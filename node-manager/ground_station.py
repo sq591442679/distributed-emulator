@@ -6,7 +6,8 @@ import json
 import math
 import time
 from loguru import logger
-ground_stations = []
+from global_var import ground_stations
+
 
 class GroundStation:
     DockerCli : DockerClient = None

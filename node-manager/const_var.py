@@ -20,9 +20,9 @@ V_EDIT = "/home/satellite-2/Workspace/distributed_simulation/satellite-source-ro
 LIGHT_SPEED = 300
 
 # DELAY BANDWIDTH LOSS
-NETWORK_DELAY = 0
-NETWORK_BANDWIDTH = "10Mbps"
-NETWORK_LOSS = "0%"
+NETWORK_DELAY = 150 # unit ms, 150 means 150ms
+NETWORK_BANDWIDTH = 100 # unis kbytes/s must integer, 100 means 100kB/s
+NETWORK_LOSS = 0 # percent 0 means 0%
 
 # CONSTELLATION PARAMETERS
 ORBIT_NUM = 5
