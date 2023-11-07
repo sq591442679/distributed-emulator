@@ -119,25 +119,51 @@ class Network:
         }
         self.init_info()
 
+    '''
+    #!/bin/bash
+    echo "add tbf and netem to eth0..."
+    tc qdisc del dev eth0 root
+    tc qdisc add dev eth0 root handle 1:0 tbf rate 80kbit burst 10k limit 10kbit
+    tc qdisc add dev eth0 parent 2:0 handle 1:0 netem delay 100ms loss 10%
+    tc qdisc show dev eth0
+    '''
     def init_info(self):
-        command = "tc qdisc add dev %s %s netem delay %dms loss %s rate %s" % (
-            self.veth_interface_list[0], "root", self.delay, self.loss, self.bandwidth)
+        # bandwidth unit is kbytes/s integer
+        command = "tc qdisc replace dev %s root handle 1:0 tbf rate %dkbit burst %dk limit %dkbit" % (
+            self.veth_interface_list[0], self.bandwidth*8, self.bandwidth, self.bandwidth*8)
         exec_res = os.popen(command).read()
-        logger.info(f"{self.veth_interface_list[0]} init")
-        command = "tc qdisc add dev %s %s netem delay %dms loss %s rate %s" % (
-            self.veth_interface_list[1], "root", self.delay, self.loss, self.bandwidth)
+        
+        command = "tc qdisc add dev %s parent 1:0 handle 2:0 netem delay %dms loss %s" % (
+            self.veth_interface_list[0], self.delay, self.loss)
         exec_res = os.popen(command).read()
-        logger.info(f"{self.veth_interface_list[1]} init")
+
+        # bandwidth unit is kbytes/s integer
+        command = "tc qdisc replace dev %s root handle 1:0 tbf rate %dkbit burst %dk limit %dkbit" % (
+            self.veth_interface_list[1], self.bandwidth*8, self.bandwidth, self.bandwidth*8)
+        exec_res = os.popen(command).read()
+
+        command = "tc qdisc add dev %s parent 1:0 handle 2:0 netem delay %dms loss %s" % (
+            self.veth_interface_list[1], self.delay, self.loss)
+        exec_res = os.popen(command).read()
 
     def update_info(self):
-        command = "tc qdisc replace dev %s %s netem delay %dms loss %s rate %s" % (
-            self.veth_interface_list[0], "root", self.delay, self.loss, self.bandwidth)
+        command = "tc qdisc replace dev %s root handle 1:0 tbf rate %dkbit burst %dk limit %dkbit" % (
+            self.veth_interface_list[0], self.bandwidth*8, self.bandwidth, self.bandwidth*8)
+        
         exec_res = os.popen(command).read()
-        logger.info(f"{self.veth_interface_list[0]} update {self.delay}")
-        command = "tc qdisc replace dev %s %s netem delay %dms loss %s rate %s" % (
-            self.veth_interface_list[1], "root", self.delay, self.loss, self.bandwidth)
+        command = "tc qdisc replace dev %s parent 1:0 handle 2:0 netem delay %dms loss %s" % (
+            self.veth_interface_list[0], self.delay, self.loss)
+        
         exec_res = os.popen(command).read()
-        logger.info(f"{self.veth_interface_list[1]} update {self.delay}")
+        # bandwidth unit is kbytes/s integer
+        command = "tc qdisc replace dev %s root handle 1:0 tbf rate %dkbit burst %dk limit %dkbit" % (
+            self.veth_interface_list[1], self.bandwidth*8, self.bandwidth, self.bandwidth*8)
+        
+        exec_res = os.popen(command).read()
+        command = "tc qdisc replace dev %s parent 1:0 handle 2:0 netem delay %dms loss %s" % (
+            self.veth_interface_list[1], self.delay, self.loss)
+        
+        exec_res = os.popen(command).read()
 
     def update_delay_param(self, set_time: int):
         self.delay = set_time

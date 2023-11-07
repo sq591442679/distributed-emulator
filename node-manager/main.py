@@ -15,7 +15,7 @@ from tle_generator import generate_tle
 from delete_containers_and_networks import delete_containers_with_multiple_processes, \
     delete_networks_with_multiple_processes
 from network_controller import update_network_delay_with_multi_process
-from global_var import networks, connect_order_map, satellite_map
+from global_var import networks, connect_order_map, satellite_map,reinit_global_var
 from ground_station import create_station_from_json
 
 
@@ -44,6 +44,8 @@ def get_user_input(stop_process_state_tmp, docker_client: DockerClient):
             print("Please input the right command!")
 
 if __name__ == "__main__":
+
+    reinit_global_var()
     # the share bool value
     stop_process_state = multiprocessing.Value(c_bool, False)
     # read config.ini file
