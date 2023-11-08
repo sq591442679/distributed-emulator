@@ -12,7 +12,7 @@ BROADCAST_SEND_INTERVAL = 3
 NETWORK_DELAY_UPDATE_INTERVAL = 30
 
 # VOLUME1
-VOLUME1 = "/home/satellite-2/Workspace/distributed_simulation/satellite-source-routing/configuration:/configuration"
+VOLUME1 = "../configuration:/configuration"
 VOLUME2 = "/tmp/.X11-unix:/tmp/.X11-unix"
 V_EDIT = "/home/satellite-2/Workspace/distributed_simulation/satellite-source-routing/satellite_node_docker/video_trans:/edit"
         
