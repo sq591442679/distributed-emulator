@@ -8,7 +8,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 USER root
 # 替换为国内源
 # RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
-COPY sources.list /etc/apt/sources.list
+COPY resources/sources.list /etc/apt/sources.list
 ## Update the system and install required packages
 RUN apt-get update 
 RUN apt-get install -y \
@@ -33,10 +33,12 @@ RUN apt-get install -y \
     frr \
     xauth
 
-RUN touch /root/.Xauthority
-RUN xauth add unix:0.0 MIT-MAGIC-COOKIE-1  ed38891ce0eb40149fbdc76e11c94e76
-# COPY the daemons to frr
-COPY ./daemons /etc/frr/daemons
+RUN touch /root/.Xauthority \
+    && xauth add unix:0.0 MIT-MAGIC-COOKIE-1  ed38891ce0eb40149fbdc76e11c94e76
+
+RUN cd /
+
+COPY resources/daemons /etc/frr/daemons
 
 # 启用ipv4转发
 RUN echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf && sysctl -p

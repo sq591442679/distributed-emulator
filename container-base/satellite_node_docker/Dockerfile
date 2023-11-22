@@ -1,4 +1,4 @@
-FROM ubuntu_python:latest
+FROM ubuntu-python:latest
 
 USER root
 
