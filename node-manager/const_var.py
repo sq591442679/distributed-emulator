@@ -1,5 +1,5 @@
 # BROADCAST PARAMETERS
-import threading
+import os
 
 LATITUDE_KEY = 'lat'
 LONGITUDE_KEY = 'lon'
@@ -11,10 +11,11 @@ HOST_PREFIX_LEN = 16
 BROADCAST_SEND_INTERVAL = 3
 NETWORK_DELAY_UPDATE_INTERVAL = 30
 
+WD = os.getcwd()
 # VOLUME1
-VOLUME1 = "../configuration:/configuration"
+VOLUME1 = "%s/../configuration:/configuration"%WD
 VOLUME2 = "/tmp/.X11-unix:/tmp/.X11-unix"
-V_EDIT = "/home/satellite-2/Workspace/distributed_simulation/satellite-source-routing/satellite_node_docker/video_trans:/edit"
+V_EDIT = "%s/../satellite_node_docker/video_trans:/edit"%WD
         
 # LIGHT_SPEED
 LIGHT_SPEED = 300
@@ -25,8 +26,8 @@ NETWORK_BANDWIDTH = 100 # unis kbytes/s must integer, 100 means 100kB/s
 NETWORK_LOSS = 0 # percent 0 means 0%
 
 # CONSTELLATION PARAMETERS
-ORBIT_NUM = 5
-SAT_PER_ORBIT = 6
+ORBIT_NUM = 3
+SAT_PER_ORBIT = 3
 
 # SUBMISSION SIZE
 SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION = 1

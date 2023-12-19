@@ -7,7 +7,7 @@ from math import cos, sin, sqrt
 from typing import Dict, List, Tuple
 from const_var import *
 from satellite_node import SatelliteNode
-from global_var import networks
+from global_var import networks,satellite_map
 from threading import Thread
 
 
@@ -189,6 +189,17 @@ def generate_mission_for_update_network_delay(position_data: Dict[str, Dict[str,
                 (network_key, delay)
             )
     return update_network_delay_missions
+
+def update_network_delay(position_data: dict, topo: dict):
+    for start_node_id in topo.keys():
+        conn_array = topo[start_node_id]
+        for target_node_id in conn_array:
+            delay = get_laser_delay_ms(position_data[start_node_id],position_data[target_node_id])
+            start_container_id = satellite_map[start_node_id].container_id
+            target_container_id = satellite_map[target_node_id].container_id
+            net_object = networks[get_network_key(start_container_id,target_container_id)]
+            net_object.update_delay_param(delay)
+            net_object.update_info()
 
 
 def generate_submission_list_for_update_network_delay(missions: List[Tuple[str, int]],

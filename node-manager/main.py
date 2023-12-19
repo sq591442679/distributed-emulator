@@ -105,15 +105,15 @@ if __name__ == "__main__":
     # start network delay updater
     # ----------------------------------------------------------
     submission_size = SUBMISSION_SIZE_FOR_UPDATE_NETWORK_DELAY
-    update_network_delay_process = Process(target=update_network_delay_with_multi_process,
-                                           args=(stop_process_state,
-                                                 networks,
-                                                 position_datas,
-                                                 connect_order_map,
-                                                 satellite_map,
-                                                 submission_size,
-                                                 NETWORK_DELAY_UPDATE_INTERVAL))
-    update_network_delay_process.start()
+    # update_network_delay_process = Process(target=update_network_delay_with_multi_process,
+    #                                        args=(stop_process_state,
+    #                                              networks,
+    #                                              position_datas,
+    #                                              connect_order_map,
+    #                                              satellite_map,
+    #                                              submission_size,
+    #                                              NETWORK_DELAY_UPDATE_INTERVAL))
+    # update_network_delay_process.start()
     # ----------------------------------------------------------
 
     # start position broadcaster
@@ -122,7 +122,8 @@ if __name__ == "__main__":
                                                                          satellite_num,
                                                                          position_datas,
                                                                          updater,
-                                                                         BROADCAST_SEND_INTERVAL))
+                                                                         BROADCAST_SEND_INTERVAL,
+                                                                         connect_order_map))
     update_position_process.start()
     # ----------------------------------------------------------
 
