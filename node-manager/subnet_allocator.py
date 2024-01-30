@@ -74,4 +74,4 @@ if __name__ == "__main__":
     allocator = SubnetAllocator(29)
     for i in range(10):
         ip = allocator.alloc_local_subnet()
-        print(ip)
+        print(ip2str(ip))

@@ -61,6 +61,14 @@ RUN git clone https://github.com/CESNET/libyang.git \
 ENV LDFLAGS="-Wl,--copy-dt-needed-entries" 
 # ENV LD_LIBRARY_PATH='$LD_LIBRARY /usr/local/lib'
 
+# install libnl
+COPY libnl-src /libnl
+RUN chmod -R 777 /libnl \ 
+    && cd /libnl \ 
+    && ./configure --prefix=/usr \  
+    && make -j$(nproc) \ 
+    && make install -j$(nproc)
+
 # add frr users and groups
 RUN groupadd -r -g 92 frr \ 
     && groupadd -r -g 85 frrvty \
@@ -102,14 +110,6 @@ COPY resources/daemons /etc/frr/daemons
 RUN echo "log file /var/log/frr/sqsq_ospfd.log" >> /etc/frr/frr.conf \
     && echo "log record-priority" >> /etc/frr/frr.conf \
     && echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf && sysctl -p
-
-# install libnl
-COPY libnl-src /libnl
-RUN chmod -R 777 /libnl \ 
-    && cd /libnl \ 
-    && ./configure --prefix=/usr \  
-    && make -j$(nproc) \ 
-    && make install -j$(nproc)
 
 # ENTRYPOINT [ "/bin/bash" ]
 ENTRYPOINT [ "/sbin/init" ]

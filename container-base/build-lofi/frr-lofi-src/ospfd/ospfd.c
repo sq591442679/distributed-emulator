@@ -2372,22 +2372,36 @@ bool check_lofi(const struct ospf *ospf)
 	}
 }
 
-struct in_addr sqsq_get_neighbor_intf_ip(struct in_addr current_ip)
+struct in_addr sqsq_get_neighbor_intf_ip(struct router_lsa_link *l, struct ospf_lsa *neighbor_lsa)
 {
-	// zlog_debug("[%s] current ip: %pI4", __func__, &current_ip);
-
-	struct in_addr ret;
-	unsigned int tail = ntohl(current_ip.s_addr) & 255u;
-	// zlog_debug("tail: %u", tail);
-	assert(tail == 1u || tail == 2u);
-	if (tail == 1) {
-		ret.s_addr = ((unsigned int)((current_ip.s_addr << 8) >> 8) | (2 << 24));
+	/**
+	 * for a router lsa point-to-point link,
+	 * its link id is neighbor router id,
+	 * and link data is ip interface address of the associated router interface
+	 */
+	struct in_addr ret = {.s_addr = INADDR_ANY}, current_intf_addr = l->link_data;
+	uint8_t *p = (uint8_t *)neighbor_lsa->data + OSPF_LSA_HEADER_SIZE + 4; // point to the beginning of the first link
+	uint8_t *lim = (uint8_t *)neighbor_lsa->data + ntohs(neighbor_lsa->data->length);
+	int max_match_length = 0;
+	
+	while (p > lim) // iterate through all links of neighbor_lsa
+	{
+		struct router_lsa_link *nei_l = (struct router_lsa_link *)p;
+		p += (OSPF_ROUTER_LSA_LINK_SIZE + nei_l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE);
+		int link_type = nei_l->m[0].type;
+		if (link_type == LSA_LINK_TYPE_POINTOPOINT) {
+			struct in_addr neighbor_intf_addr = nei_l->link_data;
+			int match_length = sqsq_get_match_length(current_intf_addr, neighbor_intf_addr);
+			if (max_match_length < match_length) {
+				max_match_length = match_length;
+				ret = neighbor_intf_addr;
+			}
+		}
 	}
-	else {
-		ret.s_addr = ((unsigned int)((current_ip.s_addr << 8) >> 8) | (1 << 24));
+	
+	if (ret.s_addr == INADDR_ANY) {
+		zlog_err("%s neighbor ip == 0", __func__);
 	}
-
-	// zlog_debug("ret ip: %pI4", &ret);
 
 	return ret;
 }
@@ -2397,4 +2411,18 @@ bool sqsq_ip_prefix_match(struct in_addr ip1, struct in_addr ip2, int length)
 	in_addr_t ip_value1 = ntohl(ip1.s_addr), ip_value2 = ntohl(ip2.s_addr);
 	int shift = 32 - length;
 	return (ip_value1 >> shift) == (ip_value2 >> shift);
+}
+
+/**
+ * ip2 and ip2 are in netwrk order
+ */
+int sqsq_get_match_length(struct in_addr ip1, struct in_addr ip2)
+{
+	in_addr_t ip_value1 = ntohl(ip1.s_addr), ip_value2 = ntohl(ip2.s_addr);
+	uint32_t shift = 31;
+	int xor_result = (ip_value1 ^ ip_value2);
+	while ((xor_result >> shift) == 0 && shift >= 0) {
+		shift--;
+	}
+	return 31 - shift;
 }

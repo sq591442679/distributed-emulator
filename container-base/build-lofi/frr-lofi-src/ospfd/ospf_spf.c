@@ -846,7 +846,7 @@ static unsigned int ospf_nexthop_calculation(struct ospf_area *area,
 
 				/** @sqsq */
 				if (area->spf_root_node) {
-					nexthop = sqsq_get_neighbor_intf_ip(l->link_data);
+					nexthop = sqsq_get_neighbor_intf_ip(l->link_data, w->lsa_p);
 					added = 1;
 				}
 
@@ -1901,7 +1901,7 @@ void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
 					if (or != NULL) { // NOTE this judgement is important
 						for (ALL_LIST_ELEMENTS(or->paths, node, nnode, path)) {
 							struct in_addr current_addr = { (l->link_data.s_addr) };
-							struct in_addr neighbor_intf_ip = sqsq_get_neighbor_intf_ip(current_addr);
+							struct in_addr neighbor_intf_ip = sqsq_get_neighbor_intf_ip(l, neighbor_lsa);
 							path->nexthop = neighbor_intf_ip;
 							oi = ospf_if_lookup_by_local_addr(ospf, NULL, l->link_data);
 							if (oi) {
@@ -1941,7 +1941,7 @@ void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
 					if (or != NULL) { // NOTE this judgement is important
 						for (ALL_LIST_ELEMENTS(or->paths, node, nnode, path)) {
 							struct in_addr current_addr = { (l->link_data.s_addr) };
-							struct in_addr neighbor_intf_ip = sqsq_get_neighbor_intf_ip(current_addr);
+							struct in_addr neighbor_intf_ip = sqsq_get_neighbor_intf_ip(l, neighbor_lsa);
 							path->nexthop = neighbor_intf_ip;
 							oi = ospf_if_lookup_by_local_addr(ospf, NULL, l->link_data);
 							if (oi) {

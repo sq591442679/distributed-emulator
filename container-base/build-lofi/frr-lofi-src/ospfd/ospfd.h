@@ -799,7 +799,7 @@ extern int q_spaces_compare_func(const struct q_space *a,
 */
 extern bool check_lofi(const struct ospf *ospf);
 
-extern struct in_addr sqsq_get_neighbor_intf_ip(struct in_addr current_ip);
+extern struct in_addr sqsq_get_neighbor_intf_ip(struct router_lsa_link *l, struct ospf_lsa *neighbor_lsa);
 
 /**
  * check if the first LENGTH bit are the same
