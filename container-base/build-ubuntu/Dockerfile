@@ -30,15 +30,37 @@ RUN apt-get install -y \
     libsm6 \
     libxext6 \
     libxrender-dev \
-    frr \
-    xauth
+    xauth \
+	tcpdump \ 
+    grep \ 
+    net-tools \ 
+    iputils-ping \ 
+    traceroute \ 
+    iproute2 \ 
+    systemd \ 
+    systemd-sysv \ 
+    dbus \ 
+    dbus-user-session \ 
+    git autoconf automake libtool make libreadline-dev texinfo \
+    pkg-config libpam0g-dev libjson-c-dev bison flex \
+    libc-ares-dev python3-dev python3-sphinx \
+    install-info build-essential libsnmp-dev perl \
+    protobuf-c-compiler libprotobuf-c-dev \
+    libcap-dev libelf-dev libunwind-dev libpcre2-dev
 
 RUN touch /root/.Xauthority \
     && xauth add unix:0.0 MIT-MAGIC-COOKIE-1  ed38891ce0eb40149fbdc76e11c94e76
 
-RUN cd /
-
-COPY resources/daemons /etc/frr/daemons
+# install libyang
+RUN git clone https://github.com/CESNET/libyang.git \
+    && cd libyang \
+    && git checkout v2.1.128 \
+    && mkdir build; cd build \
+    && cmake -D CMAKE_INSTALL_PREFIX:PATH=/usr \
+        -D CMAKE_BUILD_TYPE:String="Release" .. \
+    && make \ 
+    && make install
+ENV LDFLAGS="-Wl,--copy-dt-needed-entries" 
 
 # 启用ipv4转发
 RUN echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf && sysctl -p

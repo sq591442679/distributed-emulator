@@ -45,6 +45,11 @@ def get_user_input(stop_process_state_tmp, docker_client: DockerClient):
 
 
 if __name__ == "__main__":
+    # check sudo permission
+    sudo_uid = os.environ.get('SUDO_UID')
+    if sudo_uid is None:
+        raise Exception("\nneed to have sudo permission.\n try sudo python3 main.py")
+
     reinit_global_var()
     # the share bool value
     stop_process_state = multiprocessing.Value(c_bool, False)

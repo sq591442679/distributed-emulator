@@ -151,7 +151,10 @@ void ospf_route_table_free(struct route_table *rt)
 	/** @sqsq */
 	assert(rt->child_table_list);
 	for (ALL_LIST_ELEMENTS(rt->child_table_list, l_node, l_nnode, tmp_table)) {
-		ospf_route_table_free(tmp_table);
+		route_table_finish(tmp_table);
+		// NOTE: here uses route_table_finish instead of ospf_route_finish
+		// because paths of tmp_table has been added into rt
+		// and they have been freed in ospf_route_free above
 	}
 	list_delete(&rt->child_table_list);
 

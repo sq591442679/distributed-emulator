@@ -2581,6 +2581,10 @@ static unsigned nexthop_active_check(struct route_node *rn,
 			SET_FLAG(nexthop->flags, NEXTHOP_FLAG_ACTIVE);
 		else
 			UNSET_FLAG(nexthop->flags, NEXTHOP_FLAG_ACTIVE);
+
+		/** @sqsq */
+		// zlog_debug("%s %d\n", __func__, CHECK_FLAG(nexthop->flags, NEXTHOP_FLAG_ACTIVE));
+		
 		break;
 	case NEXTHOP_TYPE_IPV6:
 		family = AFI_IP6;

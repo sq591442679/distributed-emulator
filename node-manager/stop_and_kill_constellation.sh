@@ -5,9 +5,9 @@ set +e
 # shellcheck disable=SC2006
 # shellcheck disable=SC2062
 # 暂停所有以node开头的容器
-docker stop  `docker ps -a | grep Sat-* | awk '{print $1}'`
+docker stop  `docker ps -a | grep node_* | awk '{print $1}'`
 # 删除所有以node开头的容器
-docker rm -f `docker ps -a | grep Sat-* | awk '{print $1}'`
+docker rm -f `docker ps -a | grep node_* | awk '{print $1}'`
 # 停止satellite-monitor
 docker stop  `docker ps -a | grep satellite | awk '{print $1}'`
 # 删除所有satellite-monitor的容器

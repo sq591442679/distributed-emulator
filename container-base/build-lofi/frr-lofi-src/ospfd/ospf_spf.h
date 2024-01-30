@@ -110,6 +110,13 @@ extern void ospf_restart_spf(struct ospf *ospf);
 /* void ospf_spf_calculate_timer_add (); */
 
 /**@sqsq */
+extern void sqsq_calculate_route_table(struct ospf *ospf, struct ospf_area *area,
+			     struct route_table *rt,
+			     struct route_table *all_rtrs,
+			     struct route_table *new_rtrs,
+				 struct ospf_lsa *current_lsa,
+				 struct ospf_lsa *neighbor_lsa,
+				 struct router_lsa_link *l);
 extern int sqsq_path_cmp(const void **first, const void **second);
 extern int sqsq_find_in_path_list(struct list *list, struct ospf_path *path);
 

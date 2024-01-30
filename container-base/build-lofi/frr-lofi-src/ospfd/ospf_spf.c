@@ -846,7 +846,7 @@ static unsigned int ospf_nexthop_calculation(struct ospf_area *area,
 
 				/** @sqsq */
 				if (area->spf_root_node) {
-					nexthop = sqsq_get_neighbor_intf_ip(l, w->lsa_p);
+					nexthop = sqsq_get_neighbor_intf_ip(v->lsa_p, l, w->lsa_p);
 					added = 1;
 				}
 
@@ -1861,6 +1861,52 @@ int sqsq_find_in_path_list(struct list* list, struct ospf_path *path)
 	return ret;
 }
 
+/** @sqsq */
+void sqsq_calculate_route_table(struct ospf *ospf, struct ospf_area *area,
+			     struct route_table *rt,
+			     struct route_table *all_rtrs,
+			     struct route_table *new_rtrs,
+				 struct ospf_lsa *current_lsa,
+				 struct ospf_lsa *neighbor_lsa,
+				 struct router_lsa_link *l)
+{
+	ospf_spf_calculate(area, neighbor_lsa, rt, all_rtrs, new_rtrs, false, true);
+
+	// zlog_debug("calculating routing table based on upper neighbor");
+
+	for (struct route_node *rn = route_top(rt); rn; rn = route_next(rn)) {
+		struct ospf_route *or = rn->info;
+		struct listnode *node, *nnode;
+		struct ospf_path *path;
+		struct ospf_interface *oi;
+		if (or != NULL) { // NOTE this judgement is important
+			for (ALL_LIST_ELEMENTS(or->paths, node, nnode, path)) {
+				struct in_addr current_intf_ip = { (l->link_data.s_addr) };
+				struct in_addr neighbor_intf_ip = sqsq_get_neighbor_intf_ip(current_lsa, l, neighbor_lsa);
+				path->nexthop = neighbor_intf_ip;
+				oi = ospf_if_lookup_by_local_addr(ospf, NULL, l->link_data);
+				if (oi) {
+					path->ifindex = oi->ifp->ifindex;
+					if (!sqsq_ip_prefix_match(rn->p.u.prefix4, current_intf_ip, rn->p.prefixlen)) {
+						or->cost += ntohs(l->m[0].metric);
+					}
+					path->cost = or->cost;
+				}
+				else {
+					list_delete_node(or->paths, node);
+				}
+			}
+
+			// delete duplicate next hops (due to original equal-cost paths)
+			for (ALL_LIST_ELEMENTS(or->paths, node, nnode, path)) { 
+				if (sqsq_find_in_path_list(or->paths, path) > 1) {
+					list_delete_node(or->paths, node);
+				}
+			}
+		}
+	}	
+}
+
 void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
 			     struct route_table *new_table,
 			     struct route_table *all_rtrs,
@@ -1869,94 +1915,35 @@ void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
 	/**
 	 * @sqsq
 	 */
-	struct lsa_header *current_lsa = area->router_lsa_self->data;
-	uint8_t *p = (uint8_t *)current_lsa + OSPF_LSA_HEADER_SIZE + 4; // point to the beginning of the first link
-	uint8_t *lim = (uint8_t *)current_lsa + ntohs(current_lsa->length);
+	struct ospf_lsa *current_lsa = area->router_lsa_self;
+	struct lsa_header *current_lsa_header = current_lsa->data;
+	uint8_t *p = (uint8_t *)current_lsa_header + OSPF_LSA_HEADER_SIZE + 4; // point to the beginning of the first link
+	uint8_t *lim = (uint8_t *)current_lsa_header + ntohs(current_lsa_header->length);
 	int cnt = 0;
 
 	while (p < lim) {
 		struct router_lsa_link *l = (struct router_lsa_link *)p;
+		int link_type = l->m[0].type;
 
 		p += (OSPF_ROUTER_LSA_LINK_SIZE + l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE);
-
-		int link_type = l->m[0].type;
+		
 		if (link_type == LSA_LINK_TYPE_POINTOPOINT) {
 			cnt++;
-			struct ospf_lsa * neighbor_lsa = ospf_lsa_lookup(ospf, area, OSPF_ROUTER_LSA, l->link_id, l->link_id);
+			struct ospf_lsa *neighbor_lsa = ospf_lsa_lookup(ospf, area, OSPF_ROUTER_LSA, l->link_id, l->link_id);
 			/**
 			 * @sqsq
 			 * found the neighbor's router LSA
 			 * then calculate SPF tree based on it
 			 */
 			if (cnt == 1) {
-				ospf_spf_calculate(area, neighbor_lsa, new_table, all_rtrs, new_rtrs, false, true);
-
-				// zlog_debug("calculating routing table based on upper neighbor");
-
-				for (struct route_node *rn = route_top(new_table); rn; rn = route_next(rn)) {
-					struct ospf_route *or = rn->info;
-					struct listnode *node, *nnode;
-					struct ospf_path *path;
-					struct ospf_interface *oi;
-					if (or != NULL) { // NOTE this judgement is important
-						for (ALL_LIST_ELEMENTS(or->paths, node, nnode, path)) {
-							struct in_addr current_addr = { (l->link_data.s_addr) };
-							struct in_addr neighbor_intf_ip = sqsq_get_neighbor_intf_ip(l, neighbor_lsa);
-							path->nexthop = neighbor_intf_ip;
-							oi = ospf_if_lookup_by_local_addr(ospf, NULL, l->link_data);
-							if (oi) {
-								path->ifindex = oi->ifp->ifindex;
-								if (!sqsq_ip_prefix_match(rn->p.u.prefix4, current_addr, rn->p.prefixlen)) {
-									or->cost += ntohs(l->m[0].metric);
-								}
-								path->cost = or->cost;
-							}
-							else {
-								list_delete_node(or->paths, node);
-							}
-						}
-
-						// delete duplicate next hops (due to original equal-cost paths)
-						for (ALL_LIST_ELEMENTS(or->paths, node, nnode, path)) { 
-							if (sqsq_find_in_path_list(or->paths, path) > 1) {
-								list_delete_node(or->paths, node);
-							}
-						}
-					}
-				}	
+				sqsq_calculate_route_table(ospf, area, new_table, all_rtrs, new_rtrs, current_lsa, neighbor_lsa, l);
 			}
 			else {
 				struct route_table *tmp_table = route_table_init();
 				listnode_add(new_table->child_table_list, tmp_table);
 				
 				// calculate tmp_table
-				ospf_spf_calculate(area, neighbor_lsa, tmp_table, all_rtrs, new_rtrs, false, true);
-
-				// modify tmp_table
-				for (struct route_node *rn = route_top(tmp_table); rn; rn = route_next(rn)) {
-					struct ospf_route *or = rn->info;
-					struct listnode *node, *nnode;
-					struct ospf_path *path;
-					struct ospf_interface *oi;
-					if (or != NULL) { // NOTE this judgement is important
-						for (ALL_LIST_ELEMENTS(or->paths, node, nnode, path)) {
-							struct in_addr current_addr = { (l->link_data.s_addr) };
-							struct in_addr neighbor_intf_ip = sqsq_get_neighbor_intf_ip(l, neighbor_lsa);
-							path->nexthop = neighbor_intf_ip;
-							oi = ospf_if_lookup_by_local_addr(ospf, NULL, l->link_data);
-							if (oi) {
-								path->ifindex = oi->ifp->ifindex;
-								if (!sqsq_ip_prefix_match(rn->p.u.prefix4, current_addr, rn->p.prefixlen)) {
-									or->cost += ntohs(l->m[0].metric);
-								}
-								path->cost = or->cost;
-							}
-							else {
-								list_delete_node(or->paths, node);
-							}
-						}	
-					}
-				}
+				sqsq_calculate_route_table(ospf, area, tmp_table, all_rtrs, new_rtrs, current_lsa, neighbor_lsa, l);
 
 				// find the corresponding route node in new_table and add path
 				for (struct route_node *node_in_tmp = route_top(tmp_table); node_in_tmp; node_in_tmp = route_next(node_in_tmp)) {
