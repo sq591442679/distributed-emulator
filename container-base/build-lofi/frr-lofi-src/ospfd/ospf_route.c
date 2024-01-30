@@ -136,6 +136,10 @@ void ospf_route_table_free(struct route_table *rt)
 	struct route_node *rn;
 	struct ospf_route * or ;
 
+	/** @sqsq */
+	struct listnode *l_node, *l_nnode;
+	struct route_table *tmp_table;
+
 	for (rn = route_top(rt); rn; rn = route_next(rn))
 		if ((or = rn->info) != NULL) {
 			ospf_route_free(or);
@@ -143,6 +147,13 @@ void ospf_route_table_free(struct route_table *rt)
 			rn->info = NULL;
 			route_unlock_node(rn);
 		}
+
+	/** @sqsq */
+	assert(rt->child_table_list);
+	for (ALL_LIST_ELEMENTS(rt->child_table_list, l_node, l_nnode, tmp_table)) {
+		ospf_route_table_free(tmp_table);
+	}
+	list_delete(&rt->child_table_list);
 
 	route_table_finish(rt);
 }

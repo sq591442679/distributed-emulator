@@ -35,6 +35,11 @@ RUN apt-get update -y \
     libxrender-dev \
     xauth \
     tcpdump \ 
+    grep \ 
+    net-tools \ 
+    iputils-ping \ 
+    traceroute \ 
+    iproute2 \ 
     systemd \ 
     systemd-sysv \ 
     dbus \ 

@@ -101,19 +101,8 @@ static void route_table_free(struct route_table *rt)
 	struct route_node *tmp_node;
 	struct route_node *node;
 
-	/** @sqsq */
-	struct listnode *l_node, *l_nnode;
-	struct route_table *tmp_table;
-
 	if (rt == NULL)
 		return;
-
-	/** @sqsq */
-	assert(rt->child_table_list);
-	for (ALL_LIST_ELEMENTS(rt->child_table_list, l_node, l_nnode, tmp_table)) {
-		route_table_finish(tmp_table);
-	}
-	list_delete(&rt->child_table_list);
 
 	node = rt->top;
 

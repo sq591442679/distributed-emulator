@@ -2383,8 +2383,11 @@ struct in_addr sqsq_get_neighbor_intf_ip(struct router_lsa_link *l, struct ospf_
 	uint8_t *p = (uint8_t *)neighbor_lsa->data + OSPF_LSA_HEADER_SIZE + 4; // point to the beginning of the first link
 	uint8_t *lim = (uint8_t *)neighbor_lsa->data + ntohs(neighbor_lsa->data->length);
 	int max_match_length = 0;
+
+	// uint32_t tmp = ntohl(current_intf_addr.s_addr);
+	// zlog_debug("current_intf_addr: %pI4", &tmp);
 	
-	while (p > lim) // iterate through all links of neighbor_lsa
+	while (p < lim) // iterate through all links of neighbor_lsa
 	{
 		struct router_lsa_link *nei_l = (struct router_lsa_link *)p;
 		p += (OSPF_ROUTER_LSA_LINK_SIZE + nei_l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE);
@@ -2392,6 +2395,10 @@ struct in_addr sqsq_get_neighbor_intf_ip(struct router_lsa_link *l, struct ospf_
 		if (link_type == LSA_LINK_TYPE_POINTOPOINT) {
 			struct in_addr neighbor_intf_addr = nei_l->link_data;
 			int match_length = sqsq_get_match_length(current_intf_addr, neighbor_intf_addr);
+
+			// tmp = ntohl(neighbor_intf_addr.s_addr);
+			// zlog_debug("neighbor_intf_addr: %pI4", &tmp);
+
 			if (max_match_length < match_length) {
 				max_match_length = match_length;
 				ret = neighbor_intf_addr;
@@ -2408,19 +2415,26 @@ struct in_addr sqsq_get_neighbor_intf_ip(struct router_lsa_link *l, struct ospf_
 
 bool sqsq_ip_prefix_match(struct in_addr ip1, struct in_addr ip2, int length)
 {
-	in_addr_t ip_value1 = ntohl(ip1.s_addr), ip_value2 = ntohl(ip2.s_addr);
+	in_addr_t ip_value1 = ip1.s_addr, ip_value2 = ip2.s_addr;
 	int shift = 32 - length;
+
+	zlog_debug("%s ip1:%pI4 ip2:%pI4", __func__, &ip_value1, &ip_value2);
+
 	return (ip_value1 >> shift) == (ip_value2 >> shift);
 }
 
 /**
- * ip2 and ip2 are in netwrk order
+ * ip2 and ip2 are in host order
  */
 int sqsq_get_match_length(struct in_addr ip1, struct in_addr ip2)
 {
-	in_addr_t ip_value1 = ntohl(ip1.s_addr), ip_value2 = ntohl(ip2.s_addr);
-	uint32_t shift = 31;
+	// in_addr_t ip_value1 = ntohl(ip1.s_addr), ip_value2 = ntohl(ip2.s_addr);
+	in_addr_t ip_value1 = ip1.s_addr, ip_value2 = ip2.s_addr;
+	int shift = 31;
 	int xor_result = (ip_value1 ^ ip_value2);
+
+	zlog_debug("%s ip1:%pI4 ip2:%pI4", __func__, &ip_value1, &ip_value2);
+
 	while ((xor_result >> shift) == 0 && shift >= 0) {
 		shift--;
 	}

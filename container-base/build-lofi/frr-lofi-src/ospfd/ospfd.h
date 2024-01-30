@@ -806,4 +806,6 @@ extern struct in_addr sqsq_get_neighbor_intf_ip(struct router_lsa_link *l, struc
  */
 extern bool sqsq_ip_prefix_match(struct in_addr ip1, struct in_addr ip2, int length);
 
+extern int sqsq_get_match_length(struct in_addr ip1, struct in_addr ip2);
+
 #endif /* _ZEBRA_OSPFD_H */

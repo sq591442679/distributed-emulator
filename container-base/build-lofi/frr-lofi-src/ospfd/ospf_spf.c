@@ -846,7 +846,7 @@ static unsigned int ospf_nexthop_calculation(struct ospf_area *area,
 
 				/** @sqsq */
 				if (area->spf_root_node) {
-					nexthop = sqsq_get_neighbor_intf_ip(l->link_data, w->lsa_p);
+					nexthop = sqsq_get_neighbor_intf_ip(l, w->lsa_p);
 					added = 1;
 				}
 
@@ -1980,7 +1980,7 @@ void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
 				}
 
 				// do I need to free here?
-				// UPDATE: maybe not, added member child_table_list in struct route_table
+				// UPDATE: maybe not, added member child_table_list in struct route_table, see ospf_route_table_free
 				// ospf_route_table_free(tmp_table);
 			}
 		}
