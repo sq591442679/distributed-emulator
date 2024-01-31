@@ -112,6 +112,10 @@ class DockerClient:
         self.client.containers.get(container_id).exec_run(tty=False,cmd=cmd)
 
 if __name__ == '__main__':
-    cli = DockerClient('aaa', 'bbb')
-    resp = cli.get_container_interfaces("6ad80cb5be8ba205027c157814b0f47eda11c2a635862fba367316df8a2720d0")
-    print(resp)
+    # cli = DockerClient('aaa', 'bbb')
+    # resp = cli.get_container_interfaces("6ad80cb5be8ba205027c157814b0f47eda11c2a635862fba367316df8a2720d0")
+    # print(resp)
+
+    # client = DockerClient('lofi:latest', '127.0.0.1', 'ubuntu-modified:latest')
+    # client.client.containers.run('lofi:latest', detach=True)
+    pass

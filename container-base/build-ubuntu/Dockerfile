@@ -10,7 +10,7 @@ USER root
 # RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
 COPY resources/sources.list /etc/apt/sources.list
 ## Update the system and install required packages
-RUN apt-get update 
+RUN apt-get update -y
 RUN apt-get install -y \
     build-essential \
     zlib1g-dev \
@@ -31,7 +31,7 @@ RUN apt-get install -y \
     libxext6 \
     libxrender-dev \
     xauth \
-	tcpdump \ 
+    tcpdump \ 
     grep \ 
     net-tools \ 
     iputils-ping \ 

@@ -1,4 +1,4 @@
-FROM ubuntu-modified:latest
+FROM ubuntu_modified:latest
 ## 将Python-3.6.9 拷贝解压缩
 COPY ./resources/Python-3.8.0.tgz /
 

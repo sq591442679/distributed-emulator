@@ -9,7 +9,7 @@ class DataUpdater:
         self.addr = (host, port)
         self.eth_ip = eth_ip
         self.udp_cli_sock = socket(AF_INET, SOCK_DGRAM)
-        self.udp_cli_sock.bind((eth_ip, 36000))
+        self.udp_cli_sock.bind((eth_ip, 36123))
         self.udp_cli_sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
 
     def broadcast_info(self, json_data: str):

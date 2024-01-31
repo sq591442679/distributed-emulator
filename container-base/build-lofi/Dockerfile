@@ -1,14 +1,16 @@
-FROM ubuntu-python:latest
+FROM ubuntu_python:latest
 
 LABEL mantainer="sqsq" description="LoFi image"
 
 # install libnl
-COPY libnl-src /libnl
-RUN chmod -R 777 /libnl \ 
-    && cd /libnl \ 
-    && ./configure --prefix=/usr \  
-    && make -j$(nproc) \ 
-    && make install -j$(nproc)
+# COPY libnl-src /libnl
+# RUN chmod -R 777 /libnl \
+#     && apt update -y \
+#     && apt install -y automake autoconf m4\  
+#     && cd /libnl \ 
+#     && ./configure --prefix=/usr \  
+#     && make -j$(nproc) \ 
+#     && make install -j$(nproc)
 
 # add frr users and groups
 RUN groupadd -r -g 92 frr \ 

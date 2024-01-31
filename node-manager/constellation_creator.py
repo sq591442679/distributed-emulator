@@ -1,6 +1,7 @@
 import time
 from collections import OrderedDict
 from threading import Thread
+import subprocess
 
 import docker
 from tools import ip_to_subnet
@@ -277,7 +278,8 @@ def create_network_submission(submission, docker_client, send_pipe):
         docker_client.connect_node(container_id1, net_id, node_id1)
         docker_client.connect_node(container_id2, net_id, node_id2)
         # print link connection information
-        logger.info("connect satellite %s and %s" % (node_id1, node_id2))
+        result = subprocess.run("ip link show | grep -c 'veth'", shell=True, capture_output=True, text=True)
+        logger.info("connect satellite %s and %s, total veth:%s" % (node_id1, node_id2, result.stdout.strip()))
         # send the net_id info
         send_pipe.send(f"{net_id}|{container_id1}|{container_id2}")
         # modify interface map
