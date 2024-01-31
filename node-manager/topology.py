@@ -112,18 +112,40 @@ def loadAndTest():
         print(item)
 
 
-def writeIntoRRF(host_name, network_list, prefix_list):
+def writeIntoFRR(host_name, network_list, prefix_list):
     with open(f"../configuration/frr/"
               f"{host_name}.conf", "w") as f:
         full_str = \
-            f"""frr version 7.2.1 
-frr defaults traditional
-hostname {host_name}
-log syslog informational
-no ipv6 forwarding
-service integrated-vtysh-config
-!
+            f"""
+log file /var/log/frr/sqsq_ospfd.log
+log record-priority
+interface eth1
+    ip ospf network point-to-point
+    ip ospf area 0.0.0.0
+    ip ospf hello-interval 1
+    ip ospf dead-interval 4
+    ip ospf retransmit-interval 2
+interface eth2
+    ip ospf network point-to-point
+    ip ospf area 0.0.0.0
+    ip ospf hello-interval 1
+    ip ospf dead-interval 4
+    ip ospf retransmit-interval 2
+interface eth3
+    ip ospf network point-to-point
+    ip ospf area 0.0.0.0
+    ip ospf hello-interval 1
+    ip ospf dead-interval 4
+    ip ospf retransmit-interval 2
+interface eth4
+    ip ospf network point-to-point
+    ip ospf area 0.0.0.0
+    ip ospf hello-interval 1
+    ip ospf dead-interval 4
+    ip ospf retransmit-interval 2
+
 router ospf
+    ospf lofi 1
     redistribute connected
 """
         for index in range(len(network_list)):

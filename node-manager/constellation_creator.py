@@ -7,7 +7,7 @@ import docker
 from tools import ip_to_subnet
 from satellite_node import SatelliteNode
 from const_var import *
-from topology import writeIntoRRF, GenerateNetworkX
+from topology import writeIntoFRR, GenerateNetworkX
 from network_controller import Network, get_network_key
 from loguru import logger
 from multiprocessing import Process, Pipe
@@ -449,7 +449,7 @@ def constellation_creator(docker_client,
         # get the subnet of each interface
         sub_nets = [ip_to_subnet(interfaces[i], prefix_len[i]) for i in range(len(prefix_len))]
         # write the interface into the rrf file
-        writeIntoRRF(container_id_key, sub_nets, prefix_len)
+        writeIntoFRR(container_id_key, sub_nets, prefix_len)
         # traverse all the subnets
         for sub_index in range(len(sub_nets)):
             # sub is the subnet

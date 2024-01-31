@@ -1,6 +1,7 @@
 import multiprocessing
 import os.path
 import time
+import typing
 from ctypes import c_bool
 from multiprocessing import Process
 from loguru import logger
@@ -100,7 +101,32 @@ if __name__ == "__main__":
     position_datas, monitor_payloads = constellation_creator(docker_client, satellite_infos, connections, host_ip,
                                                              udp_port, successful_init)
     # ----------------------------------------------------------------------------------------------------
-    ground_stations = create_station_from_json(docker_client, config.GroundConfigPath)
+    # ground_stations = create_station_from_json(docker_client, config.GroundConfigPath)
+    ground_stations = {}
+
+    #-------------------------------------------------------------------
+    # start frr    added by sqsq
+    process_list: typing.List[Process] = []
+    logger.info('copying frr.conf to containers')
+    for id in satellite_map.keys():
+        process = Process(target=docker_client.copy_to_container, args=(id, f'../configuration/frr/{id}.conf', f'/etc/frr/frr.conf'))
+        process_list.append(process)
+    for process in process_list:
+        process.start()
+    for process in process_list:
+        process.join()
+
+    process_list.clear()
+    logger.info('starting frr in containers')
+    for id in satellite_map.keys():
+        process = Process(target=docker_client.exec_cmd, args=(id, 'systemctl start frr'))
+        process_list.append(process)
+    for process in process_list:
+        process.start()
+    for process in process_list:
+        process.join()
+    #-------------------------------------------------------------------
+    
     # set monitor
     # ----------------------------------------------------------
     process = Process(target=set_monitor, args=(monitor_payloads, ground_stations, stop_process_state, 20))

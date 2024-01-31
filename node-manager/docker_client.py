@@ -1,5 +1,6 @@
 import logging
 import docker
+import subprocess
 from const_var import *
 from subnet_allocator import SubnetAllocator, ip2str
 
@@ -110,6 +111,13 @@ class DockerClient:
 
     def exec_cmd(self,container_id: str, cmd: list):
         self.client.containers.get(container_id).exec_run(tty=False,cmd=cmd)
+
+    """
+    added by sqsq
+    copy file src to dst in container_id
+    """
+    def copy_to_container(self, container_id: str, src: str, dst: str):
+        subprocess.run(f"docker cp {src} {container_id}:{dst}", shell=True, stdout=subprocess.DEVNULL)
 
 if __name__ == '__main__':
     # cli = DockerClient('aaa', 'bbb')
