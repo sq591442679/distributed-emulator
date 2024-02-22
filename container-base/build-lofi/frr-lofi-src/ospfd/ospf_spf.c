@@ -1905,6 +1905,13 @@ void sqsq_calculate_route_table(struct ospf *ospf, struct ospf_area *area,
 			}
 		}
 	}	
+
+	// do we need to cleanup spf here?
+	// i.e., will the cleanup infect the calculated routing table
+	ospf_spf_cleanup(area->spf, area->spf_vertex_list);
+
+	area->spf = NULL;
+	area->spf_vertex_list = NULL;
 }
 
 void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
@@ -1940,7 +1947,6 @@ void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
 			}
 			else {
 				struct route_table *tmp_table = route_table_init();
-				listnode_add(new_table->child_table_list, tmp_table);
 				
 				// calculate tmp_table
 				sqsq_calculate_route_table(ospf, area, tmp_table, all_rtrs, new_rtrs, current_lsa, neighbor_lsa, l);
@@ -1957,7 +1963,9 @@ void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
 									struct ospf_path *path;
 									for (ALL_LIST_ELEMENTS(route_in_tmp->paths, node, nnode, path)) {
 										if (sqsq_find_in_path_list(route_in_new->paths, path) == 0) {
-											listnode_add(route_in_new->paths, path);
+											struct ospf_path *inserted_path = ospf_path_new();
+											memcpy(inserted_path, path, sizeof(struct ospf_path));	// imitates ospf_path_dup()
+											listnode_add(route_in_new->paths, inserted_path);
 										}
 									}
 								}
@@ -1967,8 +1975,7 @@ void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
 				}
 
 				// do I need to free here?
-				// UPDATE: maybe not, added member child_table_list in struct route_table, see ospf_route_table_free
-				// ospf_route_table_free(tmp_table);
+				ospf_route_table_free(tmp_table);
 			}
 		}
 	}

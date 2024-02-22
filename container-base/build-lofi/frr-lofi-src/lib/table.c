@@ -54,9 +54,6 @@ route_table_init_with_delegate(route_table_delegate_t *delegate)
 	rt->delegate = delegate;
 	rn_hash_node_init(&rt->hash);
 
-	/** @sqsq */
-	rt->child_table_list = list_new();
-
 	return rt;
 }
 

@@ -27,11 +27,6 @@
 #include "prefix.h"
 #include "typesafe.h"
 
-/**
- * @sqsq
- */
-#include "linklist.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -70,13 +65,6 @@ PREDECL_HASH(rn_hash_node);
 struct route_table {
 	struct route_node *top;
 	struct rn_hash_node_head hash;
-
-	/**
-	 * @sqsq
-	 * list of tmp_table created when calling ospf_spf_calculate_area()
-	 * the list itself and all tmp_tables should be freed when this table, i.e. parent table is freed
-	 */
-	struct list *child_table_list;
 
 	/*
 	 * Delegate that performs certain functions for this table.

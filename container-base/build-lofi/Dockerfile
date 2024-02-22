@@ -2,6 +2,8 @@ FROM ubuntu_python:latest
 
 LABEL mantainer="sqsq" description="LoFi image"
 
+ENV container docker
+
 # install libnl
 COPY libnl-src /libnl
 RUN chmod -R 777 /libnl \
@@ -53,5 +55,50 @@ RUN echo "log file /var/log/frr/sqsq_ospfd.log" >> /etc/frr/frr.conf \
     && echo "log record-priority" >> /etc/frr/frr.conf \
     && echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf && sysctl -p
 
+# copied from https://github.com/robertdebock/docker-ubuntu-systemd/blob/focal/Dockerfile
+# Enable systemd.
+RUN apt-get update ; \
+    apt-get install -y systemd systemd-sysv ; \
+    apt-get clean ; \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* ; \
+    cd /lib/systemd/system/sysinit.target.wants/ ; \
+    ls | grep -v systemd-tmpfiles-setup | xargs rm -f $1 ; \
+    rm -f /lib/systemd/system/multi-user.target.wants/* ; \
+    rm -f /etc/systemd/system/*.wants/* ; \
+    rm -f /lib/systemd/system/local-fs.target.wants/* ; \
+    rm -f /lib/systemd/system/sockets.target.wants/*udev* ; \
+    rm -f /lib/systemd/system/sockets.target.wants/*initctl* ; \
+    rm -f /lib/systemd/system/basic.target.wants/* ; \
+    rm -f /lib/systemd/system/anaconda.target.wants/* ; \
+    rm -f /lib/systemd/system/plymouth* ; \
+    rm -f /lib/systemd/system/systemd-update-utmp*
+
+# block some service from running
+# added by sqsq
+RUN systemctl mask \
+    dev-hugepages.mount \
+    sys-fs-fuse-connections.mount \
+    sys-kernel-config.mount \
+    display-manager.service \
+    getty@.service \
+    systemd-logind.service \
+    systemd-remount-fs.service \
+    getty.target \
+    graphical.target \ 
+    systemd-journald.service \ 
+    systemd-timesyncd.service
+
+VOLUME [ "/sys/fs/cgroup" ]
+
+CMD ["/lib/systemd/systemd"]
+
 # ENTRYPOINT [ "/bin/bash" ]
-ENTRYPOINT [ "/sbin/init" ]
+# ENTRYPOINT [ "/sbin/init" ]
+# CMD ["/lib/systemd/systemd"]
+
+# maunally starting: 
+# docker run \
+#   --tty \
+#   --privileged \
+#   --volume /sys/fs/cgroup:/sys/fs/cgroup:ro \
+#   robertdebock/ubuntu

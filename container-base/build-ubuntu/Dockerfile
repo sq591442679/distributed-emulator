@@ -37,10 +37,10 @@ RUN apt-get install -y \
     iputils-ping \ 
     traceroute \ 
     iproute2 \ 
-    systemd \ 
-    systemd-sysv \ 
-    dbus \ 
-    dbus-user-session \ 
+    # systemd \ 
+    # systemd-sysv \ 
+    # dbus \ 
+    # dbus-user-session \ 
     git autoconf automake libtool make libreadline-dev texinfo \
     pkg-config libpam0g-dev libjson-c-dev bison flex \
     libc-ares-dev python3-dev python3-sphinx \
