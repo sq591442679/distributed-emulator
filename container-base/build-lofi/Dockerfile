@@ -8,10 +8,11 @@ ENV container docker
 COPY libnl-src /libnl
 RUN chmod -R 777 /libnl \
     && cd /libnl \ 
-    && autoreconf -f -i \ 
+    && autoreconf -ivf \ 
     && ./configure --prefix=/usr \  
     && make -j$(nproc) \ 
-    && make install -j$(nproc)
+    && make install -j$(nproc) \ 
+    && make clean
 
 # add frr users and groups
 RUN groupadd -r -g 92 frr \ 
