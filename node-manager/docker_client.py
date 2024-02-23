@@ -2,6 +2,7 @@ import logging
 import docker
 import subprocess
 from const_var import *
+from tools import *
 from subnet_allocator import SubnetAllocator, ip2str
 
 class DockerClient:
@@ -14,12 +15,16 @@ class DockerClient:
         self.host_ip = host_ip
 
     
-    def create_satellite(self, node_id: str, port: str, satellite_num: int, successful_init) -> str:
+    def create_satellite(self, node_id: tuple, port: str, satellite_num: int, successful_init) -> str:
         # add --cap-add=NET_ADMIN
-        index = int(node_id.split('_')[1])
+
+        # refactored by sqsq
+        node_id_str = satellite_id_tuple_to_str(node_id)
+        index = satellite_id_tuple_to_index(node_id)
+
         if successful_init:
             container_info = self.client.containers.run(self.image_name, detach=True, environment=[
-                'NODE_ID=' + node_id,
+                'NODE_ID=' + node_id_str,
                 'HOST_IP=' + self.host_ip,
                 'BROAD_PORT=' + port,
                 'THRESHOLD=' + str(5.0),
@@ -28,11 +33,11 @@ class DockerClient:
                 "DISPLAY=unix:0.0",
                 "GDK_SCALE",
                 "GDK_DPI_SCALE",
-            ], cap_add=['NET_ADMIN'], name=node_id, volumes=[
-                VOLUME1, VOLUME2,V_EDIT], privileged=True, ports={'8765/tcp': 30000+index})
+            ], cap_add=['NET_ADMIN'], name=node_id_str, volumes=[
+                VOLUME1, VOLUME2,V_EDIT], privileged=True, ports={'8765/tcp': 30000 + index})
         else:
             container_info = self.client.containers.run(self.image_name, detach=True, environment=[
-                'NODE_ID=' + node_id,
+                'NODE_ID=' + node_id_str,
                 'HOST_IP=' + self.host_ip,
                 'BROAD_PORT=' + port,
                 'THRESHOLD=' + str(5.0),
@@ -41,7 +46,7 @@ class DockerClient:
                 "DISPLAY=unix:0.0",
                 "GDK_SCALE",
                 "GDK_DPI_SCALE",
-            ], cap_add=['NET_ADMIN'], name=node_id, volumes=[
+            ], cap_add=['NET_ADMIN'], name=node_id_str, volumes=[
                 VOLUME1, VOLUME2,V_EDIT], privileged=True)
         return container_info.id
 

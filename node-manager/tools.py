@@ -1,3 +1,4 @@
+from const_var import ORBIT_NUM, SAT_PER_ORBIT
 
 def ip_to_subnet(ip: str, prefix_len: int) -> str:
     # print(ip, prefix_len)
@@ -15,6 +16,28 @@ def ip_to_subnet(ip: str, prefix_len: int) -> str:
         ip_int // (1 << 8) % 256,
         ip_int % 256
     )
+
+
+# added by sqsq
+# NOTE: x, y all begin from 0
+def satellite_id_tuple_to_index(id: tuple) -> int:
+    x = int(id[0])  # count of orbit number
+    y = int(id[1])  # count of inner-orbit number
+    index = x * ORBIT_NUM + y
+    return index
+
+
+def satellite_index_to_id_tuple(index: int) -> tuple:
+    x = index // ORBIT_NUM
+    y = index % SAT_PER_ORBIT
+    return (x, y)
+
+
+def satellite_id_tuple_to_str(id: tuple) -> str:
+    return 'node_' + str(id[0]) + '_' + str(id[1])
+
+def satellite_str_to_id_tuple(str: str) -> tuple:
+    return (int(str.split('_')[1]), int(str.split('_')[2]))
 
 
 if __name__ == "__main__":

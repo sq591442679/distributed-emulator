@@ -26,7 +26,7 @@ def worker(range_start: int, range_end: int, res, send_pipe):
 
 class SatelliteNode:
 
-    def __init__(self, tle_info: tuple, node_id: str, container_id: str):
+    def __init__(self, tle_info: tuple, node_id: tuple, container_id: str):
         self.orbit = tle_info[0][5:].split('_')[0]
         self.position = tle_info[0][5:].split('_')[1]
         self.satellite = ephem.readtle(tle_info[0], tle_info[1], tle_info[2])
@@ -37,7 +37,7 @@ class SatelliteNode:
         self.subnet_ip = {}  # {subnet_str: interface}
 
     def __str__(self):
-        return self.node_id
+        return 'node_' + str(self.node_id[0]) + '_' + str(self.node_id[1])
 
     def get_next_position(self, time_now):
         """

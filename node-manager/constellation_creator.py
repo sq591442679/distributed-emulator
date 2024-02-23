@@ -4,7 +4,7 @@ from threading import Thread
 import subprocess
 
 import docker
-from tools import ip_to_subnet
+from tools import *
 from satellite_node import SatelliteNode
 from const_var import *
 from topology import writeIntoFRR, GenerateNetworkX
@@ -36,40 +36,44 @@ def create_satellite_submission(mission_index,
     :param send_pipe: send pipe (we need to put the container id into the pipe)
     :return:
     """
-    for item in mission:
-        index = item - 1
-        node_id = 'node_' + str(index)
+    for id_tuple in mission:
+        node_id_str = satellite_id_tuple_to_str(id_tuple)
         # after docker_client create satellite the container_id will be returned
         container_id = docker_client.create_satellite(
-            node_id,
+            id_tuple,
             udp_listening_port,
             satellite_num,
             successful_init,
         )
-        logger.success(f"create satellite {node_id} successfully")
-        send_pipe.send(f"{mission_index}|{index}|{container_id}")
+
+        logger.success(f"create satellite {node_id_str} successfully")
+        send_pipe.send(f"{mission_index}|{node_id_str}|{container_id}")
     send_pipe.send("finished")
 
-
-def generate_submission_list(satellite_number: int, submission_size_tmp: int):
+# modified by sqsq: added parameter satellite_id_list
+def generate_submission_list(submission_size_tmp: int, satellite_id_list: list):
     """
     generate submission for create satellite container
-    :param satellite_number: total satellite container need to create
     :param submission_size_tmp: the number of the satellite container that each submission should create
+    :param satellite_id_list: list of satellite ids (in tuples)
     :return: mission list and container id list
     """
     mission_list = []
     mission_list_tmp = []
-    for i in range(1, satellite_number + 1):
+    cnt = 0
+    for id in satellite_id_list:
         # submission_size_tmp satellites in one mission
-        if i % submission_size_tmp == 0:
-            mission_list_tmp.append(i)
+        cnt += 1
+        mission_list_tmp.append(id)
+        if cnt >= submission_size_tmp:
             mission_list.append(mission_list_tmp)
             mission_list_tmp = []
-        else:
-            mission_list_tmp.append(i)
-            if i == satellite_number:
-                mission_list.append(mission_list_tmp)
+            cnt = 0
+    if cnt >= submission_size_tmp:
+        mission_list.append(mission_list_tmp)
+        mission_list_tmp = []
+        cnt = 0
+    logger.info(mission_list)
     return mission_list
 
 
@@ -143,14 +147,16 @@ def multiprocess_generate_containers(submission_size_tmp,
                                      docker_client,
                                      udp_listening_port,
                                      successful_init,
-                                     satellite_infos,
+                                     satellite_infos: dict,
+                                     link_connections: dict,
                                      position_datas,
                                      satellites_tmp):
     submission_size = submission_size_tmp  # the size of the submission
     finished_submission_count = 0  # the count of the finished submission
     rcv_pipe, send_pipe = Pipe()  # the pipe for receiving the container_id
     satellite_id_to_satellite = PriorityQueue()  # the priority queue for the (satellite_id, satellite) pair
-    mission_list = generate_submission_list(satellite_num, submission_size)
+    satellite_id_list = list(link_connections.keys())
+    mission_list = generate_submission_list(submission_size, satellite_id_list)  # modified by sqsq 
     process_list = []
     logger.info(f"container creation submission list size: {len(mission_list)}")
     for mission_index, mission in enumerate(mission_list):
@@ -168,6 +174,7 @@ def multiprocess_generate_containers(submission_size_tmp,
     # collect the generated container_id
     while True:
         rcv_string = rcv_pipe.recv()
+        logger.info(rcv_string)
         if rcv_string == "finished":
             finished_submission_count += 1
             if finished_submission_count == len(mission_list):
@@ -175,15 +182,16 @@ def multiprocess_generate_containers(submission_size_tmp,
                 send_pipe.close()
                 break
         else:
-            mission_index, node_id, container_id = rcv_string.split("|")
-            node_id_str = "node_" + str(node_id)
+            mission_index, node_id_str, container_id = rcv_string.split("|")
+            node_id = satellite_str_to_id_tuple(node_id_str)
+            print(satellite_infos[(1, 0)])
             tmp_satellite_node = SatelliteNode((
-                satellite_infos[int(node_id)][0],
-                satellite_infos[int(node_id)][1],
-                satellite_infos[int(node_id)][2],
-            ), node_id_str, container_id)
+                satellite_infos[node_id][0],
+                satellite_infos[node_id][1],
+                satellite_infos[node_id][2],
+            ), node_id, container_id)
             satellite_map[tmp_satellite_node.node_id] = tmp_satellite_node
-            satellite_id_to_satellite.put((int(node_id), tmp_satellite_node))
+            satellite_id_to_satellite.put((node_id, tmp_satellite_node))
             position_datas[node_id_str] = {
                 LATITUDE_KEY: 0.0,
                 LONGITUDE_KEY: 0.0,
@@ -348,8 +356,8 @@ def multiple_process_generate_networks(link_connections, satellites_tmp, docker_
 
 
 def constellation_creator(docker_client,
-                          satellite_infos,
-                          link_connections,
+                          satellite_infos: dict,
+                          link_connections: dict,
                           host_ip,
                           udp_listening_port,
                           successful_init):
@@ -381,6 +389,7 @@ def constellation_creator(docker_client,
                                      udp_listening_port,
                                      successful_init,
                                      satellite_infos,
+                                     link_connections,
                                      position_datas,
                                      satellites)
     # ---------------------------------------------------------------------

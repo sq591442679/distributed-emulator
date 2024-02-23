@@ -1,7 +1,7 @@
 from datetime import datetime
+from typing import Tuple
 
-
-def get_year_day(now_time: datetime) -> (int, float):
+def get_year_day(now_time: datetime) -> Tuple[int, float]:
     year = now_time.year
     day = float(now_time.microsecond)
     day /= 1000
@@ -32,8 +32,8 @@ def area2line(y: int, x: int, x_limit: int, y_limit: int) -> int:
     return y_true * x_limit + x_true
 
 
-def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, delta, period) -> (list, dict):
-    satellites = []
+def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, delta, period) -> Tuple[dict, dict]:
+    satellites = {}
     index_2d = []
     topo = {}
     freq = 1 / period  # if the period is 1, the freq is 1Hz, if the period is 0.5, the freq is 2Hz
@@ -49,14 +49,14 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
             this_latitude = start_latitude + 360 * j / orbit_satellite_num
             this_line_1 = line_1 % (year2, day)
             this_line_2 = line_2 % (start_longitude, this_latitude, freq)
-            index_1d.append(len(satellites))
-            satellites.append(
-                [
-                    "NODE_%d_%d" % (i, j),
-                    this_line_1 + str(str_checksum(this_line_1)),
-                    this_line_2 + str(str_checksum(this_line_2))
-                ]
-            )
+            # refactored id by sqsq
+            # index_1d.append(len(satellites))
+            index_1d.append((i, j))
+            satellites[(i, j)] = [
+                "NODE_%d_%d" % (i, j),
+                this_line_1 + str(str_checksum(this_line_1)),
+                this_line_2 + str(str_checksum(this_line_2))
+            ]
         index_2d.append(index_1d)
     """
     [
@@ -83,10 +83,12 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
         if y < orbit_num - 1:
             array.append(index_2d[y + 1][x])
         # record the inter-orbit connection
-        topo[str(i)] = array
+        # refactored id by sqsq
+        # topo[str(i)] = array
+        topo[(y, x)] = array
     return satellites, topo
 
 
 if __name__ == "__main__":
     satellites, topo = generate_tle(8, 30, 0, 0, 0, 0.1)
-    print(topo)
+    print(satellites)
