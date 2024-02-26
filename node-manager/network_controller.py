@@ -9,6 +9,7 @@ from const_var import *
 from satellite_node import SatelliteNode
 from global_var import networks,satellite_map
 from threading import Thread
+from tools import *
 
 
 def generate_submission_list_for_network_object_creation(missions, submission_size: int):
@@ -183,7 +184,9 @@ def generate_mission_for_update_network_delay(position_data: Dict[str, Dict[str,
         for target_node_id in conn_array:
             start_container_id = satellite_map_tmp[start_node_id].container_id
             target_container_id = satellite_map_tmp[target_node_id].container_id
-            delay = get_laser_delay_ms(position_data[start_node_id], position_data[target_node_id])
+            start_node_id_str = satellite_id_tuple_to_str(start_node_id)
+            target_node_id_str = satellite_id_tuple_to_str(target_node_id)
+            delay = get_laser_delay_ms(position_data[start_node_id_str], position_data[target_node_id_str])
             network_key = get_network_key(start_container_id, target_container_id)
             update_network_delay_missions.append(
                 (network_key, delay)
@@ -194,7 +197,9 @@ def update_network_delay(position_data: dict, topo: dict):
     for start_node_id in topo.keys():
         conn_array = topo[start_node_id]
         for target_node_id in conn_array:
-            delay = get_laser_delay_ms(position_data[start_node_id],position_data[target_node_id])
+            start_node_id_str = satellite_id_tuple_to_str(start_node_id)
+            target_node_id_str = satellite_id_tuple_to_str(target_node_id)
+            delay = get_laser_delay_ms(position_data[start_node_id_str],position_data[target_node_id_str])
             start_container_id = satellite_map[start_node_id].container_id
             target_container_id = satellite_map[target_node_id].container_id
             net_object = networks[get_network_key(start_container_id,target_container_id)]

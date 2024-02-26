@@ -112,7 +112,7 @@ def loadAndTest():
         print(item)
 
 
-def writeIntoFRR(host_name, network_list, prefix_list):
+def write_into_frr_conf(host_name, network_list, prefix_list):
     with open(f"../configuration/frr/"
               f"{host_name}.conf", "w") as f:
         full_str = \

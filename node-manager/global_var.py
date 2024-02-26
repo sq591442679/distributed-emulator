@@ -4,9 +4,9 @@ from collections import OrderedDict
 
 satellites = []
 networks = {}
-satellite_map = {}
+satellite_map = {}  # tuple of satellite id -> class SatelliteNode
 connect_order_map = OrderedDict()
-interface_map = {}
+interface_map = {}  # tuple of satellite id -> interface
 ground_stations = []
 
 def reinit_global_var():

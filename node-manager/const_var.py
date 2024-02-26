@@ -16,6 +16,7 @@ WD = os.getcwd()
 VOLUME1 = "%s/../configuration:/configuration"%WD
 VOLUME2 = "/tmp/.X11-unix:/tmp/.X11-unix"
 V_EDIT = "%s/../satellite_node_docker/video_trans:/edit"%WD
+VOLUME_SYSTEMD = "/sys/fs/cgroup:/sys/fs/cgroup"
         
 # LIGHT_SPEED
 LIGHT_SPEED = 300

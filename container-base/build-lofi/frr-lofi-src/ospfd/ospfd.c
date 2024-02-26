@@ -2395,27 +2395,20 @@ struct in_addr sqsq_get_neighbor_intf_ip(struct ospf_lsa *current_lsa, struct ro
 		p += (OSPF_ROUTER_LSA_LINK_SIZE + nei_l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE);
 
 		if (link_type == LSA_LINK_TYPE_POINTOPOINT) {
+			// zlog_debug("%s	neighbor link id:%pI4", __func__, &nei_l->link_id.s_addr);
 			if (nei_l->link_id.s_addr == current_lsa->data->id.s_addr) {
 				ret = nei_l->link_data;
 			}
-			// struct in_addr neighbor_intf_addr = nei_l->link_data;
-			// int match_length = sqsq_get_match_length(current_intf_addr, neighbor_intf_addr);
-
 			// zlog_debug("neighbor_intf_addr: %pI4", &neighbor_intf_addr.s_addr);
-
-			// if (max_match_length < match_length) {
-			// 	max_match_length = match_length;
-			// 	ret = neighbor_intf_addr;
-			// }
 		}
 	}
 	
-	if (ret.s_addr == INADDR_ANY) {
-		zlog_err("%s neighbor ip == 0", __func__);
-	}
-	else {
-		zlog_debug("%s    current_ip:%pI4    neighbor_ip:%pI4", __func__, &current_intf_addr.s_addr, &ret.s_addr);
-	}
+	// if (ret.s_addr == INADDR_ANY) {
+	// 	zlog_err("%s neighbor ip == 0", __func__);
+	// }
+	// else {
+	// 	zlog_debug("%s    current_ip:%pI4    neighbor_ip:%pI4", __func__, &current_intf_addr.s_addr, &ret.s_addr);
+	// }
 
 	return ret;
 }

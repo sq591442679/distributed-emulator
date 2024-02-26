@@ -844,9 +844,14 @@ static unsigned int ospf_nexthop_calculation(struct ospf_area *area,
 				struct ospf_interface *oi = NULL;
 				struct in_addr nexthop = {.s_addr = 0};
 
-				/** @sqsq */
+				/** 
+				 * @sqsq 
+				 * here the link data is in big-end order, i.e., network order
+				 * so the returned nexthop is also in network order
+				 * */
 				if (area->spf_root_node) {
 					nexthop = sqsq_get_neighbor_intf_ip(v->lsa_p, l, w->lsa_p);
+					// zlog_info("%s	nexthop:%pI4 %pI4", __func__, &nexthop, &nexthop.s_addr);
 					added = 1;
 				}
 
@@ -1884,6 +1889,7 @@ void sqsq_calculate_route_table(struct ospf *ospf, struct ospf_area *area,
 				struct in_addr current_intf_ip = { (l->link_data.s_addr) };
 				struct in_addr neighbor_intf_ip = sqsq_get_neighbor_intf_ip(current_lsa, l, neighbor_lsa);
 				path->nexthop = neighbor_intf_ip;
+				// zlog_info("%s:	path->nexthop: %pI4", __func__, &neighbor_intf_ip);
 				oi = ospf_if_lookup_by_local_addr(ospf, NULL, l->link_data);
 				if (oi) {
 					path->ifindex = oi->ifp->ifindex;

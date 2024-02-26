@@ -2,11 +2,14 @@ import json
 import multiprocessing as mp
 from satellite_node import worker,satellites
 from const_var import *
+from global_var import *
 from loguru import logger
 import time
 from multiprocessing import Pipe
 from ground_station import ground_select,ground_stations
 from network_controller import update_network_delay
+from tools import *
+
 
 def generate_submission_list_for_position_broadcaster(satellite_num, cpu_count):
     if cpu_count < satellite_num:
@@ -65,18 +68,19 @@ def position_broadcaster(stop_process_state, satellite_num, position_datas, upda
             # if current_count < satellite_num:
             #     continue
             # else:
-                for i in range(satellite_num):
-                    node_id = 'node_' + str(i)
+                for i, node_id in enumerate(list(satellite_map.keys())):
                     index_base = 3 * i
-                    position_datas[node_id][LATITUDE_KEY] = res[index_base]
-                    position_datas[node_id][LONGITUDE_KEY] = res[index_base + 1]
-                    position_datas[node_id][HEIGHT_KEY] = res[index_base + 2]
+                    node_id_str = satellite_id_tuple_to_str(node_id)
+                    position_datas[node_id_str][LATITUDE_KEY] = res[index_base]
+                    position_datas[node_id_str][LONGITUDE_KEY] = res[index_base + 1]
+                    position_datas[node_id_str][HEIGHT_KEY] = res[index_base + 2]
                 update_network_delay(position_datas,topo)
                 ground_connections = ground_select(satellites,position_datas,ground_stations)
                 broadcast_data = {
                     "position_datas": position_datas,
                     "ground_connections": ground_connections
                 }
+                logger.info(broadcast_data)
                 data_str = json.dumps(broadcast_data)
                 updater.broadcast_info(data_str)
                 

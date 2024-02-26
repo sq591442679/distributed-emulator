@@ -7,7 +7,7 @@ import docker
 from tools import *
 from satellite_node import SatelliteNode
 from const_var import *
-from topology import writeIntoFRR, GenerateNetworkX
+from topology import write_into_frr_conf, GenerateNetworkX
 from network_controller import Network, get_network_key
 from loguru import logger
 from multiprocessing import Process, Pipe
@@ -96,16 +96,16 @@ def print_and_store_interface_map(interface_map_tmp):
 def modify_interface_map(conn_index, network_node_id, interface_map_tmp):
     """
     modify interface map
-    :param conn_index:  start node id
-    :param network_node_id:  end node id
+    :param conn_index:  start node id in tuple
+    :param network_node_id:  end node id in tuple
     :param interface_map_tmp:  interface map that need to be modified
     :return:
     """
     # 打印两个点所处的轨道
     start_node_id = conn_index
-    end_node_id = str(network_node_id)
-    start_node_orbit = int(conn_index) // SAT_PER_ORBIT
-    end_node_orbit = int(network_node_id) // SAT_PER_ORBIT
+    end_node_id = network_node_id
+    start_node_orbit = start_node_id[0]
+    end_node_orbit = end_node_id[0]
     # 如果两个点在同一个轨道上
     if start_node_orbit == end_node_orbit:
         # print(f"start node id:{conn_index} end node id:{network_node_id} intra-orbit-link", flush=True)
@@ -208,14 +208,6 @@ def multiprocess_generate_containers(submission_size_tmp,
         satellites_tmp.append(satellite_node)
 
 
-def modify_interface_map_process(link_connections, interface_map_tmp):
-    for conn_index in link_connections.keys():
-        # network_node_id is the end node
-        for network_node_id in link_connections[conn_index]:
-            modify_interface_map(conn_index, network_node_id, interface_map_tmp)
-    print_and_store_interface_map(interface_map_tmp)
-
-
 def generate_mission_for_network(link_connections, satellites_tmp, docker_client):
     # final result
     final_mission_list = []
@@ -232,9 +224,9 @@ def generate_mission_for_network(link_connections, satellites_tmp, docker_client
             ipam_pool = docker.types.IPAMPool(subnet='%s/29' % subnet_ip_str, gateway=gateway_str)
             ipam_config = docker.types.IPAMConfig(pool_configs=[ipam_pool])
             # start node id
-            node_id1 = satellites_tmp[int(conn_index)].node_id
+            node_id1 = satellites_tmp[satellite_id_tuple_to_index(conn_index)].node_id
             # end node id
-            node_id2 = satellites_tmp[network_node_id].node_id
+            node_id2 = satellites_tmp[satellite_id_tuple_to_index(network_node_id)].node_id
             # update connect order map
             if node_id1 in connect_order_map.keys():
                 connect_order_map[node_id1].append(node_id2)
@@ -280,19 +272,22 @@ def create_network_submission(submission, docker_client, send_pipe):
     for single_mission in submission:
         # split and get the mission info
         node_id1, node_id2, container_id1, container_id2, network_index, ipam_config = single_mission
+        node_id1_str = satellite_id_tuple_to_str(node_id1)
+        node_id2_str = satellite_id_tuple_to_str(node_id2)
+        # logger.info(single_mission)
         # create network
         net_id = docker_client.create_network_with_ipam_config(network_index, ipam_config)
         # connect the node to the network
-        docker_client.connect_node(container_id1, net_id, node_id1)
-        docker_client.connect_node(container_id2, net_id, node_id2)
+        docker_client.connect_node(container_id1, net_id, node_id1_str)
+        docker_client.connect_node(container_id2, net_id, node_id2_str)
         # print link connection information
         result = subprocess.run("ip link show | grep -c 'veth'", shell=True, capture_output=True, text=True)
-        logger.info("connect satellite %s and %s, total veth:%s" % (node_id1, node_id2, result.stdout.strip()))
+        logger.info("connect satellite %s and %s, total veth:%s" % (node_id1_str, node_id2_str, result.stdout.strip()))
         # send the net_id info
         send_pipe.send(f"{net_id}|{container_id1}|{container_id2}")
         # modify interface map
         interface_map_lock.acquire()
-        modify_interface_map(node_id1[5:], node_id2[5:], interface_map)
+        modify_interface_map(node_id1, node_id2, interface_map)
         interface_map_lock.release()
     # after all the network is created
     send_pipe.send("finished")
@@ -337,6 +332,8 @@ def multiple_process_generate_networks(link_connections, satellites_tmp, docker_
             net_id, container_id1, container_id2 = pipe_rcv_string.split("|")
             network_object_mission.append((net_id, container_id1, container_id2))
 
+    logger.info(network_object_mission)
+
     print_and_store_interface_map(interface_map)
 
     logger.info(f"generate network object mission size: {len(network_object_mission) / SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION}")
@@ -373,7 +370,7 @@ def constellation_creator(docker_client,
     """
     # interface_map = {}  # 接口表 interface map
     # satellites = []  # 卫星列表 satellite list
-    position_datas = {}  # 位置信息表 position data map from node_id to position data
+    position_datas = {}  # 位置信息表 position data map from node id str to position data
     subnet_map = OrderedDict()  # 子网表 subnet map ordered dict the order is the order of appending
     network_index = 0  # 网络节点索引 network node index
     satellite_num = len(satellite_infos)  # 卫星数量 satellite number
@@ -394,11 +391,6 @@ def constellation_creator(docker_client,
                                      satellites)
     # ---------------------------------------------------------------------
 
-    # modify interface table
-    # ---------------------------------------------------------------------
-    # modify_interface_map_process(link_connections, interface_map)
-    # ---------------------------------------------------------------------
-
     # generate containers with multiple process
     # ---------------------------------------------------------------------
     multiple_process_generate_networks(link_connections, satellites, docker_client, submission_size_for_network)
@@ -408,37 +400,6 @@ def constellation_creator(docker_client,
     # ---------------------------------------------------------------------
 
     # ---------------------------------------------------------------------
-
-    # network generate process
-    # ---------------------------------------------------------------------
-    """
-    # conn_index is the start node
-    for conn_index in link_connections.keys():
-        # network_node_id is the end node
-        for network_node_id in link_connections[conn_index]:
-            net_id = docker_client.create_network(network_index)
-            network_index += 1
-            node_id1 = satellites[int(conn_index)].node_id
-            node_id2 = satellites[network_node_id].node_id
-            container_id1 = satellite_map[node_id1].container_id
-            container_id2 = satellite_map[node_id2].container_id
-            docker_client.connect_node(container_id1, net_id, node_id1)
-            docker_client.connect_node(container_id2, net_id, node_id2)
-            if node_id1 in connect_order_map.keys():
-                connect_order_map[node_id1].append(node_id2)
-            else:
-                connect_order_map[node_id1] = [node_id2]
-            # print link connection information
-            print("connect satellite %s and %s" % (node_id1, node_id2))
-            # create the network object, this object is used to set bandwidth and delay
-            network_key = get_network_key(container_id1, container_id2)
-            networks[network_key] = Network(net_id, container_id1, container_id2)
-            # set the delay bandwidth and loss rate
-            networks[network_key].update_bandwidth(NETWORK_BANDWIDTH)
-            networks[network_key].update_delay(NETWORK_DELAY)
-            networks[network_key].update_loss(NETWORK_LOSS)
-    """
-
     # traverse all the satellite
     for container_id_key in satellite_map.keys():
         # get satellite
@@ -458,7 +419,7 @@ def constellation_creator(docker_client,
         # get the subnet of each interface
         sub_nets = [ip_to_subnet(interfaces[i], prefix_len[i]) for i in range(len(prefix_len))]
         # write the interface into the rrf file
-        writeIntoFRR(container_id_key, sub_nets, prefix_len)
+        write_into_frr_conf(satellite_id_tuple_to_str(container_id_key), sub_nets, prefix_len)
         # traverse all the subnets
         for sub_index in range(len(sub_nets)):
             # sub is the subnet
@@ -515,7 +476,7 @@ def constellation_creator(docker_client,
     # zhf add code
     monitor_payloads_queue = PriorityQueue()
     for k in satellite_map.keys():
-        monitor_payloads_queue.put((int(satellite_map[k].node_id[5:]),
+        monitor_payloads_queue.put(((satellite_map[k].node_id),
                                     satellite_map[k].node_id,
                                     satellite_map[k].host_ip,
                                     satellite_map[k].topo))

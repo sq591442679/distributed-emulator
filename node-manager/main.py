@@ -18,7 +18,7 @@ from delete_containers_and_networks import delete_containers_with_multiple_proce
 from network_controller import update_network_delay_with_multi_process
 from global_var import networks, connect_order_map, satellite_map, reinit_global_var
 from ground_station import create_station_from_json
-
+from tools import *
 
 def get_user_input(stop_process_state_tmp, docker_client: DockerClient):
     while True:
@@ -108,7 +108,8 @@ if __name__ == "__main__":
     process_list: typing.List[Process] = []
     logger.info('copying frr.conf to containers')
     for id in satellite_map.keys():
-        process = Process(target=docker_client.copy_to_container, args=(id, f'../configuration/frr/{id}.conf', f'/etc/frr/frr.conf'))
+        id_str = satellite_id_tuple_to_str(id)
+        process = Process(target=docker_client.copy_to_container, args=(id_str, f'../configuration/frr/{id_str}.conf', f'/etc/frr/frr.conf'))
         process_list.append(process)
     for process in process_list:
         process.start()
@@ -118,7 +119,7 @@ if __name__ == "__main__":
     process_list.clear()
     logger.info('starting frr in containers')
     for id in satellite_map.keys():
-        process = Process(target=docker_client.exec_cmd, args=(id, 'systemctl start frr'))
+        process = Process(target=docker_client.exec_cmd, args=(satellite_id_tuple_to_str(id), 'systemctl start frr'))
         process_list.append(process)
     for process in process_list:
         process.start()

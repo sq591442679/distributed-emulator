@@ -30,8 +30,8 @@ class SatelliteNode:
         self.orbit = tle_info[0][5:].split('_')[0]
         self.position = tle_info[0][5:].split('_')[1]
         self.satellite = ephem.readtle(tle_info[0], tle_info[1], tle_info[2])
-        self.node_id = node_id
-        self.container_id = container_id
+        self.node_id = node_id              # tuple of (orbit number, inner orbir order)
+        self.container_id = container_id    # str of hex used for docker
         self.topo = []
         self.host_ip = ''
         self.subnet_ip = {}  # {subnet_str: interface}
