@@ -3,7 +3,7 @@ import threading
 from collections import OrderedDict
 
 satellites = []
-networks = {}
+networks = {}   # network key (str) -> class Network
 satellite_map = {}  # tuple of satellite id -> class SatelliteNode
 connect_order_map = OrderedDict()
 interface_map = {}  # tuple of satellite id -> interface

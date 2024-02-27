@@ -80,7 +80,6 @@ def position_broadcaster(stop_process_state, satellite_num, position_datas, upda
                     "position_datas": position_datas,
                     "ground_connections": ground_connections
                 }
-                logger.info(broadcast_data)
                 data_str = json.dumps(broadcast_data)
                 updater.broadcast_info(data_str)
                 

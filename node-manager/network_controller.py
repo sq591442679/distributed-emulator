@@ -1,5 +1,5 @@
 import time
-from multiprocessing import Process
+from multiprocessing import Process, Lock
 from multiprocessing.connection import Pipe
 from loguru import logger
 import os
@@ -10,7 +10,8 @@ from satellite_node import SatelliteNode
 from global_var import networks,satellite_map
 from threading import Thread
 from tools import *
-
+import random
+from docker_client import DockerClient
 
 def generate_submission_list_for_network_object_creation(missions, submission_size: int):
     submission_list = []
@@ -56,7 +57,7 @@ def get_laser_delay_ms(position1: dict, position2: dict) -> int:
     x1, y1, z1 = hei1 * cos(lat1) * cos(lon1), hei1 * cos(lat1) * sin(lon1), hei1 * sin(lat1)
     x2, y2, z2 = hei2 * cos(lat2) * cos(lon2), hei2 * cos(lat2) * sin(lon2), hei2 * sin(lat2)
     dist_square = (x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2  # UNIT: m^2
-    logger.info(f"distance: {int(sqrt(dist_square))} light speed: {LIGHT_SPEED}")
+    # logger.info(f"distance: {int(sqrt(dist_square))} light speed: {LIGHT_SPEED}")
     # return int(sqrt(dist_square) / LIGHT_SPEED)  # UNIT: ms
     # ZHF MODIFY
     return 0
@@ -98,7 +99,8 @@ def get_vethes_of_bridge(interface_name: str) -> list:
 
 class Network:
 
-    def __init__(self, bridge_id: str,
+    def __init__(self,
+                 bridge_id: str,
                  container_id1: str,
                  container_id2: str,
                  time: int,
@@ -118,6 +120,11 @@ class Network:
             container_id1: self.veth_interface_list[0],
             container_id2: self.veth_interface_list[1]
         }
+
+        # added by sqsq
+        self.is_down = False    # if True, then do not really update info
+        self.down_momnet = 0.0
+
         self.init_info()
 
     '''
@@ -168,12 +175,95 @@ class Network:
 
     def update_delay_param(self, set_time: int):
         self.delay = set_time
+        if not self.is_down:
+            self.update_info()
 
     def update_bandwidth_param(self, band_width: str):
         self.bandwidth = band_width
+        if not self.is_down:
+            self.update_info()
 
     def update_loss_param(self, loss_percent: str):
         self.loss = loss_percent
+        if not self.is_down:
+            self.update_info()
+
+    # added by sqsq
+    def close_veth(self):
+        for veth_name in self.veth_interface_list:
+            command = "ifconfig %s down" % veth_name
+            exec_res = os.popen(command).read()
+
+    def open_veth(self):
+        for veth_name in self.veth_interface_list:
+            command = "ifconfig %s up" % veth_name
+            exec_res = os.popen(command).read()
+
+
+"""
+added by sqsq
+used to print link events
+"""
+def print_link_event(network: Network, docker_client: DockerClient, lock, current_sim_time: float, event_type: str):
+    connected_containers = docker_client.client.networks.get(network.br_id).containers
+    if len(connected_containers) != 2:
+        logger.error("network connecting %d caontainers" % len(connected_containers))
+    src_container_name: str = connected_containers[0].name
+    target_container_name: str = connected_containers[1].name
+    with lock:
+        logger.info(
+            '{"sim_time": %.3f, "link": "%s <--> %s", "type": "%s"}'
+            % (current_sim_time, src_container_name, target_container_name, event_type)
+        )
+
+
+"""
+added by sqsq
+for link failure generating
+"""
+def generate_link_failure(docker_client: DockerClient, link_failure_rate: float):
+    if abs(link_failure_rate - 0) < 1e-6:
+        return
+    
+    lock = Lock()
+
+    poisson_lambda = link_failure_rate / (LINK_FAILURE_DURATION * (1 - link_failure_rate))
+    start_time = time.time()
+
+    for network in networks.values():   # generate first down moment
+        sim_time_interval = random.expovariate(poisson_lambda)
+        network.down_moment = sim_time_interval
+    
+    flag = False
+    while True:
+         if (flag):
+             break
+         for network in networks.values():
+
+            current_sim_time = time.time() - start_time
+
+            if current_sim_time <= SIMULATION_END_TIME:
+                if network.is_down and current_sim_time <= network.down_moment + LINK_FAILURE_DURATION:
+                    # link is in down state
+                    continue
+                elif network.is_down and current_sim_time > network.down_moment + LINK_FAILURE_DURATION:
+                    # link should recover
+                    print_link_event(network, docker_client, lock, current_sim_time, "up")
+                    network.is_down = False
+                    sim_time_interval = random.expovariate(poisson_lambda)
+                    network.down_moment = current_sim_time + sim_time_interval # set the next link down moment
+                elif not network.is_down and current_sim_time > network.down_moment:
+                    # link should turned to down
+                    print_link_event(network, docker_client, lock, current_sim_time, "down")
+                    network.is_down = True
+                else:
+                    continue
+
+                current_sim_time = time.time() - start_time
+                if current_sim_time >= SIMULATION_END_TIME:
+                    break
+            else:   # sim time exceeded, loop should stop
+                flag = True  
 
 
 def generate_mission_for_update_network_delay(position_data: Dict[str, Dict[str, float]], topo: Dict[str, List[str]],
@@ -204,7 +294,6 @@ def update_network_delay(position_data: dict, topo: dict):
             target_container_id = satellite_map[target_node_id].container_id
             net_object = networks[get_network_key(start_container_id,target_container_id)]
             net_object.update_delay_param(delay)
-            net_object.update_info()
 
 
 def generate_submission_list_for_update_network_delay(missions: List[Tuple[str, int]],
@@ -219,7 +308,6 @@ def update_network_delay_with_single_process(submission: List[Tuple[str, int]], 
     for network_key, delay in submission:
         network = networks_tmp[network_key]
         network.update_delay_param(delay)
-        network.update_info()
     send_pipe.send("finished")
 
 

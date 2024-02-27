@@ -20,7 +20,7 @@ class DataUpdater:
             # another reason is that the port is already in use
             # how to judge the port is in use? use netstat -anp | grep 30000
             # if the port is in use
-            logger.info("sending broadcast info")
+            # logger.info("sending broadcast info")
             self.udp_cli_sock.sendto(json_data.encode(), self.addr)
         except Exception as e:
             logger.error(f"{self.addr, self.eth_ip}")

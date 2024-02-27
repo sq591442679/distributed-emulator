@@ -15,7 +15,7 @@ from satellite_config import Config
 from tle_generator import generate_tle
 from delete_containers_and_networks import delete_containers_with_multiple_processes, \
     delete_networks_with_multiple_processes
-from network_controller import update_network_delay_with_multi_process
+from network_controller import update_network_delay_with_multi_process, generate_link_failure
 from global_var import networks, connect_order_map, satellite_map, reinit_global_var
 from ground_station import create_station_from_json
 from tools import *
@@ -133,21 +133,7 @@ if __name__ == "__main__":
     process.start()
     # ----------------------------------------------------------
 
-    # start network delay updater
-    # ----------------------------------------------------------
-    submission_size = SUBMISSION_SIZE_FOR_UPDATE_NETWORK_DELAY
-    # update_network_delay_process = Process(target=update_network_delay_with_multi_process,
-    #                                        args=(stop_process_state,
-    #                                              networks,
-    #                                              position_datas,
-    #                                              connect_order_map,
-    #                                              satellite_map,
-    #                                              submission_size,
-    #                                              NETWORK_DELAY_UPDATE_INTERVAL))
-    # update_network_delay_process.start()
-    # ----------------------------------------------------------
-
-    # start position broadcaster
+    # start position broadcaster and update network delay
     # ----------------------------------------------------------
     update_position_process = Process(target=position_broadcaster, args=(stop_process_state,
                                                                          satellite_num,
@@ -156,6 +142,12 @@ if __name__ == "__main__":
                                                                          BROADCAST_SEND_INTERVAL,
                                                                          connect_order_map))
     update_position_process.start()
+    # ----------------------------------------------------------
+
+    # start link failure generation
+    # ----------------------------------------------------------
+    generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, 0.05))
+    generate_link_failure_process.start()
     # ----------------------------------------------------------
 
     # get user input
