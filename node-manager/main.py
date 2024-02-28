@@ -16,9 +16,10 @@ from tle_generator import generate_tle
 from delete_containers_and_networks import delete_containers_with_multiple_processes, \
     delete_networks_with_multiple_processes
 from network_controller import update_network_delay_with_multi_process, generate_link_failure
-from global_var import networks, connect_order_map, satellite_map, reinit_global_var
+from global_var import connect_order_map, satellite_map, reinit_global_var
 from ground_station import create_station_from_json
 from tools import *
+from transmission_test import start_transmission_test
 
 def get_user_input(stop_process_state_tmp, docker_client: DockerClient):
     while True:
@@ -145,10 +146,15 @@ if __name__ == "__main__":
     update_position_process.start()
     # ----------------------------------------------------------
 
-    # start link failure generation
+    # start link failure generation and UDP send & recv
     # ----------------------------------------------------------
+
     generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, 0.1))
     generate_link_failure_process.start()
+    
+    start_transmission_test_process = Process(target=start_transmission_test, args=(docker_client, 0.1))
+    start_transmission_test_process.start()
+    
     # ----------------------------------------------------------
 
     # get user input

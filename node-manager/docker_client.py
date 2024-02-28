@@ -116,7 +116,11 @@ class DockerClient:
 
 
     def exec_cmd(self, container_id: str, cmd: list):
-        self.client.containers.get(container_id).exec_run(tty=False,cmd=cmd)
+        self.client.containers.get(container_id).exec_run(tty=False, cmd=cmd)
+
+    def exec_cmd_stream(self, container_id: str, cmd: list):
+        ret = self.client.containers.get(container_id).exec_run(tty=False, cmd=cmd, stream=True)
+        return ret
 
     """
     added by sqsq

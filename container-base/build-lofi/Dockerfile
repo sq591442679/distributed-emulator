@@ -57,6 +57,9 @@ RUN echo "log file /var/log/frr/sqsq_ospfd.log" >> /etc/frr/frr.conf \
     && echo "log record-priority" >> /etc/frr/frr.conf \
     && echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf && sysctl -p
 
+COPY udp-applications /udp-applications
+RUN chmod -R 777 /udp-applications
+
 # copied from https://github.com/robertdebock/docker-ubuntu-systemd/blob/focal/Dockerfile
 # Enable systemd.
 # RUN apt-get update ; \

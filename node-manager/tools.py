@@ -1,4 +1,5 @@
 from const_var import ORBIT_NUM, SAT_PER_ORBIT
+import os
 
 def ip_to_subnet(ip: str, prefix_len: int) -> str:
     # print(ip, prefix_len)
@@ -36,12 +37,14 @@ def satellite_index_to_id_tuple(index: int) -> tuple:
 def satellite_id_tuple_to_str(id: tuple) -> str:
     return 'node_' + str(id[0]) + '_' + str(id[1])
 
+
 def satellite_str_to_id_tuple(str: str) -> tuple:
     return (int(str.split('_')[1]), int(str.split('_')[2]))
 
 
 if __name__ == "__main__":
-    print(ip_to_subnet("172.17.0.3", 16))
-    print(ip_to_subnet("172.17.8.3", 24))
-    print(ip_to_subnet("172.17.9.3", 8))
-    print(ip_to_subnet("172.17.0.3", 15))
+    # print(ip_to_subnet("172.17.0.3", 16))
+    # print(ip_to_subnet("172.17.8.3", 24))
+    # print(ip_to_subnet("172.17.9.3", 8))
+    # print(ip_to_subnet("172.17.0.3", 15))
+    pass

@@ -40,7 +40,7 @@ def position_broadcaster(stop_process_state, satellite_num, position_datas, upda
     # ------------------------------------------------
     # 打印cpu的数量
     cpu_count = min(mp.cpu_count(), satellite_num)
-    logger.info(f"cpu_count: {cpu_count}")
+    # logger.info(f"cpu_count: {cpu_count}")
     # 共享数组
     res = mp.Array('f', range(3 * satellite_num), lock=False)
     first_time = True

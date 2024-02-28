@@ -7,7 +7,7 @@ from math import cos, sin, sqrt
 from typing import Dict, List, Tuple
 from const_var import *
 from satellite_node import SatelliteNode
-from global_var import networks,satellite_map
+from global_var import network_dict,satellite_map
 from threading import Thread
 from tools import *
 import random
@@ -23,7 +23,7 @@ def generate_submission_list_for_network_object_creation(missions, submission_si
 def network_object_creation_submission(submission, send_pipe):
     for net_id, container_id1, container_id2 in submission:
         network_key = get_network_key(container_id1, container_id2)
-        networks[network_key] = Network(net_id,
+        network_dict[network_key] = Network(net_id,
                                         container_id1,
                                         container_id2,
                                         NETWORK_DELAY,
@@ -37,7 +37,7 @@ def create_network_object_with_multiple_process(missions, submission_size):
     current_finished_submission_count = 0
     rcv_pipe, send_pipe = Pipe()
     submission_list = generate_submission_list_for_network_object_creation(missions, submission_size)
-    logger.info(f"create_network_object_submission_size: {submission_size}")
+    # logger.info(f"create_network_object_submission_size: {submission_size}")
     for single_submission in submission_list:
         singleThread = Thread(target=network_object_creation_submission, args=(single_submission, send_pipe))
         singleThread.start()
@@ -230,7 +230,7 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float)
     poisson_lambda = link_failure_rate / (LINK_FAILURE_DURATION * (1 - link_failure_rate))
     start_time = time.time()
 
-    for network in networks.values():   # generate first down moment
+    for network in network_dict.values():   # generate first down moment
         sim_time_interval = random.expovariate(poisson_lambda)
         network.down_moment = sim_time_interval
     
@@ -238,7 +238,7 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float)
     while True:
          if (flag):
              break
-         for network in networks.values():
+         for network in network_dict.values():
 
             current_sim_time = time.time() - start_time
 
@@ -292,7 +292,7 @@ def update_network_delay(position_data: dict, topo: dict):
             delay = get_laser_delay_ms(position_data[start_node_id_str],position_data[target_node_id_str])
             start_container_id = satellite_map[start_node_id].container_id
             target_container_id = satellite_map[target_node_id].container_id
-            net_object = networks[get_network_key(start_container_id,target_container_id)]
+            net_object = network_dict[get_network_key(start_container_id,target_container_id)]
             net_object.update_delay_param(delay)
 
 

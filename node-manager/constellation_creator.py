@@ -13,7 +13,7 @@ from loguru import logger
 from multiprocessing import Process, Pipe
 from queue import PriorityQueue
 from subnet_allocator import ip2str
-from global_var import networks, satellites, connect_order_map, satellite_map
+from global_var import network_dict, satellites, connect_order_map, satellite_map
 from network_controller import create_network_object_with_multiple_process
 from global_var import interface_map_lock, interface_map
 
@@ -69,7 +69,8 @@ def generate_submission_list(submission_size_tmp: int, satellite_id_list: list):
             mission_list.append(mission_list_tmp)
             mission_list_tmp = []
             cnt = 0
-    mission_list.append(mission_list_tmp)
+    if len(mission_list_tmp) > 0:
+        mission_list.append(mission_list_tmp)
     mission_list_tmp = []
     cnt = 0
     logger.info(mission_list)
