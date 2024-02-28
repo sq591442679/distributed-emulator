@@ -23,7 +23,7 @@ def ip_to_subnet(ip: str, prefix_len: int) -> str:
 def satellite_id_tuple_to_index(id: tuple) -> int:
     x = int(id[0])  # count of orbit number
     y = int(id[1])  # count of inner-orbit number
-    index = x * ORBIT_NUM + y
+    index = x * SAT_PER_ORBIT + y
     return index
 
 

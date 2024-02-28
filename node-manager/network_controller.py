@@ -115,7 +115,7 @@ class Network:
         self.loss = loss_percent
         if len(self.veth_interface_list) != 2:
             logger.warning(self.veth_interface_list)
-            raise ValueError("wrong veth number of bridge")
+            raise ValueError("wrong veth number of bridge: %d" % len(self.veth_interface_list))
         self.veth_map = {
             container_id1: self.veth_interface_list[0],
             container_id2: self.veth_interface_list[1]

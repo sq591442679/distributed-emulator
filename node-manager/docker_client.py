@@ -4,6 +4,7 @@ import subprocess
 from const_var import *
 from tools import *
 from subnet_allocator import SubnetAllocator, ip2str
+from loguru import logger
 
 class DockerClient:
 
@@ -34,7 +35,7 @@ class DockerClient:
                 "GDK_SCALE",
                 "GDK_DPI_SCALE",
             ], cap_add=['NET_ADMIN'], name=node_id_str, volumes=[
-                VOLUME1, VOLUME2, V_EDIT, VOLUME_SYSTEMD], privileged=True, ports={'8765/tcp': 30000 + index})
+                VOLUME1, VOLUME2, V_EDIT], privileged=True, ports={'8765/tcp': 30000 + index})
         else:
             container_info = self.client.containers.run(self.image_name, detach=True, environment=[
                 'NODE_ID=' + node_id_str,
@@ -47,7 +48,7 @@ class DockerClient:
                 "GDK_SCALE",
                 "GDK_DPI_SCALE",
             ], cap_add=['NET_ADMIN'], name=node_id_str, volumes=[
-                VOLUME1, VOLUME2, V_EDIT, VOLUME_SYSTEMD], privileged=True)
+                VOLUME1, VOLUME2, V_EDIT], privileged=True)
         return container_info.id
 
     def create_ground_container(self, node_id_g: str):

@@ -90,8 +90,9 @@ if __name__ == "__main__":
     # ----------------------------------------------------------------
     orbit_num = ORBIT_NUM
     satellites_per_orbit = SAT_PER_ORBIT
-    satellite_infos, connections = generate_tle(orbit_num, satellites_per_orbit, 0, 0, 0.1, 0.08)
+    satellite_infos, connections = generate_tle(orbit_num, satellites_per_orbit, 0, 0, 0.01, 0.08)
     # logger.info(satellite_infos)
+    logger.info(connections)
     satellite_num = len(satellite_infos)
     # ----------------------------------------------------------------
 
@@ -119,7 +120,7 @@ if __name__ == "__main__":
     process_list.clear()
     logger.info('starting frr in containers')
     for id in satellite_map.keys():
-        process = Process(target=docker_client.exec_cmd, args=(satellite_id_tuple_to_str(id), 'systemctl start frr'))
+        process = Process(target=docker_client.exec_cmd, args=(satellite_id_tuple_to_str(id), './usr/lib/frr/frrinit.sh start'))
         process_list.append(process)
     for process in process_list:
         process.start()
@@ -146,7 +147,7 @@ if __name__ == "__main__":
 
     # start link failure generation
     # ----------------------------------------------------------
-    generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, 0.05))
+    generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, 0.1))
     generate_link_failure_process.start()
     # ----------------------------------------------------------
 

@@ -69,10 +69,9 @@ def generate_submission_list(submission_size_tmp: int, satellite_id_list: list):
             mission_list.append(mission_list_tmp)
             mission_list_tmp = []
             cnt = 0
-    if cnt >= submission_size_tmp:
-        mission_list.append(mission_list_tmp)
-        mission_list_tmp = []
-        cnt = 0
+    mission_list.append(mission_list_tmp)
+    mission_list_tmp = []
+    cnt = 0
     logger.info(mission_list)
     return mission_list
 
@@ -83,8 +82,8 @@ def print_and_store_interface_map(interface_map_tmp):
     :param interface_map_tmp: interface map [key:node_id][value:interface list]
     :return:
     """
-    for node_id in interface_map_tmp.keys():
-        logger.success(f"node id: {node_id} interfaces: {interface_map_tmp[node_id]['interface']}")
+    # for node_id in interface_map_tmp.keys():
+    #     logger.success(f"node id: {node_id} interfaces: {interface_map_tmp[node_id]['interface']}")
     for node_id in interface_map_tmp.keys():
         storage = f"../configuration/interface_table" \
                   f"/node{node_id}_interface_table.conf"
@@ -158,7 +157,7 @@ def multiprocess_generate_containers(submission_size_tmp,
     satellite_id_list = list(link_connections.keys())
     mission_list = generate_submission_list(submission_size, satellite_id_list)  # modified by sqsq 
     process_list = []
-    logger.info(f"container creation submission list size: {len(mission_list)}")
+    # logger.info(f"container creation submission list size: {len(mission_list)}")
     for mission_index, mission in enumerate(mission_list):
         process = Process(target=create_satellite_submission,
                           args=(mission_index,
@@ -174,7 +173,7 @@ def multiprocess_generate_containers(submission_size_tmp,
     # collect the generated container_id
     while True:
         rcv_string = rcv_pipe.recv()
-        logger.info(rcv_string)
+        # logger.info(rcv_string)
         if rcv_string == "finished":
             finished_submission_count += 1
             if finished_submission_count == len(mission_list):
@@ -184,7 +183,6 @@ def multiprocess_generate_containers(submission_size_tmp,
         else:
             mission_index, node_id_str, container_id = rcv_string.split("|")
             node_id = satellite_str_to_id_tuple(node_id_str)
-            print(satellite_infos[(1, 0)])
             tmp_satellite_node = SatelliteNode((
                 satellite_infos[node_id][0],
                 satellite_infos[node_id][1],
@@ -206,6 +204,8 @@ def multiprocess_generate_containers(submission_size_tmp,
     while not satellite_id_to_satellite.empty():
         _, satellite_node = satellite_id_to_satellite.get()
         satellites_tmp.append(satellite_node)
+
+    logger.success('satellites built successfully')
 
 
 def generate_mission_for_network(link_connections, satellites_tmp, docker_client):
@@ -282,7 +282,8 @@ def create_network_submission(submission, docker_client, send_pipe):
         docker_client.connect_node(container_id2, net_id, node_id2_str)
         # print link connection information
         result = subprocess.run("ip link show | grep -c 'veth'", shell=True, capture_output=True, text=True)
-        logger.info("connect satellite %s and %s, total veth:%s" % (node_id1_str, node_id2_str, result.stdout.strip()))
+        logger.info("connect satellite %s and %s, total veth: %s, connected container num: %d" % 
+                    (node_id1_str, node_id2_str, result.stdout.strip(), len(docker_client.client.networks.get(net_id).containers)))
         # send the net_id info
         send_pipe.send(f"{net_id}|{container_id1}|{container_id2}")
         # modify interface map
@@ -298,12 +299,12 @@ def multiple_process_generate_networks(link_connections, satellites_tmp, docker_
     rcv_pipe, send_pipe = Pipe()
     # generate networks with multiple process
     all_network_missions = generate_mission_for_network(link_connections, satellites_tmp, docker_client)
-    for mission in all_network_missions:
-        logger.info(mission)
+    # for mission in all_network_missions:
+    #     logger.info(mission)
     # generate submission list
     submission_list = generate_submission_list_for_network(all_network_missions, submission_size)
     # print the list length
-    logger.info("generate network submission list length: %s" % len(submission_list))
+    # logger.info("generate network submission list length: %s" % len(submission_list))
     # total submission count
     submission_count = len(submission_list)
     # finished submission count
@@ -332,11 +333,11 @@ def multiple_process_generate_networks(link_connections, satellites_tmp, docker_
             net_id, container_id1, container_id2 = pipe_rcv_string.split("|")
             network_object_mission.append((net_id, container_id1, container_id2))
 
-    logger.info(network_object_mission)
+    # logger.info(network_object_mission)
 
     print_and_store_interface_map(interface_map)
 
-    logger.info(f"generate network object mission size: {len(network_object_mission) / SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION}")
+    # logger.info(f"generate network object mission size: {len(network_object_mission) / SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION}")
     start_time = time.time()
     create_network_object_with_multiple_process(network_object_mission, SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION)
     end_time = time.time()
@@ -418,7 +419,7 @@ def constellation_creator(docker_client,
             del prefix_len[toDelete]
         # get the subnet of each interface
         sub_nets = [ip_to_subnet(interfaces[i], prefix_len[i]) for i in range(len(prefix_len))]
-        # write the interface into the rrf file
+        # write the interface into the frr file
         write_into_frr_conf(satellite_id_tuple_to_str(container_id_key), sub_nets, prefix_len)
         # traverse all the subnets
         for sub_index in range(len(sub_nets)):
