@@ -7,7 +7,7 @@ import docker
 from tools import *
 from satellite_node import SatelliteNode
 from const_var import *
-from topology import write_into_frr_conf, GenerateNetworkX
+from topology import write_into_frr_conf, clear_frr_conf, GenerateNetworkX
 from network_controller import Network, get_network_key
 from loguru import logger
 from multiprocessing import Process, Pipe
@@ -359,7 +359,8 @@ def constellation_creator(docker_client,
                           link_connections: dict,
                           host_ip,
                           udp_listening_port,
-                          successful_init):
+                          successful_init,
+                          lofi_n: int):
     """
     create constellation function
     :param docker_client:  docker client
@@ -403,6 +404,7 @@ def constellation_creator(docker_client,
 
     # ---------------------------------------------------------------------
     # traverse all the satellite
+    clear_frr_conf()
     for container_id_key in satellite_map.keys():
         # get satellite
         container_id = satellite_map[container_id_key].container_id
@@ -421,7 +423,7 @@ def constellation_creator(docker_client,
         # get the subnet of each interface
         sub_nets = [ip_to_subnet(interfaces[i], prefix_len[i]) for i in range(len(prefix_len))]
         # write the interface into the frr file
-        write_into_frr_conf(satellite_id_tuple_to_str(container_id_key), sub_nets, prefix_len)
+        write_into_frr_conf(satellite_id_tuple_to_str(container_id_key), sub_nets, prefix_len, lofi_n)
         # traverse all the subnets
         for sub_index in range(len(sub_nets)):
             # sub is the subnet

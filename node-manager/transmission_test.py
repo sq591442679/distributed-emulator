@@ -6,6 +6,7 @@ from multiprocessing import Process, Queue
 import typing
 import re
 from scapy.all import sniff, UDP, IP
+import time
 
 from loguru import logger
 from const_var import *
@@ -103,6 +104,7 @@ def packet_capture_callback(packet):
         ospf_packet = packet[IP].load
         ospf_packet_type = ospf_packet[1] if len((ospf_packet)) > 1 else None
         if (ospf_packet_type == 4):
+            logger.info(ospf_packet)
             total_control_bytes += len(ospf_packet)
 
 """
@@ -110,9 +112,14 @@ returns data throughput and control overhead
 unit: MBps
 """
 def start_packet_capture(queue: Queue):
+    start_time = time.time()
     interfaces = [interface for interface in get_all_interfaces() if interface.startswith('br-')]
 
-    sniff(prn=packet_capture_callback, filter="udp dst port 12345 or ip proto 89", 
-          iface=interfaces, store=False, timeout=SIMULATION_DURATION)
+    try:
+        while time.time() - start_time <= SIMULATION_DURATION:
+            sniff(prn=packet_capture_callback, filter="udp dst port 12345 or ip proto 89", 
+                iface=interfaces, store=0, timeout=1)
+    except KeyboardInterrupt:
+        pass
     
     queue.put([total_data_bytes / 1e6 / SIMULATION_DURATION, total_control_bytes / 1e6 / SIMULATION_DURATION])

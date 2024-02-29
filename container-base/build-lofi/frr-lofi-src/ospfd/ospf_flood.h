@@ -70,6 +70,6 @@ extern struct external_info *ospf_external_info_check(struct ospf *,
 extern void ospf_lsdb_init(struct ospf_lsdb *);
 
 /** @sqsq */
-extern int local_disseminate(struct ospf_area *, struct ospf_neighbor *, struct ospf_lsa *);
+extern int can_disseminate(struct ospf_area *, struct ospf_neighbor *, struct ospf_lsa *);
 
 #endif /* _ZEBRA_OSPF_FLOOD_H */

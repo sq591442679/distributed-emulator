@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # generate constellation
     # ----------------------------------------------------------------------------------------------------
     position_datas, monitor_payloads = constellation_creator(docker_client, satellite_infos, connections, host_ip,
-                                                             udp_port, successful_init)
+                                                             udp_port, successful_init, lofi_n=2)
     # ----------------------------------------------------------------------------------------------------
     # ground_stations = create_station_from_json(docker_client, config.GroundConfigPath)
     ground_stations = {}
@@ -151,5 +151,5 @@ if __name__ == "__main__":
 
     set_monitor_process.kill()
     update_position_process.kill()
-    os.system("./stop_and_kill_constellation.sh")
+    # os.system("./stop_and_kill_constellation.sh")
     # ----------------------------------------------------------

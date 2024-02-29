@@ -668,7 +668,7 @@ int ospf_flood_through_interface(struct ospf_interface *oi,
  * if LoFi is activated and lsa should be disseminated, then its ttl will be decreased
  * returns true if can disseminate lsa, false if cannot.
 */
-int local_disseminate(struct ospf_area *area, struct ospf_neighbor *inbr, struct ospf_lsa *lsa)
+int can_disseminate(struct ospf_area *area, struct ospf_neighbor *inbr, struct ospf_lsa *lsa)
 {
 	/**
 	 * @sqsq
@@ -691,6 +691,7 @@ int local_disseminate(struct ospf_area *area, struct ospf_neighbor *inbr, struct
 				 */
 				r_lsa->ttl--;
 				lsa->data->checksum = ospf_lsa_checksum(lsa->data);
+				// zlog_info("%s: lofi dissemination", __func__);
 				return true;
 			}
 			else {
@@ -717,10 +718,10 @@ int ospf_flood_through_area(struct ospf_area *area, struct ospf_neighbor *inbr,
 
 	/** 
 	 * @sqsq 
-	 * when conducting local_disseminate(),
+	 * when conducting can_disseminate(),
 	 * TTL (if any) is decreased internaly
 	 * */
-	if (!local_disseminate(area, inbr, lsa)) {
+	if (!can_disseminate(area, inbr, lsa)) {
 		lsa_ack_flag = 1;
 		return lsa_ack_flag;
 	}

@@ -113,7 +113,10 @@ def loadAndTest():
         print(item)
 
 
-def write_into_frr_conf(host_name, network_list, prefix_list):
+def clear_frr_conf():
+    os.system("rm -r ../configuration/frr/*")
+
+def write_into_frr_conf(host_name, network_list, prefix_list, lofi_n: int):
     node_id = satellite_str_to_id_tuple(host_name)
     with open(f"../configuration/frr/"
               f"{host_name}.conf", "w") as f:
@@ -147,9 +150,9 @@ interface eth4
     ip ospf retransmit-interval 2
 
 router ospf
-    ospf lofi 1
-    router id 0.0.{node_id[0]}.{node_id[1]}
-    redistribute connected
+    ospf lofi {lofi_n}
+    ospf router-id 0.0.{node_id[0]}.{node_id[1]}
+    # redistribute connected
 """
         # commented by sqsq
         # these lines may be useless for frr configuration

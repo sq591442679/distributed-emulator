@@ -11831,6 +11831,20 @@ DEFUN (show_ip_ospf_external_aggregator,
 	return CMD_SUCCESS;
 }
 
+/**
+ * @sqsq
+ */
+DEFUN (show_ip_ospf_lofi,
+		show_ip_ospf_lofi_cmd,
+		"show ip ospf lofi",
+		SHOW_STR IP_STR
+		"OSPF information\n"
+		"Show parameter n of Lofi\n")
+{
+	vty_out(vty, "%d\n", lofi_n);
+	return CMD_SUCCESS;
+}
+
 static const char *const ospf_int_type_str[] = {
 	"unknown", /* should never be used. */
 	"point-to-point",
@@ -12766,6 +12780,11 @@ void ospf_vty_show_init(void)
 
 	/* "show ip ospf summary-address" command */
 	install_element(VIEW_NODE, &show_ip_ospf_external_aggregator_cmd);
+
+	/** @sqsq
+	 * "show ip ospf lofi" command
+	 */
+	install_element(VIEW_NODE, &show_ip_ospf_lofi_cmd);
 }
 
 /* Initialization of OSPF interface. */
