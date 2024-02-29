@@ -29,7 +29,7 @@ if __name__ == '__main__':
             data_bytes, addr = udp_socket.recvfrom(2048)
             received_data = pickle.loads(data_bytes)
 
-            print(received_data, flush=True)  # NOTE THE FLUSH
+            # print(received_data, flush=True)  # NOTE THE FLUSH
 
             avg_delay += (time.time() - received_data['real_time']) * 1000  # unit: ms
             receive_cnt += 1

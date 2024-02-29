@@ -242,7 +242,7 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float)
 
             current_sim_time = time.time() - start_time
 
-            if current_sim_time <= SIMULATION_END_TIME:
+            if current_sim_time <= SIMULATION_DURATION:
                 if network.is_down and current_sim_time <= network.down_moment + LINK_FAILURE_DURATION:
                     # link is in down state
                     continue
@@ -260,7 +260,7 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float)
                     continue
 
                 current_sim_time = time.time() - start_time
-                if current_sim_time >= SIMULATION_END_TIME:
+                if current_sim_time >= SIMULATION_DURATION:
                     break
             else:   # sim time exceeded, loop should stop
                 flag = True  

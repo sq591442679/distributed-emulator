@@ -1,6 +1,7 @@
 import networkx as nx
 import pickle
 from loguru import logger
+from tools import *
 
 class ConstellationGraph(object):
 
@@ -113,6 +114,7 @@ def loadAndTest():
 
 
 def write_into_frr_conf(host_name, network_list, prefix_list):
+    node_id = satellite_str_to_id_tuple(host_name)
     with open(f"../configuration/frr/"
               f"{host_name}.conf", "w") as f:
         full_str = \
@@ -146,10 +148,13 @@ interface eth4
 
 router ospf
     ospf lofi 1
+    router id 0.0.{node_id[0]}.{node_id[1]}
     redistribute connected
 """
-        for index in range(len(network_list)):
-            full_str += f"\t network {network_list[index]}/{prefix_list[index]} area 0.0.0.0\n"
+        # commented by sqsq
+        # these lines may be useless for frr configuration
+        # for index in range(len(network_list)):
+        #     full_str += f"\t network {network_list[index]}/{prefix_list[index]} area 0.0.0.0\n"
         full_str += "!\n"
         full_str += "line vty\n"
         full_str += "!\n"

@@ -29,7 +29,7 @@ if __name__ == '__main__':
             'cnt': cnt,
             'sim_time': elapsed_time,
             'real_time': current_time,
-            'redundant': b'\x00' * 955  # ensure that the UDP packet size = 1024Bytes
+            'redundant': b'\x00' * 941  # ensure that the UDP packet payload = 1024Bytes
         }
         # print('boot time:', time.time() - psutil.boot_time())
         
