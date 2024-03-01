@@ -25,12 +25,11 @@ find ONE ip address of a certain satellite node
 """
 def get_ip_of_node_id(docker_client: DockerClient, node_id: tuple) -> str:
     for network in network_dict.values():
-        for container_id in network.veth_map.keys():
-            container = docker_client.client.containers.get(container_id)
+        for container_name in network.inner_eth_dict.keys():
+            container = docker_client.client.containers.get(container_name)
             container_node_id = satellite_str_to_id_tuple(container.name)
             if container_node_id == node_id:
-                grep_command = "grep -oP \"(?<=inet\\s)\\d+(\\.\\d+){3}\""
-                ret = container.exec_run(f"ip addr show eth1")
+                ret = docker_client.exec_cmd(container_name, "ip addr show eth1")
                 if ret[0] != 0:
                     logger.error(ret[1].decode().strip())
                 else:
@@ -47,11 +46,11 @@ def get_ip_of_node_id(docker_client: DockerClient, node_id: tuple) -> str:
 def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared_result_list) -> None:
     
     receiver_node_name = satellite_id_tuple_to_str(RECEIVER_NODE_ID)
-    receiver_container = docker_client.client.containers.get(receiver_node_name)
-    ret = receiver_container.exec_run(f"python3 /udp-applications/udp_receiver.py "
-                                      f"{receiver_ip} {receiver_port} "
-                                      f"{SIMULATION_DURATION + 10} {int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))}",
-                                stream=True)
+    ret = docker_client.exec_cmd(receiver_node_name, 
+                                 f"python3 /udp-applications/udp_receiver.py "
+                                 f"{receiver_ip} {receiver_port} "
+                                 f"{SIMULATION_DURATION + 10} {int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))}",
+                                 stream=True)
     logger.success("UDP receiver started")
 
     for line in ret[1]:
@@ -62,10 +61,10 @@ def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared
 
 def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_interval: float) -> None:
     sender_node_name = satellite_id_tuple_to_str(sender_node_id)
-    sender_container = docker_client.client.containers.get(sender_node_name)
-    ret = sender_container.exec_run(f"python3 /udp-applications/udp_sender.py "
-                                    f"{receiver_ip} {receiver_port} {send_interval} {SIMULATION_DURATION}",
-                                    stream=True)
+    ret = docker_client.exec_cmd(sender_node_name,
+                                 f"python3 /udp-applications/udp_sender.py "
+                                 f"{receiver_ip} {receiver_port} {send_interval} {SIMULATION_DURATION}",
+                                 stream=True)
     logger.success(f"UDP sender {sender_node_name} started")
 
 
@@ -104,7 +103,7 @@ def packet_capture_callback(packet):
         ospf_packet = packet[IP].load
         ospf_packet_type = ospf_packet[1] if len((ospf_packet)) > 1 else None
         if (ospf_packet_type == 4):
-            logger.info(ospf_packet)
+            # logger.info(ospf_packet)
             total_control_bytes += len(ospf_packet)
 
 """

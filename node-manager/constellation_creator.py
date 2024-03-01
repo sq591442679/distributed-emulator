@@ -340,7 +340,7 @@ def multiple_process_generate_networks(link_connections, satellites_tmp, docker_
 
     # logger.info(f"generate network object mission size: {len(network_object_mission) / SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION}")
     start_time = time.time()
-    create_network_object_with_multiple_process(network_object_mission, SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION)
+    create_network_object_with_multiple_process(docker_client, network_object_mission, SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION)
     end_time = time.time()
     logger.success(f"network initialize time: {end_time - start_time} s")
     # for net_id, container_id1, container_id2 in network_object_mission:

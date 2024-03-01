@@ -23,8 +23,9 @@ LIGHT_SPEED = 300
 
 # DELAY BANDWIDTH LOSS
 NETWORK_DELAY = 150 # unit ms, 150 means 150ms
-NETWORK_BANDWIDTH = 100 # unis kbytes/s must integer, 100 means 100kB/s
+NETWORK_BANDWIDTH = '10Mbit'
 NETWORK_LOSS = 0 # percent 0 means 0%
+QUEUE_CAPACITY = 100    # unit: pkt
 
 # CONSTELLATION PARAMETERS
 ORBIT_NUM = 6
@@ -45,5 +46,5 @@ LINK_FAILURE_DURATION = 5   # unit: s
 SIMULATION_DURATION = 100  # unit: s
 
 # TRANSMISSION PAIR added by sqsq
-SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(0, 0)]
-RECEIVER_NODE_ID = (1, 1)
+SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(3, 3)]
+RECEIVER_NODE_ID = (6, 8)

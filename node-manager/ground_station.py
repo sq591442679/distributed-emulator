@@ -101,5 +101,5 @@ def create_ground_station(docker_client : DockerClient, long: float, lat: float)
     docker_client.connect_node(container_id,net_id,"conn")
     new_station = GroundStation(ground_id, long, lat, container_id, net_id)
     ground_stations.append(new_station)
-    docker_client.exec_cmd(container_id=container_id,cmd=["route","add","default","gw",ip2str(net_ip+2)])
+    docker_client.exec_cmd(container_id_or_name=container_id,cmd=["route","add","default","gw",ip2str(net_ip+2)])
     return new_station

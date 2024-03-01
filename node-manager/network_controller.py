@@ -12,6 +12,7 @@ from threading import Thread
 from tools import *
 import random
 from docker_client import DockerClient
+from typing import Dict
 
 def generate_submission_list_for_network_object_creation(missions, submission_size: int):
     submission_list = []
@@ -20,26 +21,28 @@ def generate_submission_list_for_network_object_creation(missions, submission_si
     return submission_list
 
 
-def network_object_creation_submission(submission, send_pipe):
+def network_object_creation_submission(docker_client, submission, send_pipe):
     for net_id, container_id1, container_id2 in submission:
         network_key = get_network_key(container_id1, container_id2)
-        network_dict[network_key] = Network(net_id,
+        network_dict[network_key] = Network(docker_client,
+                                        net_id,
                                         container_id1,
                                         container_id2,
                                         NETWORK_DELAY,
                                         NETWORK_BANDWIDTH,
-                                        NETWORK_LOSS)
+                                        NETWORK_LOSS,
+                                        QUEUE_CAPACITY)
         # print(network_key)
     send_pipe.send("finished")
 
 
-def create_network_object_with_multiple_process(missions, submission_size):
+def create_network_object_with_multiple_process(docker_client, missions, submission_size):
     current_finished_submission_count = 0
     rcv_pipe, send_pipe = Pipe()
     submission_list = generate_submission_list_for_network_object_creation(missions, submission_size)
     # logger.info(f"create_network_object_submission_size: {submission_size}")
     for single_submission in submission_list:
-        singleThread = Thread(target=network_object_creation_submission, args=(single_submission, send_pipe))
+        singleThread = Thread(target=network_object_creation_submission, args=(docker_client, single_submission, send_pipe))
         singleThread.start()
     while True:
         rcv_string = rcv_pipe.recv()
@@ -97,29 +100,70 @@ def get_vethes_of_bridge(interface_name: str) -> list:
     return veth_list
 
 
+
+def get_inner_eth_dict(veth_dict: Dict[str, str], docker_client: DockerClient) -> Dict[str, str]:
+    """
+    added by sqsq
+    e.g., for a veth3dr431, find it corresponds to eth3 in node_1_1
+    return: dict, key: container name(str), value: inner eth name(str)
+    """    
+    ret_dict = {}
+    for container_id, veth_name in veth_dict.items():
+        iflink: str = os.popen(f"cat /sys/class/net/{veth_name}/iflink").read().strip()
+        container_name = docker_client.client.containers.get(container_id).name
+
+        ret = docker_client.exec_cmd(container_id, 'ls /sys/class/net/')
+        if ret[0] != 0:
+            logger.error(ret[1].decode().strip())
+            raise Exception('get_inner_eth_dict failed')
+        
+        eth_names = ret[1].decode().strip().split('\n')
+        for eth_name in eth_names:
+            command = f"cat /sys/class/net/{eth_name}/ifindex"
+            ret = docker_client.exec_cmd(container_id, command)
+            if ret[0] != 0:
+                logger.error(ret[1].decode().strip())
+                raise Exception('get_inner_eth_dict failed')
+            else:
+                if ret[1].decode().strip() == iflink:
+                    ret_dict[container_name] = eth_name
+                    break
+        if container_name not in ret_dict.keys():
+            raise Exception('get_inner_eth_dict failed')
+        
+    logger.info(ret_dict)
+
+    return ret_dict
+
+
 class Network:
 
     def __init__(self,
+                 docker_client: DockerClient,
                  bridge_id: str,
                  container_id1: str,
                  container_id2: str,
                  time: int,
                  band_width: str,
-                 loss_percent: str):
+                 loss_percent: int,
+                 queue_capacity: int):
         # 为保证network key的唯一性，设置map中key的字符串拼接顺序为小id在前,大id在后
+        self.docker_client = docker_client
         self.br_id = bridge_id
         self.br_interface_name = get_bridge_interface_name(bridge_id)
         self.veth_interface_list = get_vethes_of_bridge(self.br_interface_name)
-        self.delay = time
-        self.bandwidth = band_width
-        self.loss = loss_percent
+        self.delay = time               # unit: ms
+        self.bandwidth = band_width     # '10Mbit'
+        self.loss = loss_percent        # unit: percent
+        self.queue_capacity = queue_capacity
         if len(self.veth_interface_list) != 2:
             logger.warning(self.veth_interface_list)
             raise ValueError("wrong veth number of bridge: %d" % len(self.veth_interface_list))
-        self.veth_map = {
+        self.veth_dict = {
             container_id1: self.veth_interface_list[0],
             container_id2: self.veth_interface_list[1]
         }
+        self.inner_eth_dict = get_inner_eth_dict(self.veth_dict, self.docker_client)
 
         # added by sqsq
         self.is_down = False    # if True, then do not really update info
@@ -136,42 +180,14 @@ class Network:
     tc qdisc show dev eth0
     '''
     def init_info(self):
-        # bandwidth unit is kbytes/s integer
-        command = "tc qdisc replace dev %s root handle 1:0 tbf rate %dkbit burst %dk limit %dkbit" % (
-            self.veth_interface_list[0], self.bandwidth*8, self.bandwidth, self.bandwidth*8)
-        exec_res = os.popen(command).read()
-        
-        command = "tc qdisc add dev %s parent 1:0 handle 2:0 netem delay %dms loss %s" % (
-            self.veth_interface_list[0], self.delay, self.loss)
-        exec_res = os.popen(command).read()
-
-        # bandwidth unit is kbytes/s integer
-        command = "tc qdisc replace dev %s root handle 1:0 tbf rate %dkbit burst %dk limit %dkbit" % (
-            self.veth_interface_list[1], self.bandwidth*8, self.bandwidth, self.bandwidth*8)
-        exec_res = os.popen(command).read()
-
-        command = "tc qdisc add dev %s parent 1:0 handle 2:0 netem delay %dms loss %s" % (
-            self.veth_interface_list[1], self.delay, self.loss)
-        exec_res = os.popen(command).read()
+        for container_name, inner_eth_name in self.inner_eth_dict.items():
+            command = f'tc qdisc add dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth} limit {self.queue_capacity}'
+            self.docker_client.exec_cmd(container_name, command)
 
     def update_info(self):
-        command = "tc qdisc replace dev %s root handle 1:0 tbf rate %dkbit burst %dk limit %dkbit" % (
-            self.veth_interface_list[0], self.bandwidth*8, self.bandwidth, self.bandwidth*8)
-        
-        exec_res = os.popen(command).read()
-        command = "tc qdisc replace dev %s parent 1:0 handle 2:0 netem delay %dms loss %s" % (
-            self.veth_interface_list[0], self.delay, self.loss)
-        
-        exec_res = os.popen(command).read()
-        # bandwidth unit is kbytes/s integer
-        command = "tc qdisc replace dev %s root handle 1:0 tbf rate %dkbit burst %dk limit %dkbit" % (
-            self.veth_interface_list[1], self.bandwidth*8, self.bandwidth, self.bandwidth*8)
-        
-        exec_res = os.popen(command).read()
-        command = "tc qdisc replace dev %s parent 1:0 handle 2:0 netem delay %dms loss %s" % (
-            self.veth_interface_list[1], self.delay, self.loss)
-        
-        exec_res = os.popen(command).read()
+        for container_name, inner_eth_name in self.inner_eth_dict.items():
+            command = f'tc qdisc replace dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth} limit {self.queue_capacity}'
+            self.docker_client.exec_cmd(container_name, command)
 
     def update_delay_param(self, set_time: int):
         self.delay = set_time
@@ -189,32 +205,31 @@ class Network:
             self.update_info()
 
     # added by sqsq
-    def close_veth(self):
-        for veth_name in self.veth_interface_list:
-            command = "ifconfig %s down" % veth_name
-            exec_res = os.popen(command).read()
+    def close_link(self, sim_time: float = None):
+        self.is_down = True
+        for container_name, eth_name in self.inner_eth_dict.items():
+            command = f"ifconfig {eth_name} down"
+            self.docker_client.exec_cmd(container_name, command)
 
-    def open_veth(self):
-        for veth_name in self.veth_interface_list:
-            command = "ifconfig %s up" % veth_name
-            exec_res = os.popen(command).read()
+        if sim_time is not None:
+            container_name_list = list(self.inner_eth_dict.keys())
+            logger.info(
+                '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
+                % (sim_time, container_name_list[0], container_name_list[1])
+            )
 
+    def open_link(self, sim_time:float = None):
+        for container_id, eth_name in self.inner_eth_dict.items():
+            command = f"ifconfig {eth_name} up"
+            self.docker_client.exec_cmd(container_id, command)
+        self.is_down = False
 
-"""
-added by sqsq
-used to print link events
-"""
-def print_link_event(network: Network, docker_client: DockerClient, lock, current_sim_time: float, event_type: str):
-    connected_containers = docker_client.client.networks.get(network.br_id).containers
-    if len(connected_containers) != 2:
-        logger.error("network connecting %d caontainers" % len(connected_containers))
-    src_container_name: str = connected_containers[0].name
-    target_container_name: str = connected_containers[1].name
-    with lock:
-        logger.info(
-            '{"sim_time": %.3f, "link": "%s <--> %s", "type": "%s"}'
-            % (current_sim_time, src_container_name, target_container_name, event_type)
-        )
+        if sim_time is not None:
+            container_name_list = list(self.inner_eth_dict.keys())
+            logger.info(
+                '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
+                % (sim_time, container_name_list[0], container_name_list[1])
+            )
 
 
 """
@@ -248,14 +263,14 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float)
                     continue
                 elif network.is_down and current_sim_time > network.down_moment + LINK_FAILURE_DURATION:
                     # link should recover
-                    print_link_event(network, docker_client, lock, current_sim_time, "up")
-                    network.is_down = False
+                    with lock:
+                        network.open_link(current_sim_time)
                     sim_time_interval = random.expovariate(poisson_lambda)
                     network.down_moment = current_sim_time + sim_time_interval # set the next link down moment
                 elif not network.is_down and current_sim_time > network.down_moment:
                     # link should turned to down
-                    print_link_event(network, docker_client, lock, current_sim_time, "down")
-                    network.is_down = True
+                    with lock:
+                        network.close_link(current_sim_time)
                 else:
                     continue
 

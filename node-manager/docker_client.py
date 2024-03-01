@@ -115,12 +115,9 @@ class DockerClient:
         return ans, free_bit
 
 
-    def exec_cmd(self, container_id: str, cmd: list):
-        self.client.containers.get(container_id).exec_run(tty=False, cmd=cmd)
+    def exec_cmd(self, container_id_or_name: str, cmd: list, stream=False):
+        return self.client.containers.get(container_id_or_name).exec_run(tty=False, cmd=cmd, stream=stream, privileged=True)
 
-    def exec_cmd_stream(self, container_id: str, cmd: list):
-        ret = self.client.containers.get(container_id).exec_run(tty=False, cmd=cmd, stream=True)
-        return ret
 
     """
     added by sqsq
