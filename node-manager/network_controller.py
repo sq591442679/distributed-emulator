@@ -12,7 +12,7 @@ from threading import Thread
 from tools import *
 import random
 from docker_client import DockerClient
-from typing import Dict
+from typing import Dict, List
 
 def generate_submission_list_for_network_object_creation(missions, submission_size: int):
     submission_list = []
@@ -101,39 +101,50 @@ def get_vethes_of_bridge(interface_name: str) -> list:
 
 
 
-def get_inner_eth_dict(veth_dict: Dict[str, str], docker_client: DockerClient) -> Dict[str, str]:
+def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docker_client: DockerClient) -> List[Dict[str, str]]:
     """
     added by sqsq
     e.g., for a veth3dr431, find it corresponds to eth3 in node_1_1
-    return: dict, key: container name(str), value: inner eth name(str)
+    return: list of dict, 
+    veth_dict: container_name(str) -> outer veth name of the corresponding network
+    eth_dict: container_name(str) -> inner eth name of the container which connects to the corresponding network 
+    note that the mapping of container_id and veth_name is uncertain
     """    
-    ret_dict = {}
-    for container_id, veth_name in veth_dict.items():
-        iflink: str = os.popen(f"cat /sys/class/net/{veth_name}/iflink").read().strip()
+    veth_dict: Dict[str, str] = {}
+    eth_dict: Dict[str, str] = {}
+    for container_id in container_id_list:
         container_name = docker_client.client.containers.get(container_id).name
-
         ret = docker_client.exec_cmd(container_id, 'ls /sys/class/net/')
         if ret[0] != 0:
             logger.error(ret[1].decode().strip())
             raise Exception('get_inner_eth_dict failed')
-        
         eth_names = ret[1].decode().strip().split('\n')
-        for eth_name in eth_names:
-            command = f"cat /sys/class/net/{eth_name}/ifindex"
-            ret = docker_client.exec_cmd(container_id, command)
-            if ret[0] != 0:
-                logger.error(ret[1].decode().strip())
-                raise Exception('get_inner_eth_dict failed')
-            else:
-                if ret[1].decode().strip() == iflink:
-                    ret_dict[container_name] = eth_name
-                    break
-        if container_name not in ret_dict.keys():
-            raise Exception('get_inner_eth_dict failed')
-        
-    logger.info(ret_dict)
+        # logger.info(eth_names)
 
-    return ret_dict
+        for veth_name in veth_list:
+            iflink: str = os.popen(f"cat /sys/class/net/{veth_name}/iflink").read().strip()
+            for eth_name in eth_names:
+                command = f"cat /sys/class/net/{eth_name}/ifindex"
+                ret = docker_client.exec_cmd(container_id, command)
+                if ret[0] != 0:
+                    logger.error(ret[1].decode().strip())
+                    raise Exception('get_inner_eth_dict failed')
+                else:
+                    if ret[1].decode().strip() == iflink:
+                        eth_dict[container_name] = eth_name
+                        veth_dict[container_name] = veth_name
+                        break
+            # if container_name not in ret_dict.keys():
+            #     logger.error(f"{container_name} has no inner eth corresponds to {veth_name}")
+            #     raise Exception(f"{container_name} has no inner eth corresponds to {veth_name}")
+    
+    if len(set(veth_dict.values())) != 2 or len(veth_dict.keys()) != 2:
+        logger.error(f"veth_dict: {veth_dict}, eth_dict: {eth_dict}")
+        raise Exception("bad ret_dict")
+
+    # logger.info(f"veth_dict: {veth_dict}, eth_dict: {eth_dict}")
+
+    return [veth_dict, eth_dict]
 
 
 class Network:
@@ -159,11 +170,11 @@ class Network:
         if len(self.veth_interface_list) != 2:
             logger.warning(self.veth_interface_list)
             raise ValueError("wrong veth number of bridge: %d" % len(self.veth_interface_list))
-        self.veth_dict = {
-            container_id1: self.veth_interface_list[0],
-            container_id2: self.veth_interface_list[1]
-        }
-        self.inner_eth_dict = get_inner_eth_dict(self.veth_dict, self.docker_client)
+        
+        # added by sqsq
+        self.veth_dict, self.inner_eth_dict = get_inner_eth_dict([container_id1, container_id2], 
+                                                                 self.veth_interface_list, 
+                                                                 self.docker_client)
 
         # added by sqsq
         self.is_down = False    # if True, then do not really update info
@@ -223,6 +234,7 @@ class Network:
             command = f"ifconfig {eth_name} up"
             self.docker_client.exec_cmd(container_id, command)
         self.is_down = False
+        self.update_info()
 
         if sim_time is not None:
             container_name_list = list(self.inner_eth_dict.keys())

@@ -175,8 +175,8 @@ def GenerateNetworkX(subnet_map_tmp):
         target_node_id = target_node.node_id
         source_node_ip = source_node.subnet_ip[key_temp]
         target_node_ip = target_node.subnet_ip[key_temp]
-        logger.info(f"source_node_id: {source_node_id}: {source_node_ip} "
-                    f"<---> target_node_id: {target_node_id}: {target_node_ip}")
+        # logger.info(f"source_node_id: {source_node_id}: {source_node_ip} "
+        #             f"<---> target_node_id: {target_node_id}: {target_node_ip}")
         satellite_source_node = SatelliteNetworkXNode(f"{source_node_id}", source_node_ip)
         satellite_dest_node = SatelliteNetworkXNode(f"{target_node_id}", target_node_ip)
         satellite_source_center = SatelliteNetworkXNode(f"{source_node_id}", "center")

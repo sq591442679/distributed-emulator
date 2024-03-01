@@ -22,12 +22,7 @@ from tools import *
 from transmission_test import start_transmission_test, start_packet_capture
 
 
-if __name__ == "__main__":
-    # check sudo permission
-    sudo_uid = os.environ.get('SUDO_UID')
-    if sudo_uid is None:
-        raise Exception("\nneed to have sudo permission.\n try sudo python3 main.py")
-
+def run(lofi_n: int, link_failure_rate: float, send_interval: float):
     reinit_global_var()
     # the share bool value
     stop_process_state = multiprocessing.Value(c_bool, False)
@@ -76,7 +71,7 @@ if __name__ == "__main__":
     # generate constellation
     # ----------------------------------------------------------------------------------------------------
     position_datas, monitor_payloads = constellation_creator(docker_client, satellite_infos, connections, host_ip,
-                                                             udp_port, successful_init, lofi_n=2)
+                                                             udp_port, successful_init, lofi_n=lofi_n)
     # ----------------------------------------------------------------------------------------------------
     # ground_stations = create_station_from_json(docker_client, config.GroundConfigPath)
     ground_stations = {}
@@ -129,12 +124,12 @@ if __name__ == "__main__":
     logger.info("transmission starting...")
     process_list.clear()
 
-    generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, 0.1))
+    generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, link_failure_rate))
     process_list.append(generate_link_failure_process)
 
     manager = Manager()
     shared_result_list = manager.list()
-    start_transmission_test_process = Process(target=start_transmission_test, args=(docker_client, 0.1, shared_result_list))
+    start_transmission_test_process = Process(target=start_transmission_test, args=(docker_client, send_interval, shared_result_list))
     process_list.append(start_transmission_test_process)
 
     queue = Queue()
@@ -146,10 +141,29 @@ if __name__ == "__main__":
     for process_copy in process_list:
         process_copy.join()
     
-    logger.success(shared_result_list[0])
-    logger.success(queue.get())
+    # logger.success(shared_result_list[0])
+    # logger.success(queue.get())
+    with open('./result.txt', 'a') as f:
+        print(shared_result_list[0], file=f)
+        print(queue.get(), file=f)
+        print('')
 
     set_monitor_process.kill()
     update_position_process.kill()
-    # os.system("./stop_and_kill_constellation.sh")
+    os.system("./stop_and_kill_constellation.sh")
+    os.system("clear")
     # ----------------------------------------------------------
+
+
+if __name__ == "__main__":
+    # check sudo permission
+    sudo_uid = os.environ.get('SUDO_UID')
+    if sudo_uid is None:
+        raise Exception("\nneed to have sudo permission.\n try sudo python3 main.py")
+
+    os.system("echo '' > result.txt")
+
+    for lofi_n in [0, 1, 2, 3, 4]:
+        run(lofi_n, 0.1, 0.1)
+
+    

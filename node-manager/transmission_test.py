@@ -121,4 +121,5 @@ def start_packet_capture(queue: Queue):
     except KeyboardInterrupt:
         pass
     
-    queue.put([total_data_bytes / 1e6 / SIMULATION_DURATION, total_control_bytes / 1e6 / SIMULATION_DURATION])
+    queue.put("{'throughput': '%.3f'}, {'control_overhead': '%.3f'}" 
+              % (total_data_bytes / 1e6 / SIMULATION_DURATION, total_control_bytes / 1e6 / SIMULATION_DURATION))

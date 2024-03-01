@@ -47,4 +47,4 @@ SIMULATION_DURATION = 100  # unit: s
 
 # TRANSMISSION PAIR added by sqsq
 SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(3, 3)]
-RECEIVER_NODE_ID = (6, 8)
+RECEIVER_NODE_ID = (5, 8)
