@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta
 import multiprocessing as mp
 from satellite_node import worker,satellites
 from const_var import *
@@ -36,6 +37,10 @@ def position_broadcaster(stop_process_state, satellite_num, position_datas, upda
     updater.broadcast_info(config_str)
     # ------------------------------------------------
 
+    # ------------------------------------------------
+    # record sim time, added by sqsq
+    start_time = datetime.now()
+
     # update position
     # ------------------------------------------------
     # 打印cpu的数量
@@ -55,7 +60,11 @@ def position_broadcaster(stop_process_state, satellite_num, position_datas, upda
         # 创建管道
         rcv_pipe, send_pipe = Pipe()
         for i in range(len(submission_list)):
-            p = mp.Process(target=worker, args=(submission_list[i][0],
+            now_time = datetime.now()
+            now_sim_time = now_time - start_time + TIME_BASE
+
+            p = mp.Process(target=worker, args=(now_sim_time,
+                                                submission_list[i][0],
                                                 submission_list[i][1],
                                                 res,
                                                 send_pipe))

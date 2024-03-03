@@ -128,11 +128,11 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float):
     process_list.append(generate_link_failure_process)
 
     manager = Manager()
-    shared_result_list = manager.list()
+    shared_result_list = manager.list() # shared_result_list: list[dict]
     start_transmission_test_process = Process(target=start_transmission_test, args=(docker_client, send_interval, shared_result_list))
     process_list.append(start_transmission_test_process)
 
-    queue = Queue()
+    queue = Queue() # queue of dict
     start_packet_capture_process = Process(target=start_packet_capture, args=(queue, ))
     process_list.append(start_packet_capture_process)
 
@@ -143,10 +143,14 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float):
     
     # logger.success(shared_result_list[0])
     # logger.success(queue.get())
-    with open('./result.txt', 'a') as f:
-        print(shared_result_list[0], file=f)
-        print(queue.get(), file=f)
-        print('')
+    with open('./result.csv', 'a') as f:
+        drop_rate = shared_result_list[0]['drop rate']
+        delay = shared_result_list[0]['delay']
+
+        queue_element = queue.get()
+        throughput = queue_element['throughput']
+        control_overhead = queue_element['control overhead']
+        print(f"{lofi_n},{link_failure_rate},{drop_rate},{delay},{throughput},{control_overhead}", file=f)
 
     set_monitor_process.kill()
     update_position_process.kill()
@@ -161,9 +165,13 @@ if __name__ == "__main__":
     if sudo_uid is None:
         raise Exception("\nneed to have sudo permission.\n try sudo python3 main.py")
 
-    os.system("echo '' > result.txt")
+    if not os.path.exists('./result.csv'):
+        with open('./result.csv', 'w') as f:
+            print('lofi_n,link_failure_rate,drop_rate,delay,throughput,control_overhead', file=f)
+        os.system("chmod 777 ./result.csv")
 
-    for lofi_n in [0, 1, 2, 3, 4]:
-        run(lofi_n, 0.1, 0.1)
+    for link_failure_rate in [0.05, 0.1]:
+        for lofi_n in [0, 1, 2, 3, 4]:
+            run(lofi_n, link_failure_rate, 0.1)
 
     

@@ -7,6 +7,7 @@ import typing
 import re
 from scapy.all import sniff, UDP, IP
 import time
+import json
 
 from loguru import logger
 from const_var import *
@@ -43,6 +44,9 @@ def get_ip_of_node_id(docker_client: DockerClient, node_id: tuple) -> str:
     raise Exception(f"node id {node_id} not found")
                 
 
+"""
+shared_result_list: list[dict]
+"""
 def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared_result_list) -> None:
     
     receiver_node_name = satellite_id_tuple_to_str(RECEIVER_NODE_ID)
@@ -55,7 +59,7 @@ def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared
 
     for line in ret[1]:
         if len(line.decode().strip()) > 0:
-            shared_result_list.append(line.decode().strip())
+            shared_result_list.append(json.loads(line.decode().strip()))
             # logger.info(line.decode().strip())
 
 
@@ -67,7 +71,9 @@ def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_in
                                  stream=True)
     logger.success(f"UDP sender {sender_node_name} started")
 
-
+"""
+shared_result_list: list[dict]
+"""
 def start_transmission_test(docker_client: DockerClient, send_interval: float, shared_result_list):
     global receiver_ip
     receiver_ip = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
@@ -121,5 +127,8 @@ def start_packet_capture(queue: Queue):
     except KeyboardInterrupt:
         pass
     
-    queue.put("{'throughput': '%.3f'}, {'control_overhead': '%.3f'}" 
-              % (total_data_bytes / 1e6 / SIMULATION_DURATION, total_control_bytes / 1e6 / SIMULATION_DURATION))
+    res_dict = {}
+    res_dict["throughput"] = "%.3f" % (total_data_bytes / 1e6 / SIMULATION_DURATION)
+    res_dict["control overhead"] = "%.3f" % (total_control_bytes / 1e6 / SIMULATION_DURATION)
+
+    queue.put(res_dict)

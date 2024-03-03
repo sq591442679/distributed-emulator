@@ -118,8 +118,17 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
         if ret[0] != 0:
             logger.error(ret[1].decode().strip())
             raise Exception('get_inner_eth_dict failed')
+        logger.info(f"raw eth_names: {ret[1]}")
         eth_names = ret[1].decode().strip().split('\n')
-        # logger.info(eth_names)
+        logger.info(f"cooked eth_names: {eth_names}")
+        # while len(eth_names) == 0:
+        #     time.sleep(0.1)
+        #     logger.warning(f"container_name: {container_name}, eth_names:{eth_names}, len=0")
+        #     ret = docker_client.exec_cmd(container_id, 'ls /sys/class/net/')
+        #     if ret[0] != 0:
+        #         logger.error(ret[1].decode().strip())
+        #         raise Exception('get_inner_eth_dict failed')
+        #     eth_names = ret[1].decode().strip().split('\n')    
 
         for veth_name in veth_list:
             iflink: str = os.popen(f"cat /sys/class/net/{veth_name}/iflink").read().strip()
@@ -128,6 +137,7 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
                 ret = docker_client.exec_cmd(container_id, command)
                 if ret[0] != 0:
                     logger.error(ret[1].decode().strip())
+                    logger.error(f'container_name: {container_name}    eth_names: {eth_names}')
                     raise Exception('get_inner_eth_dict failed')
                 else:
                     if ret[1].decode().strip() == iflink:

@@ -5,7 +5,7 @@ from loguru import logger
 
 
 # 用来进行位置计算的线程
-def worker(range_start: int, range_end: int, res, send_pipe):
+def worker(now: datetime, range_start: int, range_end: int, res, send_pipe):
     """
     Calculate the position of the satellite
     :param send_pipe:
@@ -16,7 +16,7 @@ def worker(range_start: int, range_end: int, res, send_pipe):
     # calculated satellite nums
     calculated_satellites_num = range_end - range_start + 1
     # calculate the position of the satellites
-    now = datetime.utcnow()
+    # now = datetime.utcnow()
     for i in range(range_start, range_end + 1):
         index_base = 3 * i
         # logger.info("%d %d %d %d"%(len(res),index_base,len(satellites),i))

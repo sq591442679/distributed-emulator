@@ -1,5 +1,6 @@
 # BROADCAST PARAMETERS
 import os
+from datetime import datetime
 from typing import List, Tuple
 
 LATITUDE_KEY = 'lat'
@@ -48,3 +49,6 @@ SIMULATION_DURATION = 100  # unit: s
 # TRANSMISSION PAIR added by sqsq
 SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(3, 3)]
 RECEIVER_NODE_ID = (5, 8)
+
+# used for tle generation and position update
+TIME_BASE = datetime(2024, 1, 1)
