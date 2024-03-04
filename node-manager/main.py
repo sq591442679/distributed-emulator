@@ -42,7 +42,7 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
     updater = DataUpdater("<broadcast>", host_ip, int(udp_port))
     # ----------------------------------------------------------
 
-    print(host_ip, int(udp_port))
+    logger.info(f"host ip:{host_ip}, udp port:{udp_port}")
 
     # create docker client
     # ----------------------------------------------------------
@@ -171,6 +171,8 @@ if __name__ == "__main__":
     sudo_uid = os.environ.get('SUDO_UID')
     if sudo_uid is None:
         raise Exception("\nneed to have sudo permission.\n try sudo python3 main.py")
+    
+    os.system("./stop_and_kill_constellation.sh")
     
     dry_run = True
     # link_failure_rate_list = [0, 0.01, 0.05, 0.1]

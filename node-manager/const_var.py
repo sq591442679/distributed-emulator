@@ -49,6 +49,8 @@ SIMULATION_DURATION = 100  # unit: s
 # TRANSMISSION PAIR added by sqsq
 SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(3, 3)]
 RECEIVER_NODE_ID = (5, 8)
+# SENDER_NODE_ID_LIST: List[Tuple[int, int]] = []
+# RECEIVER_NODE_ID = (0, 0)
 
 # used for tle generation and position update
 TIME_BASE = datetime(2024, 1, 1)

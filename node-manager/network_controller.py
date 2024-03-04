@@ -300,14 +300,13 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float,
         network = network_dict[key]
         random_instance_seed = random.randint(0, 100000)
         random_instance_dict[network] = random.Random(random_instance_seed)
+        # with open("seed.txt", "a") as f:
+        #     print(f"network key:{network.network_key}, seed:{random_instance_seed}/{random_instance_dict[network].getstate()[1][0]}", file=f)    
     if seed is not None:
         random.seed(None)
 
     poisson_lambda = link_failure_rate / (LINK_FAILURE_DURATION * (1 - link_failure_rate))
     start_time = time.time()
-
-    for _, network in network_dict.items():
-        logger.info(f"network key:{network.network_key}, seed:{random_instance_dict[network].getstate()[1][0]}")
 
     for network in network_dict.values():   # generate first down moment
         random_instance = random_instance_dict[network]
