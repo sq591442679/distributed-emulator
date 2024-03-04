@@ -20,3 +20,8 @@ docker network rm `docker network ls | grep Network | awk '{print $1}'`
 docker network rm `docker network ls | grep ground | awk '{print $1}'`
 # 打印成功清除的信息
 echo "All containers and networks have been removed."
+
+# added by sqsq
+# give docker daemon a fresh restart
+systemctl restart docker
+echo "Docker daemon restarted"

@@ -61,9 +61,9 @@ def get_laser_delay_ms(position1: dict, position2: dict) -> int:
     x2, y2, z2 = hei2 * cos(lat2) * cos(lon2), hei2 * cos(lat2) * sin(lon2), hei2 * sin(lat2)
     dist_square = (x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2  # UNIT: m^2
     # logger.info(f"distance: {int(sqrt(dist_square))} light speed: {LIGHT_SPEED}")
-    # return int(sqrt(dist_square) / LIGHT_SPEED)  # UNIT: ms
+    return int(sqrt(dist_square) / LIGHT_SPEED)  # UNIT: ms
     # ZHF MODIFY
-    return 0
+    # return 0
 
 
 def get_network_key(docker_client: DockerClient, container_id1: str, container_id2: str) -> str:
@@ -183,7 +183,7 @@ class Network:
                  bridge_id: str,
                  container_id1: str,
                  container_id2: str,
-                 time: int,
+                 delay: int,
                  band_width: str,
                  loss_percent: int,
                  queue_capacity: int):
@@ -195,7 +195,7 @@ class Network:
         self.network_key = get_network_key(docker_client, container_id1, container_id2)
         self.br_interface_name = get_bridge_interface_name(bridge_id)
         self.veth_interface_list = get_vethes_of_bridge(self.br_interface_name)
-        self.delay = time               # unit: ms
+        self.delay = delay               # unit: ms
         self.bandwidth = band_width     # '10Mbit'
         self.loss = loss_percent        # unit: percent
         self.queue_capacity = queue_capacity
@@ -260,13 +260,13 @@ class Network:
 
         if sim_time is not None:
             container_name_list = sorted(list(self.inner_eth_dict.keys()))
-            with open("link.log", "a") as f:
-                print(
-                    '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
-                    % (sim_time, container_name_list[0], container_name_list[1]),
-                    file=f,
-                    flush=True
-                )    
+            # with open("link.log", "a") as f:
+            #     print(
+            #         '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
+            #         % (sim_time, container_name_list[0], container_name_list[1]),
+            #         file=f,
+            #         flush=True
+            #     )    
             logger.info(
                 '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
                 % (sim_time, container_name_list[0], container_name_list[1])
@@ -281,13 +281,13 @@ class Network:
 
         if sim_time is not None:
             container_name_list = sorted(list(self.inner_eth_dict.keys()))
-            with open("link.log", "a") as f:
-                print(
-                    '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
-                    % (sim_time, container_name_list[0], container_name_list[1]),
-                    file=f,
-                    flush=True
-                )   
+            # with open("link.log", "a") as f:
+            #     print(
+            #         '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
+            #         % (sim_time, container_name_list[0], container_name_list[1]),
+            #         file=f,
+            #         flush=True
+            #     )   
             logger.info(
                 '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
                 % (sim_time, container_name_list[0], container_name_list[1])

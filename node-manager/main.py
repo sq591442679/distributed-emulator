@@ -174,7 +174,7 @@ if __name__ == "__main__":
     
     os.system("./stop_and_kill_constellation.sh")
     
-    dry_run = True
+    dry_run = False
     link_failure_rate_list = [0, 0.01, 0.05, 0.1]
     lofi_n_list = [0, 1, 2, 3, 4]
     # link_failure_rate_list = [0.05]
