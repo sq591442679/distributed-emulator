@@ -175,17 +175,16 @@ if __name__ == "__main__":
     os.system("./stop_and_kill_constellation.sh")
     
     dry_run = True
-    # link_failure_rate_list = [0, 0.01, 0.05, 0.1]
-    # lofi_n_list = [0, 1, 2, 3, 4]
-    link_failure_rate_list = [0.05]
-    lofi_n_list = [1]
+    link_failure_rate_list = [0, 0.01, 0.05, 0.1]
+    lofi_n_list = [0, 1, 2, 3, 4]
+    # link_failure_rate_list = [0.05]
+    # lofi_n_list = [1]
 
     if not os.path.exists('./result.csv') and not dry_run:
         with open('./result.csv', 'w') as f:
             print('lofi_n,link_failure_rate,test,drop_rate,delay,throughput,control_overhead', file=f)
         os.system("chmod 777 ./result.csv")
 
-    # for link_failure_rate in [0, 0.01, 0.05, 0.1]:
     for link_failure_rate in link_failure_rate_list:
         for lofi_n in lofi_n_list:
             for test in range(1, TEST_NUM + 1):

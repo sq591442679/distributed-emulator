@@ -55,4 +55,4 @@ RECEIVER_NODE_ID = (5, 8)
 # used for tle generation and position update
 TIME_BASE = datetime(2024, 1, 1)
 
-TEST_NUM = 10
+TEST_NUM = 5

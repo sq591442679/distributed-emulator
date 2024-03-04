@@ -259,7 +259,14 @@ class Network:
             self.docker_client.exec_cmd(container_name, command)
 
         if sim_time is not None:
-            container_name_list = list(self.inner_eth_dict.keys())
+            container_name_list = sorted(list(self.inner_eth_dict.keys()))
+            with open("link.log", "a") as f:
+                print(
+                    '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
+                    % (sim_time, container_name_list[0], container_name_list[1]),
+                    file=f,
+                    flush=True
+                )    
             logger.info(
                 '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
                 % (sim_time, container_name_list[0], container_name_list[1])
@@ -273,7 +280,14 @@ class Network:
         self.update_info()
 
         if sim_time is not None:
-            container_name_list = list(self.inner_eth_dict.keys())
+            container_name_list = sorted(list(self.inner_eth_dict.keys()))
+            with open("link.log", "a") as f:
+                print(
+                    '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
+                    % (sim_time, container_name_list[0], container_name_list[1]),
+                    file=f,
+                    flush=True
+                )   
             logger.info(
                 '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
                 % (sim_time, container_name_list[0], container_name_list[1])
