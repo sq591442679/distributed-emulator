@@ -29,7 +29,7 @@ def generate_submission_list_for_position_broadcaster(satellite_num, cpu_count):
     return submission_list
 
 
-def position_broadcaster(stop_process_state, satellite_num, position_datas, updater, sending_interval,topo):
+def position_broadcaster(docker_client, stop_process_state, satellite_num, position_datas, updater, sending_interval,topo):
     # create a config command and send out the command
     # ------------------------------------------------
     config_message = {"config": "set the source routing table"}
@@ -83,7 +83,7 @@ def position_broadcaster(stop_process_state, satellite_num, position_datas, upda
                     position_datas[node_id_str][LATITUDE_KEY] = res[index_base]
                     position_datas[node_id_str][LONGITUDE_KEY] = res[index_base + 1]
                     position_datas[node_id_str][HEIGHT_KEY] = res[index_base + 2]
-                update_network_delay(position_datas,topo)
+                update_network_delay(docker_client, position_datas,topo)
                 ground_connections = ground_select(satellites,position_datas,ground_stations)
                 broadcast_data = {
                     "position_datas": position_datas,

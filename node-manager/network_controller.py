@@ -23,7 +23,7 @@ def generate_submission_list_for_network_object_creation(missions, submission_si
 
 def network_object_creation_submission(docker_client, submission, send_pipe):
     for net_id, container_id1, container_id2 in submission:
-        network_key = get_network_key(container_id1, container_id2)
+        network_key = get_network_key(docker_client, container_id1, container_id2)
         network_dict[network_key] = Network(docker_client,
                                         net_id,
                                         container_id1,
@@ -66,16 +66,18 @@ def get_laser_delay_ms(position1: dict, position2: dict) -> int:
     return 0
 
 
-def get_network_key(container_id1: str, container_id2: str) -> str:
-    if container_id1 > container_id2:
-        container_id1, container_id2 = container_id2, container_id1
-    return container_id1 + container_id2
-
-
-class ContainerEntrypoint:
-    def __init__(self, veth_name: str, container_id: str):
-        self.veth_name = veth_name
-        self.container_id = container_id
+def get_network_key(docker_client: DockerClient, container_id1: str, container_id2: str) -> str:
+    """
+    modified by sqsq
+    network_key is no longer based on container_id, but container_name
+    to ensure correspondence during different runs
+    """
+    container_name1 = docker_client.client.containers.get(container_id1).name
+    container_name2 = docker_client.client.containers.get(container_id2).name
+    if container_name1 > container_name2:
+        return container_name2 + container_name1
+    else:
+        return container_name1 + container_name2
 
 
 def get_bridge_interface_name(bridge_id: str) -> str:
@@ -112,44 +114,61 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
     """    
     veth_dict: Dict[str, str] = {}
     eth_dict: Dict[str, str] = {}
-    for container_id in container_id_list:
-        container_name = docker_client.client.containers.get(container_id).name
-        ret = docker_client.exec_cmd(container_id, 'ls /sys/class/net/')
+    container_name_list: List[str] = [docker_client.client.containers.get(container_id).name
+                                      for container_id in container_id_list]
+    ifindex_of_container: Dict[str, Dict[str, str]] = {}    # container_name -> (eth_name -> ifindex of this eth)
+    iflink_of_veth: Dict[str, str] = {}                     # veth_name -> iflink of veth
+
+    for container_name in container_name_list:              # build ifindex_of_container
+        ifindex_of_container[container_name] = {}
+        ret = docker_client.exec_cmd(container_name, 'ls /sys/class/net/')
         if ret[0] != 0:
             logger.error(ret[1].decode().strip())
             raise Exception('get_inner_eth_dict failed')
-        logger.info(f"raw eth_names: {ret[1]}")
         eth_names = ret[1].decode().strip().split('\n')
-        logger.info(f"cooked eth_names: {eth_names}")
-        # while len(eth_names) == 0:
-        #     time.sleep(0.1)
-        #     logger.warning(f"container_name: {container_name}, eth_names:{eth_names}, len=0")
-        #     ret = docker_client.exec_cmd(container_id, 'ls /sys/class/net/')
-        #     if ret[0] != 0:
-        #         logger.error(ret[1].decode().strip())
-        #         raise Exception('get_inner_eth_dict failed')
-        #     eth_names = ret[1].decode().strip().split('\n')    
-
-        for veth_name in veth_list:
-            iflink: str = os.popen(f"cat /sys/class/net/{veth_name}/iflink").read().strip()
-            for eth_name in eth_names:
-                command = f"cat /sys/class/net/{eth_name}/ifindex"
-                ret = docker_client.exec_cmd(container_id, command)
-                if ret[0] != 0:
+        while len(eth_names) == 0:
+            time.sleep(0.1)
+            logger.warning(f"container_name: {container_name}, eth_names:{eth_names}, len=0")
+            ret = docker_client.exec_cmd(container_name, 'ls /sys/class/net/')
+            if ret[0] != 0:
+                logger.error(ret[1].decode().strip())
+                raise Exception('get_inner_eth_dict failed')
+            eth_names = ret[1].decode().strip().split('\n') 
+        for eth_name in eth_names:
+            command = f"cat /sys/class/net/{eth_name}/ifindex"
+            ret = docker_client.exec_cmd(container_name, command)
+            if ret[0] != 0:
                     logger.error(ret[1].decode().strip())
                     logger.error(f'container_name: {container_name}    eth_names: {eth_names}')
                     raise Exception('get_inner_eth_dict failed')
-                else:
-                    if ret[1].decode().strip() == iflink:
-                        eth_dict[container_name] = eth_name
-                        veth_dict[container_name] = veth_name
-                        break
-            # if container_name not in ret_dict.keys():
-            #     logger.error(f"{container_name} has no inner eth corresponds to {veth_name}")
-            #     raise Exception(f"{container_name} has no inner eth corresponds to {veth_name}")
+            else:
+                ifindex = ret[1].decode().strip()
+                ifindex_of_container[container_name][eth_name] = ifindex
+
+    for veth_name in veth_list:    
+        iflink: str = os.popen(f"cat /sys/class/net/{veth_name}/iflink").read().strip()
+        iflink_of_veth[veth_name] = iflink
+
+    # for each container, iterate through all its eths
+    # and find a veth which iflink == ifindex of one of eths 
+    for container_name, ifindex_of_eth in ifindex_of_container.items():
+        found = False
+        for eth_name, ifindex in ifindex_of_eth.items():
+            for veth_name, iflink in iflink_of_veth.items():
+                if ifindex == iflink:
+                    found = True
+                    veth_dict[container_name] = veth_name
+                    eth_dict[container_name] = eth_name
+        if not found:
+            logger.error(ifindex_of_container)
+            logger.error(iflink_of_veth)
+            logger.error(f'correspond veth of {container_name} not found')
+            raise Exception('correspond veth not found')
     
     if len(set(veth_dict.values())) != 2 or len(veth_dict.keys()) != 2:
-        logger.error(f"veth_dict: {veth_dict}, eth_dict: {eth_dict}")
+        logger.error(ifindex_of_container)
+        logger.error(iflink_of_veth)
+        logger.error(f", veth_dict: {veth_dict}, eth_dict: {eth_dict}")
         raise Exception("bad ret_dict")
 
     # logger.info(f"veth_dict: {veth_dict}, eth_dict: {eth_dict}")
@@ -171,6 +190,9 @@ class Network:
         # 为保证network key的唯一性，设置map中key的字符串拼接顺序为小id在前,大id在后
         self.docker_client = docker_client
         self.br_id = bridge_id
+        self.container_id1 = container_id1
+        self.container_id2 = container_id2
+        self.network_key = get_network_key(docker_client, container_id1, container_id2)
         self.br_interface_name = get_bridge_interface_name(bridge_id)
         self.veth_interface_list = get_vethes_of_bridge(self.br_interface_name)
         self.delay = time               # unit: ms
@@ -191,6 +213,10 @@ class Network:
         self.down_momnet = 0.0
 
         self.init_info()
+
+
+    def __hash__(self) -> int:
+        return hash(self.network_key)
 
     '''
     #!/bin/bash
@@ -254,21 +280,39 @@ class Network:
             )
 
 
-"""
-added by sqsq
-for link failure generating
-"""
-def generate_link_failure(docker_client: DockerClient, link_failure_rate: float):
+def generate_link_failure(docker_client: DockerClient, link_failure_rate: float, seed: int = None):
+    """
+    added by sqsq
+    for link failure generating
+    @parameter seed: use this seed to generate random seeds of each network in random_instance_dict
+    """
     if abs(link_failure_rate - 0) < 1e-6:
         return
     
     lock = Lock()
+    random_instance_dict: Dict[Network, random.Random] = {}
+    if seed is not None:
+        random.seed(seed)
+    sorted_keys = sorted(network_dict.keys())
+    for key in sorted_keys:   
+        # generate random instance for each network
+        # NOTE: sort to ensure each network's random_instance is the same during different runs
+        network = network_dict[key]
+        random_instance_seed = random.randint(0, 100000)
+        random_instance_dict[network] = random.Random(random_instance_seed)
+    if seed is not None:
+        random.seed(None)
 
     poisson_lambda = link_failure_rate / (LINK_FAILURE_DURATION * (1 - link_failure_rate))
     start_time = time.time()
 
+    for _, network in network_dict.items():
+        logger.info(f"network key:{network.network_key}, seed:{random_instance_dict[network].getstate()[1][0]}")
+
     for network in network_dict.values():   # generate first down moment
-        sim_time_interval = random.expovariate(poisson_lambda)
+        random_instance = random_instance_dict[network]
+
+        sim_time_interval = random_instance.expovariate(poisson_lambda)
         network.down_moment = sim_time_interval
     
     flag = False
@@ -287,7 +331,7 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float)
                     # link should recover
                     with lock:
                         network.open_link(current_sim_time)
-                    sim_time_interval = random.expovariate(poisson_lambda)
+                    sim_time_interval = random_instance.expovariate(poisson_lambda)
                     network.down_moment = current_sim_time + sim_time_interval # set the next link down moment
                 elif not network.is_down and current_sim_time > network.down_moment:
                     # link should turned to down
@@ -303,24 +347,7 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float)
                 flag = True  
 
 
-def generate_mission_for_update_network_delay(position_data: Dict[str, Dict[str, float]], topo: Dict[str, List[str]],
-                                              satellite_map_tmp: Dict[str, SatelliteNode]):
-    update_network_delay_missions = []
-    for start_node_id in topo.keys():
-        conn_array = topo[start_node_id]
-        for target_node_id in conn_array:
-            start_container_id = satellite_map_tmp[start_node_id].container_id
-            target_container_id = satellite_map_tmp[target_node_id].container_id
-            start_node_id_str = satellite_id_tuple_to_str(start_node_id)
-            target_node_id_str = satellite_id_tuple_to_str(target_node_id)
-            delay = get_laser_delay_ms(position_data[start_node_id_str], position_data[target_node_id_str])
-            network_key = get_network_key(start_container_id, target_container_id)
-            update_network_delay_missions.append(
-                (network_key, delay)
-            )
-    return update_network_delay_missions
-
-def update_network_delay(position_data: dict, topo: dict):
+def update_network_delay(docker_client: DockerClient, position_data: dict, topo: dict):
     for start_node_id in topo.keys():
         conn_array = topo[start_node_id]
         for target_node_id in conn_array:
@@ -329,72 +356,8 @@ def update_network_delay(position_data: dict, topo: dict):
             delay = get_laser_delay_ms(position_data[start_node_id_str],position_data[target_node_id_str])
             start_container_id = satellite_map[start_node_id].container_id
             target_container_id = satellite_map[target_node_id].container_id
-            net_object = network_dict[get_network_key(start_container_id,target_container_id)]
+            net_object = network_dict[get_network_key(docker_client, start_container_id,target_container_id)]
             net_object.update_delay_param(delay)
-
-
-def generate_submission_list_for_update_network_delay(missions: List[Tuple[str, int]],
-                                                      submission_size: int):
-    submission_list = []
-    for i in range(0, len(missions), submission_size):
-        submission_list.append(missions[i:i + submission_size])
-    return submission_list
-
-
-def update_network_delay_with_single_process(submission: List[Tuple[str, int]], networks_tmp, send_pipe):
-    for network_key, delay in submission:
-        network = networks_tmp[network_key]
-        network.update_delay_param(delay)
-    send_pipe.send("finished")
-
-
-def update_network_delay_with_multi_process(stop_process_state,
-                                            networks_tmp,
-                                            position_data: Dict[str, Dict[str, float]],
-                                            topo: Dict[str, List[str]],
-                                            satellite_map_tmp: Dict[str, SatelliteNode],
-                                            submission_size: int,
-                                            update_interval: int):
-    # update count
-    update_count = 0
-    # generate missions
-    missions = generate_mission_for_update_network_delay(position_data, topo, satellite_map_tmp)
-    # generate submission list
-    submission_list = generate_submission_list_for_update_network_delay(missions, submission_size)
-    # submit
-    while True:
-        # store the start time
-        start_time = time.time()
-        if stop_process_state.value:
-            break
-        # current count
-        current_count = 0
-        # generate pipe
-        rcv_pipe, send_pipe = Pipe()
-        for submission in submission_list:
-            # process = Process(target=update_network_delay_with_single_process,
-            #                   args=(submission, networks_tmp, send_pipe))
-            # process.start()
-            singleThread = Thread(target=update_network_delay_with_single_process,
-                                  args=(submission, networks_tmp, send_pipe))
-            singleThread.start()
-        # receive the result
-        while True:
-            rcv_string = rcv_pipe.recv()
-            if rcv_string == "finished":
-                current_count += 1
-                # traverse all the process and kill them
-                if current_count == len(submission_list):
-                    send_pipe.close()
-                    rcv_pipe.close()
-                    break
-        end_time = time.time()
-        logger.info(f"update satellite network delay in {end_time - start_time}s")
-        update_count += 1
-        if update_count == 1:
-            break
-        time.sleep(update_interval)
-    logger.success("update satellite network delay process finished")
 
 
 if __name__ == '__main__':

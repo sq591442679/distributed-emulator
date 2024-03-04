@@ -3,6 +3,8 @@ from datetime import datetime
 from global_var import satellites
 from loguru import logger
 
+from tools import *
+
 
 # 用来进行位置计算的线程
 def worker(now: datetime, range_start: int, range_end: int, res, send_pipe):
@@ -31,6 +33,7 @@ class SatelliteNode:
         self.position = tle_info[0][5:].split('_')[1]
         self.satellite = ephem.readtle(tle_info[0], tle_info[1], tle_info[2])
         self.node_id = node_id              # tuple of (orbit number, inner orbir order)
+        self.node_name = satellite_id_tuple_to_str(node_id)
         self.container_id = container_id    # str of hex used for docker
         self.topo = []
         self.host_ip = ''

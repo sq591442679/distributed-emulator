@@ -15,14 +15,14 @@ from satellite_config import Config
 from tle_generator import generate_tle
 from delete_containers_and_networks import delete_containers_with_multiple_processes, \
     delete_networks_with_multiple_processes
-from network_controller import update_network_delay_with_multi_process, generate_link_failure
+from network_controller import generate_link_failure
 from global_var import connect_order_map, satellite_map, reinit_global_var
 from ground_station import create_station_from_json
 from tools import *
 from transmission_test import start_transmission_test, start_packet_capture
 
 
-def run(lofi_n: int, link_failure_rate: float, send_interval: float):
+def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, dry_run = False):
     reinit_global_var()
     # the share bool value
     stop_process_state = multiprocessing.Value(c_bool, False)
@@ -64,7 +64,7 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float):
     satellites_per_orbit = SAT_PER_ORBIT
     satellite_infos, connections = generate_tle(orbit_num, satellites_per_orbit, 0, 0, 0.01, 0.08)
     # logger.info(satellite_infos)
-    logger.info(connections)
+    # logger.info(connections)
     satellite_num = len(satellite_infos)
     # ----------------------------------------------------------------
 
@@ -108,7 +108,8 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float):
 
     # start position broadcaster and update network delay
     # ----------------------------------------------------------
-    update_position_process = Process(target=position_broadcaster, args=(stop_process_state,
+    update_position_process = Process(target=position_broadcaster, args=(docker_client, 
+                                                                         stop_process_state,
                                                                          satellite_num,
                                                                          position_datas,
                                                                          updater,
@@ -124,7 +125,7 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float):
     logger.info("transmission starting...")
     process_list.clear()
 
-    generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, link_failure_rate))
+    generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, link_failure_rate, 42))
     process_list.append(generate_link_failure_process)
 
     manager = Manager()
@@ -143,14 +144,20 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float):
     
     # logger.success(shared_result_list[0])
     # logger.success(queue.get())
-    with open('./result.csv', 'a') as f:
-        drop_rate = shared_result_list[0]['drop rate']
-        delay = shared_result_list[0]['delay']
+    drop_rate = shared_result_list[0]['drop rate']
+    delay = shared_result_list[0]['delay']
 
-        queue_element = queue.get()
-        throughput = queue_element['throughput']
-        control_overhead = queue_element['control overhead']
-        print(f"{lofi_n},{link_failure_rate},{drop_rate},{delay},{throughput},{control_overhead}", file=f)
+    queue_element = queue.get()
+    throughput = queue_element['throughput']
+    control_overhead = queue_element['control overhead']
+
+    if not dry_run:
+        with open('./result.csv', 'a') as f:
+            print(f"{lofi_n},{link_failure_rate},{test},{drop_rate},{delay},{throughput},{control_overhead}", file=f)
+    else:
+        logger.info(f"n:{lofi_n}, fr:{link_failure_rate}, test:{test},\n"
+                    f"drop rate:{drop_rate}, delay:{delay},\n"
+                    f"throughput:{throughput}, overhead:{control_overhead}")
 
     set_monitor_process.kill()
     update_position_process.kill()
@@ -164,14 +171,22 @@ if __name__ == "__main__":
     sudo_uid = os.environ.get('SUDO_UID')
     if sudo_uid is None:
         raise Exception("\nneed to have sudo permission.\n try sudo python3 main.py")
+    
+    dry_run = True
+    # link_failure_rate_list = [0, 0.01, 0.05, 0.1]
+    # lofi_n_list = [0, 1, 2, 3, 4]
+    link_failure_rate_list = [0.05]
+    lofi_n_list = [1]
 
-    if not os.path.exists('./result.csv'):
+    if not os.path.exists('./result.csv') and not dry_run:
         with open('./result.csv', 'w') as f:
-            print('lofi_n,link_failure_rate,drop_rate,delay,throughput,control_overhead', file=f)
+            print('lofi_n,link_failure_rate,test,drop_rate,delay,throughput,control_overhead', file=f)
         os.system("chmod 777 ./result.csv")
 
-    for link_failure_rate in [0.05, 0.1]:
-        for lofi_n in [0, 1, 2, 3, 4]:
-            run(lofi_n, link_failure_rate, 0.1)
+    # for link_failure_rate in [0, 0.01, 0.05, 0.1]:
+    for link_failure_rate in link_failure_rate_list:
+        for lofi_n in lofi_n_list:
+            for test in range(1, TEST_NUM + 1):
+                run(lofi_n, link_failure_rate, 0.1, test, dry_run)
 
     

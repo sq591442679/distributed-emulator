@@ -73,7 +73,7 @@ def generate_submission_list(submission_size_tmp: int, satellite_id_list: list):
         mission_list.append(mission_list_tmp)
     mission_list_tmp = []
     cnt = 0
-    logger.info(mission_list)
+    # logger.info(mission_list)
     return mission_list
 
 
@@ -282,9 +282,14 @@ def create_network_submission(submission, docker_client, send_pipe):
         docker_client.connect_node(container_id1, net_id, node_id1_str)
         docker_client.connect_node(container_id2, net_id, node_id2_str)
         # print link connection information
-        result = subprocess.run("ip link show | grep -c 'veth'", shell=True, capture_output=True, text=True)
-        logger.info("connect satellite %s and %s, total veth: %s, connected container num: %d" % 
-                    (node_id1_str, node_id2_str, result.stdout.strip(), len(docker_client.client.networks.get(net_id).containers)))
+        # result = subprocess.run("ip link show | grep -c 'veth'", shell=True, capture_output=True, text=True)
+        # logger.info("connect satellite %s and %s, total veth: %s, connected container num: %d" % 
+        #             (node_id1_str, node_id2_str, result.stdout.strip(), len(docker_client.client.networks.get(net_id).containers)))
+        if len(docker_client.client.networks.get(net_id).containers) != 2:
+            logger.error(f"connect satellite {node_id1_str} and {node_id2_str} failed")
+            raise Exception('')
+        else:
+            logger.success(f"connect satellite {node_id1_str} and {node_id2_str} succeed")
         # send the net_id info
         send_pipe.send(f"{net_id}|{container_id1}|{container_id2}")
         # modify interface map
@@ -343,15 +348,6 @@ def multiple_process_generate_networks(link_connections, satellites_tmp, docker_
     create_network_object_with_multiple_process(docker_client, network_object_mission, SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION)
     end_time = time.time()
     logger.success(f"network initialize time: {end_time - start_time} s")
-    # for net_id, container_id1, container_id2 in network_object_mission:
-    #     network_key = get_network_key(container_id1, container_id2)
-    #     # this can be process in multiple process
-    #     networks[network_key] = Network(net_id,
-    #                                     container_id1,
-    #                                     container_id2,
-    #                                     NETWORK_DELAY,
-    #                                     NETWORK_BANDWIDTH,
-    #                                     NETWORK_LOSS)
 
 
 def constellation_creator(docker_client,
