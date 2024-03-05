@@ -49,4 +49,3 @@ lofi_n,link_failure_rate,test,drop_rate,delay,throughput,control_overhead
 1,0.05,1,10.3%,1093.0,0.023,0.008
 
 20240305
-1,0.01,1,100.0%,1061109567.0,0.009,0.008
