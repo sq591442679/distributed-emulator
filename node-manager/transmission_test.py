@@ -69,7 +69,7 @@ def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_in
                                  f"python3 /udp-applications/udp_sender.py "
                                  f"{receiver_ip} {receiver_port} {send_interval} {SIMULATION_DURATION}",
                                  stream=True)
-    logger.success(f"UDP sender {sender_node_name} started")
+    logger.success(f"UDP sender {sender_node_name} started, dst:{receiver_ip}:{receiver_port}")
 
 """
 shared_result_list: list[dict]

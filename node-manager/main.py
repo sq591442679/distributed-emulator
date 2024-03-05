@@ -101,10 +101,9 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
     #-------------------------------------------------------------------
     
     # set monitor
-    # commented by sqsq
     # ----------------------------------------------------------
-    # set_monitor_process = Process(target=set_monitor, args=(monitor_payloads, ground_stations, stop_process_state, 20))
-    # set_monitor_process.start()
+    set_monitor_process = Process(target=set_monitor, args=(monitor_payloads, ground_stations, stop_process_state, 20))
+    set_monitor_process.start()
     # ----------------------------------------------------------
 
     # start position broadcaster and update network delay
