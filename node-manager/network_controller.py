@@ -121,7 +121,7 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
 
     for container_name in container_name_list:              # build ifindex_of_container
         ifindex_of_container[container_name] = {}
-        ret = docker_client.exec_cmd(container_name, 'ls /sys/class/net/')    # using "sh -c" may prevent exec_cmd from retuning empty string
+        ret = docker_client.exec_cmd(container_name, ['sh', '-c', 'ls /sys/class/net/'])    # using "sh -c" may prevent exec_cmd from retuning empty string
         if ret[0] != 0:
             logger.error(ret[1].decode().strip())
             raise Exception('get_inner_eth_dict failed')
@@ -138,7 +138,7 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
             flag = False
             time.sleep(random.random() * 0.1)
             logger.warning(f"container_name: {container_name}, eth_names:{eth_names}, len=0")
-            ret = docker_client.exec_cmd(container_name, 'ls /sys/class/net/')
+            ret = docker_client.exec_cmd(container_name, ['sh', '-c', 'ls /sys/class/net/'])
             if ret[0] != 0:
                 logger.error(ret[1].decode().strip())
                 raise Exception('get_inner_eth_dict failed')
@@ -152,7 +152,7 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
                         break
         
         for eth_name in eth_names:
-            command = f"cat /sys/class/net/{eth_name}/ifindex"
+            command = ['sh', '-c', f"cat /sys/class/net/{eth_name}/ifindex"]
             ret = docker_client.exec_cmd(container_name, command)
             if ret[0] != 0:
                 logger.error(ret[1].decode().strip())
@@ -254,7 +254,7 @@ class Network:
     '''
     def init_info(self):
         for container_name, inner_eth_name in self.inner_eth_dict.items():
-            command = f'tc qdisc add dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth} limit {self.queue_capacity}'
+            command = ['sh', '-c', f'tc qdisc add dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth} limit {self.queue_capacity}']
             ret = self.docker_client.exec_cmd(container_name, command)
             if ret[0] != 0:
                 logger.error(ret[1].decode().strip())
@@ -262,7 +262,7 @@ class Network:
 
     def update_info(self):
         for container_name, inner_eth_name in self.inner_eth_dict.items():
-            command = f'tc qdisc replace dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth} limit {self.queue_capacity}'
+            command = ['sh', '-c', f'tc qdisc replace dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth} limit {self.queue_capacity}']
             ret = self.docker_client.exec_cmd(container_name, command)
             if ret[0] != 0:
                 logger.error(ret[1].decode().strip())
@@ -311,11 +311,13 @@ class Network:
         self.is_down = True
 
         for container_name, eth_name in self.inner_eth_dict.items():
-            command = f"ifconfig {eth_name} down"
+            command = ['sh', '-c', f"ifconfig {eth_name} down"]
+            # self.docker_client.exec_cmd(container_name, command)
             process = Process(target=self.docker_client.exec_cmd, args=(container_name, command))
             process.start()
 
         current_sim_time = time.time() - start_time
+        # self.print_link_event(current_sim_time, "down")
         process = Process(target=self.print_link_event, args=(current_sim_time, "down"))
         process.start()
 
@@ -327,11 +329,13 @@ class Network:
         self.set_down_moment(current_sim_time, random_instance, poisson_lambda)
 
         for container_name, eth_name in self.inner_eth_dict.items():
-            command = f"ifconfig {eth_name} up"
+            command = ['sh', '-c', f"ifconfig {eth_name} up"]
+            # self.docker_client.exec_cmd(container_name, command)
             process = Process(target=self.docker_client.exec_cmd, args=(container_name, command))
             process.start()
 
         current_sim_time = time.time() - start_time
+        # self.print_link_event(current_sim_time, "up")
         process = Process(target=self.print_link_event, args=(current_sim_time, "up"))
         process.start()
 

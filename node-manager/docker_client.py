@@ -116,7 +116,7 @@ class DockerClient:
 
 
     def exec_cmd(self, container_id_or_name: str, cmd: str, stream=False):
-        return self.client.containers.get(container_id_or_name).exec_run(tty=False, cmd=['sh', '-c', cmd], stream=stream, privileged=True)
+        return self.client.containers.get(container_id_or_name).exec_run(tty=False, cmd=cmd, stream=stream, privileged=True)
 
 
     """

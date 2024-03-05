@@ -1,4 +1,5 @@
 import multiprocessing
+import subprocess
 import os.path
 import time
 import typing
@@ -102,8 +103,8 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
     
     # set monitor
     # ----------------------------------------------------------
-    set_monitor_process = Process(target=set_monitor, args=(monitor_payloads, ground_stations, stop_process_state, 20))
-    set_monitor_process.start()
+    # set_monitor_process = Process(target=set_monitor, args=(monitor_payloads, ground_stations, stop_process_state, 20))
+    # set_monitor_process.start()
     # ----------------------------------------------------------
 
     # start position broadcaster and update network delay
@@ -172,11 +173,22 @@ if __name__ == "__main__":
         raise Exception("\nneed to have sudo permission.\n try sudo python3 main.py")
     
     os.system("./stop_and_kill_constellation.sh")
+
+    # start kernel modules, added by sqsq
+    try:
+        output = subprocess.check_output("./sqsq-kernel-modules/install_multipath.sh", 
+                                         shell=True, 
+                                         stderr=subprocess.STDOUT, 
+                                         universal_newlines=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(e.output)
+        raise Exception('')
+    logger.success(output)    
     
     dry_run = False
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04]
     # lofi_n_list = [0, 1, 2, 3, 4]
-    link_failure_rate_list = [0.05]
+    link_failure_rate_list = [0.01]
     lofi_n_list = [1]
 
     if not os.path.exists('./result.csv') and not dry_run:
@@ -188,5 +200,7 @@ if __name__ == "__main__":
         for lofi_n in lofi_n_list:
             for test in range(1, TEST_NUM + 1):
                 run(lofi_n, link_failure_rate, 0.1, test, dry_run)
+
+    os.system("./sqsq-kernel-modules/uninstall_modules.sh")
 
     

@@ -1,6 +1,6 @@
 # !/bin/bash
 
-currentpath=$(pwd)
+currentpath=$(dirname "$(readlink -f "$0")")
 
 # ./compile_kernel.sh
 
