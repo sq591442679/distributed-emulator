@@ -82,6 +82,9 @@ unsigned short ospf_instance;
 
 extern struct zclient *zclient;
 
+/** @sqsq */
+uint8_t lofi_n = 255;
+
 
 static void ospf_remove_vls_through_area(struct ospf *, struct ospf_area *);
 static void ospf_network_free(struct ospf *, struct ospf_network *);
@@ -2360,10 +2363,10 @@ const char *ospf_get_name(const struct ospf *ospf)
  */
 bool check_lofi(const struct ospf *ospf)
 {
-	if (IS_OSPF) {
+	__time_t current_time = monotime(NULL);
+	if (IS_OSPF || lofi_n == 255) {
 		return false;
 	}
-	__time_t current_time = monotime(NULL);
 	if (current_time - ospf->start_time > WARMUP_PERIOD) {
 		return true;
 	}

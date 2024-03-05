@@ -121,28 +121,36 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
 
     for container_name in container_name_list:              # build ifindex_of_container
         ifindex_of_container[container_name] = {}
-        ret = docker_client.exec_cmd(container_name, 'ls /sys/class/net/')
+        ret = docker_client.exec_cmd(container_name, ['sh', '-c', 'ls /sys/class/net/'])    # using "sh -c" may prevent exec_cmd from retuning empty string
         if ret[0] != 0:
             logger.error(ret[1].decode().strip())
             raise Exception('get_inner_eth_dict failed')
         eth_names = ret[1].decode().strip().split('\n')
         while len(eth_names) == 0:
-            time.sleep(0.1)
+            time.sleep(random.random() * 0.1)
             logger.warning(f"container_name: {container_name}, eth_names:{eth_names}, len=0")
-            ret = docker_client.exec_cmd(container_name, 'ls /sys/class/net/')
+            ret = docker_client.exec_cmd(container_name, ['sh', '-c', 'ls /sys/class/net/'])
             if ret[0] != 0:
                 logger.error(ret[1].decode().strip())
                 raise Exception('get_inner_eth_dict failed')
             eth_names = ret[1].decode().strip().split('\n') 
         for eth_name in eth_names:
-            command = f"cat /sys/class/net/{eth_name}/ifindex"
+            command = ['sh', '-c', f"cat /sys/class/net/{eth_name}/ifindex"]
             ret = docker_client.exec_cmd(container_name, command)
             if ret[0] != 0:
-                    logger.error(ret[1].decode().strip())
-                    logger.error(f'container_name: {container_name}    eth_names: {eth_names}')
-                    raise Exception('get_inner_eth_dict failed')
+                logger.error(ret[1].decode().strip())
+                logger.error(f'container_name: {container_name}    eth_names: {eth_names}')
+                raise Exception('get_inner_eth_dict failed')
             else:
                 ifindex = ret[1].decode().strip()
+                while len(ifindex) == 0:
+                    logger.warning(f"{container_name}.{eth_name}.ifindex = {ifindex}")
+                    time.sleep(random.random() * 0.1)
+                    ret = docker_client.exec_cmd(container_name, command)
+                    if ret[0] != 0:
+                        logger.error(ret[1].decode().strip())
+                        logger.error(f'container_name: {container_name}    eth_names: {eth_names}')
+                        raise Exception('get_inner_eth_dict failed')
                 ifindex_of_container[container_name][eth_name] = ifindex
 
     for veth_name in veth_list:    
@@ -255,18 +263,18 @@ class Network:
     def close_link(self, sim_time: float = None):
         self.is_down = True
         for container_name, eth_name in self.inner_eth_dict.items():
-            command = f"ifconfig {eth_name} down"
+            command = ["sh", "-c", f"ifconfig {eth_name} down"]
             self.docker_client.exec_cmd(container_name, command)
 
         if sim_time is not None:
             container_name_list = sorted(list(self.inner_eth_dict.keys()))
-            # with open("link.log", "a") as f:
-            #     print(
-            #         '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
-            #         % (sim_time, container_name_list[0], container_name_list[1]),
-            #         file=f,
-            #         flush=True
-            #     )    
+            with open("link.log", "a") as f:
+                print(
+                    '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
+                    % (sim_time, container_name_list[0], container_name_list[1]),
+                    file=f,
+                    flush=True
+                )    
             logger.info(
                 '{"sim_time": %.3f, "link": "%s <--> %s", "type": "down"}'
                 % (sim_time, container_name_list[0], container_name_list[1])
@@ -274,20 +282,20 @@ class Network:
 
     def open_link(self, sim_time:float = None):
         for container_id, eth_name in self.inner_eth_dict.items():
-            command = f"ifconfig {eth_name} up"
+            command = ["sh", "-c", f"ifconfig {eth_name} up"]
             self.docker_client.exec_cmd(container_id, command)
         self.is_down = False
         self.update_info()
 
         if sim_time is not None:
             container_name_list = sorted(list(self.inner_eth_dict.keys()))
-            # with open("link.log", "a") as f:
-            #     print(
-            #         '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
-            #         % (sim_time, container_name_list[0], container_name_list[1]),
-            #         file=f,
-            #         flush=True
-            #     )   
+            with open("link.log", "a") as f:
+                print(
+                    '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
+                    % (sim_time, container_name_list[0], container_name_list[1]),
+                    file=f,
+                    flush=True
+                )   
             logger.info(
                 '{"sim_time": %.3f, "link": "%s <--> %s", "type": "up"}'
                 % (sim_time, container_name_list[0], container_name_list[1])
@@ -335,6 +343,7 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float,
          for network in network_dict.values():
 
             current_sim_time = time.time() - start_time
+            logger.debug(f"current_simtime: {current_sim_time}")
 
             if current_sim_time <= SIMULATION_DURATION:
                 if network.is_down and current_sim_time <= network.down_moment + LINK_FAILURE_DURATION:

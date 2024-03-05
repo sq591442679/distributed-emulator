@@ -101,21 +101,23 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
     #-------------------------------------------------------------------
     
     # set monitor
+    # commented by sqsq
     # ----------------------------------------------------------
-    set_monitor_process = Process(target=set_monitor, args=(monitor_payloads, ground_stations, stop_process_state, 20))
-    set_monitor_process.start()
+    # set_monitor_process = Process(target=set_monitor, args=(monitor_payloads, ground_stations, stop_process_state, 20))
+    # set_monitor_process.start()
     # ----------------------------------------------------------
 
     # start position broadcaster and update network delay
+    # comment by sqsq
     # ----------------------------------------------------------
-    update_position_process = Process(target=position_broadcaster, args=(docker_client, 
-                                                                         stop_process_state,
-                                                                         satellite_num,
-                                                                         position_datas,
-                                                                         updater,
-                                                                         BROADCAST_SEND_INTERVAL,
-                                                                         connect_order_map))
-    update_position_process.start()
+    # update_position_process = Process(target=position_broadcaster, args=(docker_client, 
+    #                                                                      stop_process_state,
+    #                                                                      satellite_num,
+    #                                                                      position_datas,
+    #                                                                      updater,
+    #                                                                      BROADCAST_SEND_INTERVAL,
+    #                                                                      connect_order_map))
+    # update_position_process.start()
     # ----------------------------------------------------------
 
     # start link failure generation and UDP send & recv
@@ -142,8 +144,6 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
     for process_copy in process_list:
         process_copy.join()
     
-    # logger.success(shared_result_list[0])
-    # logger.success(queue.get())
     drop_rate = shared_result_list[0]['drop rate']
     delay = shared_result_list[0]['delay']
 
@@ -159,8 +159,8 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
                     f"drop rate:{drop_rate}, delay:{delay},\n"
                     f"throughput:{throughput}, overhead:{control_overhead}")
 
-    set_monitor_process.kill()
-    update_position_process.kill()
+    # set_monitor_process.kill()
+    # update_position_process.kill()
     os.system("./stop_and_kill_constellation.sh")
     os.system("clear")
     # ----------------------------------------------------------
@@ -175,10 +175,10 @@ if __name__ == "__main__":
     os.system("./stop_and_kill_constellation.sh")
     
     dry_run = False
-    link_failure_rate_list = [0, 0.01, 0.05, 0.1]
-    lofi_n_list = [0, 1, 2, 3, 4]
-    # link_failure_rate_list = [0.05]
-    # lofi_n_list = [1]
+    # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04]
+    # lofi_n_list = [0, 1, 2, 3, 4]
+    link_failure_rate_list = [0.05]
+    lofi_n_list = [1]
 
     if not os.path.exists('./result.csv') and not dry_run:
         with open('./result.csv', 'w') as f:

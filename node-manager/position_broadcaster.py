@@ -63,6 +63,10 @@ def position_broadcaster(docker_client, stop_process_state, satellite_num, posit
             now_time = datetime.now()
             now_sim_time = now_time - start_time + TIME_BASE
 
+            # logger.info(f"now_sim_time:{now_sim_time}")
+            with open("sim_time.log", "a") as f:
+                print(f"sim time: {now_sim_time}", file=f, flush=True)
+
             p = mp.Process(target=worker, args=(now_sim_time,
                                                 submission_list[i][0],
                                                 submission_list[i][1],
@@ -83,8 +87,8 @@ def position_broadcaster(docker_client, stop_process_state, satellite_num, posit
                     position_datas[node_id_str][LATITUDE_KEY] = res[index_base]
                     position_datas[node_id_str][LONGITUDE_KEY] = res[index_base + 1]
                     position_datas[node_id_str][HEIGHT_KEY] = res[index_base + 2]
-                update_network_delay(docker_client, position_datas,topo)
-                ground_connections = ground_select(satellites,position_datas,ground_stations)
+                update_network_delay(docker_client, position_datas, topo)
+                ground_connections = ground_select(satellites, position_datas, ground_stations)
                 broadcast_data = {
                     "position_datas": position_datas,
                     "ground_connections": ground_connections

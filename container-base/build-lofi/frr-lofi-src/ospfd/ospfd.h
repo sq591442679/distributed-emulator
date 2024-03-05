@@ -50,7 +50,7 @@
 /*
  * sqsq
  */
-u_int32_t	lofi_n;
+extern uint8_t lofi_n;
 #define IS_OSPF					false
 
 /* @sqsq */

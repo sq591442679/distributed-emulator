@@ -248,7 +248,7 @@ DEFUN (
 )
 {
 	int idx = 0;
-	uint32_t n = 0;
+	uint8_t n = 0;
 
 	// get arguments
 	char *n_str = NULL;
@@ -11841,7 +11841,7 @@ DEFUN (show_ip_ospf_lofi,
 		"OSPF information\n"
 		"Show parameter n of Lofi\n")
 {
-	vty_out(vty, "%d\n", lofi_n);
+	vty_out(vty, "%d\n", (int)lofi_n);
 	return CMD_SUCCESS;
 }
 
