@@ -116,82 +116,103 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
     eth_dict: Dict[str, str] = {}
     container_name_list: List[str] = [docker_client.client.containers.get(container_id).name
                                       for container_id in container_id_list]
-    ifindex_of_container: Dict[str, Dict[str, str]] = {}    # container_name -> (eth_name -> ifindex of this eth)
     iflink_of_veth: Dict[str, str] = {}                     # veth_name -> iflink of veth
-
-    for container_name in container_name_list:              # build ifindex_of_container
-        ifindex_of_container[container_name] = {}
-        ret = docker_client.exec_cmd(container_name, ['sh', '-c', 'ls /sys/class/net/'])    # using "sh -c" may prevent exec_cmd from retuning empty string
-        if ret[0] != 0:
-            logger.error(ret[1].decode().strip())
-            raise Exception('get_inner_eth_dict failed')
-        eth_names = ret[1].decode().strip().split('\n')
-        flag = False
-        if len(eth_names) == 0:
-            flag = True
-        else:
-            for eth_name in eth_names:
-                if len(eth_name) == 0:
-                    flag = True
-                    break
-        while flag == True:
-            flag = False
-            time.sleep(random.random() * 0.1)
-            logger.warning(f"container_name: {container_name}, eth_names:{eth_names}, len=0")
-            ret = docker_client.exec_cmd(container_name, ['sh', '-c', 'ls /sys/class/net/'])
-            if ret[0] != 0:
-                logger.error(ret[1].decode().strip())
-                raise Exception('get_inner_eth_dict failed')
-            eth_names = ret[1].decode().strip().split('\n') 
-            if len(eth_names) == 0:
-                flag = True
-            else:
-                for eth_name in eth_names:
-                    if len(eth_name) == 0:
-                        flag = True
-                        break
-        
-        for eth_name in eth_names:
-            command = ['sh', '-c', f"cat /sys/class/net/{eth_name}/ifindex"]
-            ret = docker_client.exec_cmd(container_name, command)
-            if ret[0] != 0:
-                logger.error(ret[1].decode().strip())
-                logger.error(f'container_name: {container_name}    eth_names: {eth_names}')
-                raise Exception('get_inner_eth_dict failed')
-            else:
-                ifindex = ret[1].decode().strip()
-                while len(ifindex) == 0:
-                    logger.warning(f"{container_name}.{eth_name}.ifindex = {ifindex}")
-                    time.sleep(random.random() * 0.1)
-                    ret = docker_client.exec_cmd(container_name, command)
-                    if ret[0] != 0:
-                        logger.error(ret[1].decode().strip())
-                        logger.error(f'container_name: {container_name}    eth_names: {eth_names}')
-                        raise Exception('get_inner_eth_dict failed')
-                ifindex_of_container[container_name][eth_name] = ifindex
-
-    for veth_name in veth_list:    
+    # ifindex_of_container: Dict[str, Dict[str, str]] = {}    # container_name -> (eth_name -> ifindex of this eth)
+    
+    for veth_name in veth_list:                             # build iflink_of_veth
         iflink: str = os.popen(f"cat /sys/class/net/{veth_name}/iflink").read().strip()
         iflink_of_veth[veth_name] = iflink
 
-    # for each container, iterate through all its eths
-    # and find a veth which iflink == ifindex of one of eths 
-    for container_name, ifindex_of_eth in ifindex_of_container.items():
+    for veth_name, iflink in iflink_of_veth.items():        # for each veth, iterate through all containers to find an eth whose ifindex == iflink
         found = False
-        for eth_name, ifindex in ifindex_of_eth.items():
-            for veth_name, iflink in iflink_of_veth.items():
-                if ifindex == iflink:
-                    found = True
-                    veth_dict[container_name] = veth_name
-                    eth_dict[container_name] = eth_name
-        if not found:
-            logger.error(ifindex_of_container)
-            logger.error(iflink_of_veth)
-            logger.error(f'correspond veth of {container_name} not found')
-            raise Exception('correspond veth not found')
+        while found == False:
+            for container_name in container_name_list:
+                output = docker_client.exec_cmd(container_name, ['sh', '-c', f"/get_ifindex.sh {iflink}"])
+                if output[0] != 0:
+                    logger.error(output[1].decode().strip())
+                    raise Exception('')
+                else:
+                    res: str = output[1].decode().strip()
+                    if len(res) != 0:
+                        eth_name = res.split('/')[-2]
+                        veth_dict[container_name] = veth_name
+                        eth_dict[container_name] = eth_name
+                        found = True
+                        break
+            if found == False:
+                logger.warning(f"not found correspond eth of {veth_name}(iflink={iflink}) in {container_name_list}")
+                time.sleep(random.random() * 0.1)
+
+                
+    # for container_name in container_name_list:              # build ifindex_of_container
+    #     ifindex_of_container[container_name] = {}
+    #     ret = docker_client.exec_cmd(container_name, ['sh', '-c', 'ls /sys/class/net/'])    # using "sh -c" may prevent exec_cmd from retuning empty string
+    #     if ret[0] != 0:
+    #         logger.error(ret[1].decode().strip())
+    #         raise Exception('get_inner_eth_dict failed')
+    #     eth_names = ret[1].decode().strip().split('\n')
+    #     flag = False
+    #     if len(eth_names) == 0:
+    #         flag = True
+    #     else:
+    #         for eth_name in eth_names:
+    #             if len(eth_name) == 0:
+    #                 flag = True
+    #                 break
+    #     while flag == True:
+    #         flag = False
+    #         time.sleep(random.random() * 0.1)
+    #         logger.warning(f"container_name: {container_name}, eth_names:{eth_names}, len=0")
+    #         ret = docker_client.exec_cmd(container_name, ['sh', '-c', 'ls /sys/class/net/'])
+    #         if ret[0] != 0:
+    #             logger.error(ret[1].decode().strip())
+    #             raise Exception('get_inner_eth_dict failed')
+    #         eth_names = ret[1].decode().strip().split('\n') 
+    #         if len(eth_names) == 0:
+    #             flag = True
+    #         else:
+    #             for eth_name in eth_names:
+    #                 if len(eth_name) == 0:
+    #                     flag = True
+    #                     break
+        
+    #     for eth_name in eth_names:
+    #         command = ['sh', '-c', f"cat /sys/class/net/{eth_name}/ifindex"]
+    #         ret = docker_client.exec_cmd(container_name, command)
+    #         if ret[0] != 0:
+    #             logger.error(ret[1].decode().strip())
+    #             logger.error(f'container_name: {container_name}    eth_names: {eth_names}')
+    #             raise Exception('get_inner_eth_dict failed')
+    #         else:
+    #             ifindex = ret[1].decode().strip()
+    #             while len(ifindex) == 0:
+    #                 logger.warning(f"{container_name}.{eth_name}.ifindex = {ifindex}")
+    #                 time.sleep(random.random() * 0.1)
+    #                 ret = docker_client.exec_cmd(container_name, command)
+    #                 if ret[0] != 0:
+    #                     logger.error(ret[1].decode().strip())
+    #                     logger.error(f'container_name: {container_name}    eth_names: {eth_names}')
+    #                     raise Exception('get_inner_eth_dict failed')
+    #             ifindex_of_container[container_name][eth_name] = ifindex
+
+    # # for each container, iterate through all its eths
+    # # and find a veth which iflink == ifindex of one of eths 
+    # for container_name, ifindex_of_eth in ifindex_of_container.items():
+    #     found = False
+    #     for eth_name, ifindex in ifindex_of_eth.items():
+    #         for veth_name, iflink in iflink_of_veth.items():
+    #             if ifindex == iflink:
+    #                 found = True
+    #                 veth_dict[container_name] = veth_name
+    #                 eth_dict[container_name] = eth_name
+    #     if not found:
+    #         logger.error(ifindex_of_container)
+    #         logger.error(iflink_of_veth)
+    #         logger.error(f'correspond veth of {container_name} not found')
+    #         raise Exception('correspond veth not found')
     
     if len(set(veth_dict.values())) != 2 or len(veth_dict.keys()) != 2:
-        logger.error(ifindex_of_container)
+        # logger.error(ifindex_of_container)
         logger.error(iflink_of_veth)
         logger.error(f", veth_dict: {veth_dict}, eth_dict: {eth_dict}")
         raise Exception("bad ret_dict")
@@ -286,13 +307,13 @@ class Network:
     
     def print_link_event(self, current_sim_time: float, type: str):
         container_name_list = sorted(list(self.inner_eth_dict.keys()))
-        # with open("link.log", "a") as f:
-        #     print(
-        #         '{"sim_time": %.3f, "link": "%s <--> %s", "type": "%s"}'
-        #         % (current_sim_time, container_name_list[0], container_name_list[1], type),
-        #         file=f,
-        #         flush=True
-        #     )    
+        with open("link.log", "a") as f:
+            print(
+                '{"sim_time": %.3f, "link": "%s <--> %s", "type": "%s"}'
+                % (current_sim_time, container_name_list[0], container_name_list[1], type),
+                file=f,
+                flush=True
+            )    
         logger.info(
             '{"sim_time": %.3f, "link": "%s <--> %s", "type": "%s"}'
             % (current_sim_time, container_name_list[0], container_name_list[1], type)

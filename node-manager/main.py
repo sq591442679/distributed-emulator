@@ -110,14 +110,14 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
     # start position broadcaster and update network delay
     # comment by sqsq
     # ----------------------------------------------------------
-    # update_position_process = Process(target=position_broadcaster, args=(docker_client, 
-    #                                                                      stop_process_state,
-    #                                                                      satellite_num,
-    #                                                                      position_datas,
-    #                                                                      updater,
-    #                                                                      BROADCAST_SEND_INTERVAL,
-    #                                                                      connect_order_map))
-    # update_position_process.start()
+    update_position_process = Process(target=position_broadcaster, args=(docker_client, 
+                                                                         stop_process_state,
+                                                                         satellite_num,
+                                                                         position_datas,
+                                                                         updater,
+                                                                         BROADCAST_SEND_INTERVAL,
+                                                                         connect_order_map))
+    update_position_process.start()
     # ----------------------------------------------------------
 
     # start link failure generation and UDP send & recv
@@ -160,7 +160,7 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
                     f"throughput:{throughput}, overhead:{control_overhead}")
 
     # set_monitor_process.kill()
-    # update_position_process.kill()
+    update_position_process.kill()
     os.system("./stop_and_kill_constellation.sh")
     os.system("clear")
     # ----------------------------------------------------------
@@ -189,7 +189,7 @@ if __name__ == "__main__":
     dry_run = False
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04]
     # lofi_n_list = [0, 1, 2, 3, 4]
-    link_failure_rate_list = [0.01]
+    link_failure_rate_list = [0.01, 0.05]
     lofi_n_list = [1]
 
     if not os.path.exists('./result.csv') and not dry_run:

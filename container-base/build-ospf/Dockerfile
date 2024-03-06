@@ -61,6 +61,8 @@ RUN echo "log file /var/log/frr/sqsq_ospfd.log" >> /etc/frr/frr.conf \
 COPY udp-applications /udp-applications
 RUN chmod -R 777 /udp-applications
 
+COPY get_ifindex.sh /get_ifindex.sh
+
 # copied from https://github.com/robertdebock/docker-ubuntu-systemd/blob/focal/Dockerfile
 # Enable systemd.
 # RUN apt-get update ; \
