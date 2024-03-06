@@ -1,4 +1,5 @@
 import time
+import docker
 from multiprocessing import Process, Lock
 from multiprocessing.connection import Pipe
 from loguru import logger
@@ -128,10 +129,13 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
         while found == False:
             for container_name in container_name_list:
                 output = docker_client.exec_cmd(container_name, ['sh', '-c', f"/get_ifindex.sh {iflink}"])
-                if output[0] != 0:
-                    logger.error(output[1].decode().strip())
+                # NOTE: may return not 0 because one of the containers does not have correspond eth
+                if output[0] != 0 and len(output[1].decode().strip()) != 0:
+                    logger.error(['sh', '-c', f"/get_ifindex.sh {iflink}"])
+                    logger.error(f"container_name:{container_name}")
+                    logger.error(output)
                     raise Exception('')
-                else:
+                elif output[0] == 0:
                     res: str = output[1].decode().strip()
                     if len(res) != 0:
                         eth_name = res.split('/')[-2]

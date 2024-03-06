@@ -189,7 +189,7 @@ if __name__ == "__main__":
     dry_run = False
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04]
     # lofi_n_list = [0, 1, 2, 3, 4]
-    link_failure_rate_list = [0.01, 0.05]
+    link_failure_rate_list = [0.05]
     lofi_n_list = [1]
 
     if not os.path.exists('./result.csv') and not dry_run:
