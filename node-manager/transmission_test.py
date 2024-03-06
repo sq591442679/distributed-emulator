@@ -48,16 +48,16 @@ def get_ip_of_node_id(docker_client: DockerClient, node_id: tuple) -> str:
 shared_result_list: list[dict]
 """
 def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared_result_list) -> None:
-    
+    logger.info("UDP receiver starting")
     receiver_node_name = satellite_id_tuple_to_str(RECEIVER_NODE_ID)
     ret = docker_client.exec_cmd(receiver_node_name, 
                                  f"python3 /udp-applications/udp_receiver.py "
                                  f"{receiver_ip} {receiver_port} "
-                                 f"{SIMULATION_DURATION + 10} {int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))}",
-                                 stream=True)
-    logger.success("UDP receiver started")
-
-    for line in ret[1]:
+                                 f"{SIMULATION_DURATION + 10} {int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))}")
+    if ret[0] != 0:
+        logger.error(ret[1].decode().strip())
+    else:
+        line = ret[1]
         if len(line.decode().strip()) > 0:
             shared_result_list.append(json.loads(line.decode().strip()))
             # logger.info(line.decode().strip())
@@ -65,11 +65,11 @@ def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared
 
 def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_interval: float) -> None:
     sender_node_name = satellite_id_tuple_to_str(sender_node_id)
+    logger.info()(f"UDP sender {sender_node_name} starting, dst:{receiver_ip}:{receiver_port}")
     ret = docker_client.exec_cmd(sender_node_name,
                                  f"python3 /udp-applications/udp_sender.py "
-                                 f"{receiver_ip} {receiver_port} {send_interval} {SIMULATION_DURATION}",
-                                 stream=True)
-    logger.success(f"UDP sender {sender_node_name} started, dst:{receiver_ip}:{receiver_port}")
+                                 f"{receiver_ip} {receiver_port} {send_interval} {SIMULATION_DURATION}")
+    
 
 """
 shared_result_list: list[dict]
