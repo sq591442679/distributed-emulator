@@ -65,7 +65,7 @@ def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared
 
 def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_interval: float) -> None:
     sender_node_name = satellite_id_tuple_to_str(sender_node_id)
-    logger.info()(f"UDP sender {sender_node_name} starting, dst:{receiver_ip}:{receiver_port}")
+    logger.info(f"UDP sender {sender_node_name} starting, dst:{receiver_ip}:{receiver_port}")
     ret = docker_client.exec_cmd(sender_node_name,
                                  f"python3 /udp-applications/udp_sender.py "
                                  f"{receiver_ip} {receiver_port} {send_interval} {SIMULATION_DURATION}")

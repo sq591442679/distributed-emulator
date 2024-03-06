@@ -120,6 +120,11 @@ def write_into_frr_conf(host_name, network_list, prefix_list, lofi_n: int):
     node_id = satellite_str_to_id_tuple(host_name)
     with open(f"../configuration/frr/"
               f"{host_name}.conf", "w") as f:
+        if lofi_n == -1:    # we use ospf
+            lofi_n_command = ""
+        else:               # we use lofi
+            lofi_n_command = f"ospf lofi {lofi_n}"
+            
         full_str = \
             f"""
 log file /var/log/frr/sqsq_ospfd.log
@@ -150,7 +155,7 @@ interface eth4
     ip ospf retransmit-interval 2
 
 router ospf
-    ospf lofi {lofi_n}
+    {lofi_n_command}
     ospf router-id 0.0.{node_id[0]}.{node_id[1]}
     # redistribute connected
 """

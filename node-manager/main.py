@@ -38,6 +38,12 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
     monitor_image_name = config.MonitorImageName
     # ---------------------------------
 
+    # ---------------------------------
+    # check for ospf
+    if image_name == "ospf:latest":
+        lofi_n = -1
+    # ---------------------------------
+
     # create position updater
     # ----------------------------------------------------------
     updater = DataUpdater("<broadcast>", host_ip, int(udp_port))
@@ -189,8 +195,8 @@ if __name__ == "__main__":
     dry_run = False
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04]
     # lofi_n_list = [0, 1, 2, 3, 4]
-    link_failure_rate_list = [0.05]
-    lofi_n_list = [1]
+    link_failure_rate_list = [0.01, 0.05]
+    lofi_n_list = [4]
 
     if not os.path.exists('./result.csv') and not dry_run:
         with open('./result.csv', 'w') as f:
