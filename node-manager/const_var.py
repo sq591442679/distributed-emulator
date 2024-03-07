@@ -42,9 +42,8 @@ SUBMISSION_SIZE_FOR_UPDATE_NETWORK_DELAY = 1
 
 # LINK FAILURE  added by sqsq
 # NOTE: about the SIMULATION_DURATION, it should consider OSPF_LSA_MAXAGE and arp aging time
-LINK_FAILURE_RATE = 0.1
-LINK_FAILURE_DURATION = 5   # unit: s
-SIMULATION_DURATION = 100  # unit: s
+LINK_FAILURE_DURATION = 20      # unit: s
+SIMULATION_DURATION = 1000      # unit: s
 
 # TRANSMISSION PAIR added by sqsq
 SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(3, 3)]
