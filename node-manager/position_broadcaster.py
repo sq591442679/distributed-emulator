@@ -26,6 +26,7 @@ def generate_submission_list_for_position_broadcaster(satellite_num, cpu_count):
     else:
         # each satellite is handled by one cpu
         submission_list = [(i, i) for i in range(satellite_num)]
+    logger.info(submission_list)
     return submission_list
 
 

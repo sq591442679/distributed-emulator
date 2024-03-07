@@ -234,7 +234,7 @@ class Network:
                  container_id1: str,
                  container_id2: str,
                  delay: int,
-                 band_width: str,
+                 band_width: int,
                  loss_percent: int,
                  queue_capacity: int):
         # 为保证network key的唯一性，设置map中key的字符串拼接顺序为小id在前,大id在后
@@ -245,8 +245,8 @@ class Network:
         self.network_key = get_network_key(docker_client, container_id1, container_id2)
         self.br_interface_name = get_bridge_interface_name(bridge_id)
         self.veth_interface_list = get_vethes_of_bridge(self.br_interface_name)
-        self.delay = delay               # unit: ms
-        self.bandwidth = band_width     # '10Mbit'
+        self.delay = delay              # unit: ms
+        self.bandwidth = band_width     # unit: Mbps
         self.loss = loss_percent        # unit: percent
         self.queue_capacity = queue_capacity
         if len(self.veth_interface_list) != 2:
@@ -279,7 +279,7 @@ class Network:
     '''
     def init_info(self):
         for container_name, inner_eth_name in self.inner_eth_dict.items():
-            command = ['sh', '-c', f'tc qdisc add dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth} limit {self.queue_capacity}']
+            command = ['sh', '-c', f'tc qdisc add dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth}Mbit limit {self.queue_capacity}']
             ret = self.docker_client.exec_cmd(container_name, command)
             if ret[0] != 0:
                 logger.error(ret[1].decode().strip())
@@ -287,7 +287,7 @@ class Network:
 
     def update_info(self):
         for container_name, inner_eth_name in self.inner_eth_dict.items():
-            command = ['sh', '-c', f'tc qdisc replace dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth} limit {self.queue_capacity}']
+            command = ['sh', '-c', f'tc qdisc replace dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth} Mbitlimit {self.queue_capacity}']
             ret = self.docker_client.exec_cmd(container_name, command)
             if ret[0] != 0:
                 logger.error(ret[1].decode().strip())
@@ -298,12 +298,12 @@ class Network:
         if not self.is_down:
             self.update_info()
 
-    def update_bandwidth_param(self, band_width: str):
+    def update_bandwidth_param(self, band_width: int):
         self.bandwidth = band_width
         if not self.is_down:
             self.update_info()
 
-    def update_loss_param(self, loss_percent: str):
+    def update_loss_param(self, loss_percent: int):
         self.loss = loss_percent
         if not self.is_down:
             self.update_info()

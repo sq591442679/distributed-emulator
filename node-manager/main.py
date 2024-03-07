@@ -23,7 +23,8 @@ from tools import *
 from transmission_test import start_transmission_test, start_packet_capture
 
 
-def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, dry_run = False):
+def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int, 
+        link_failure_rate: float, send_interval: float, test: int, dry_run = False):
     reinit_global_var()
     # the share bool value
     stop_process_state = multiprocessing.Value(c_bool, False)
@@ -83,7 +84,7 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
     # ground_stations = create_station_from_json(docker_client, config.GroundConfigPath)
     ground_stations = {}
 
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
     # start frr    added by sqsq
     process_list: typing.List[Process] = []
     logger.info('copying frr.conf to containers')
@@ -105,7 +106,22 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
         process_start_frr.start()
     for process_start_frr in process_list:
         process_start_frr.join()
-    #-------------------------------------------------------------------
+    # -------------------------------------------------------------------
+        
+    # -------------------------------------------------------------------
+    # start load awareness, added bysqsq
+    process_list.clear()    
+    cmd = f"/load_wawreness/load_awareness {lofi_delta} {QUEUE_CAPACITY} {NETWORK_BANDWIDTH*1000000} {1024 * 8} " \
+            + f"{NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY}"
+    if enable_load_awareness:
+        for id in satellite_map.keys():
+            process_start_load_wawreness = Process(target=docker_client.exec_cmd, args=(satellite_id_tuple_to_str(id), cmd, False, True))
+            process_list.append(process_start_load_wawreness)
+        for process_start_load_wawreness in process_list:
+            process_start_load_wawreness.start()
+        for process_start_load_wawreness in process_list:
+            process_start_load_wawreness.join()
+    # -------------------------------------------------------------------
     
     # set monitor
     # ----------------------------------------------------------
@@ -159,7 +175,7 @@ def run(lofi_n: int, link_failure_rate: float, send_interval: float, test: int, 
 
     if not dry_run:
         with open('./result.csv', 'a') as f:
-            print(f"{lofi_n},{link_failure_rate},{test},{drop_rate},{delay},{throughput},{control_overhead}", file=f)
+            print(f"{lofi_n},{enable_load_awareness},{lofi_delta},{link_failure_rate},{test},{drop_rate},{delay},{throughput},{control_overhead}", file=f)
     else:
         logger.info(f"n:{lofi_n}, fr:{link_failure_rate}, test:{test},\n"
                     f"drop rate:{drop_rate}, delay:{delay},\n"
@@ -193,20 +209,22 @@ if __name__ == "__main__":
     logger.success(output)    
     
     dry_run = False
-    link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
+    enable_load_awareness = False
+    lofi_delta = 0.05
+    # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
     lofi_n_list = [0, 1, 2, 3, 4]
-    # link_failure_rate_list = [0, 0.01, 0.05]
+    link_failure_rate_list = [0.01, 0.05, 0.1]
     # lofi_n_list = [1, 2, 3, 4]
 
     if not os.path.exists('./result.csv') and not dry_run:
         with open('./result.csv', 'w') as f:
-            print('lofi_n,link_failure_rate,test,drop_rate,delay,throughput,control_overhead', file=f)
+            print('lofi_n,load_awareness,lofi_delta,link_failure_rate,test,drop_rate,delay,throughput,control_overhead', file=f)
         os.system("chmod 777 ./result.csv")
 
     for link_failure_rate in link_failure_rate_list:
         for lofi_n in lofi_n_list:
             for test in range(1, TEST_NUM + 1):
-                run(lofi_n, link_failure_rate, 0.1, test, dry_run)
+                run(enable_load_awareness, lofi_n, link_failure_rate, 0.1, test, dry_run)
 
     os.system("./sqsq-kernel-modules/uninstall_modules.sh")
 

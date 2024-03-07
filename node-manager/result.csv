@@ -181,3 +181,6 @@ lofi_n,link_failure_rate,test,drop_rate,delay,throughput,control_overhead
 0,0.03,2,0.6%,1057.2,0.025,0.000
 
 20240307 longer sim duration, no position change
+0,0.01,1,0.2%,1056.7,0.023,0.000
+1,0.01,1,0.3%,1057.6,0.021,0.005
+2,0.01,1,0.4%,1057.2,0.013,0.016

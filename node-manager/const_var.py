@@ -24,7 +24,7 @@ LIGHT_SPEED = 300
 
 # DELAY BANDWIDTH LOSS
 NETWORK_DELAY = 150 # unit ms, 150 means 150ms
-NETWORK_BANDWIDTH = '10Mbit'
+NETWORK_BANDWIDTH = 10 # unit Mbps
 NETWORK_LOSS = 0 # percent 0 means 0%
 QUEUE_CAPACITY = 100    # unit: pkt
 
@@ -54,4 +54,4 @@ RECEIVER_NODE_ID = (5, 8)
 # used for tle generation and position update
 TIME_BASE = datetime(2024, 1, 1)
 
-TEST_NUM = 5
+TEST_NUM = 1

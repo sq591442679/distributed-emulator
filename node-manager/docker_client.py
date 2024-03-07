@@ -115,8 +115,8 @@ class DockerClient:
         return ans, free_bit
 
 
-    def exec_cmd(self, container_id_or_name: str, cmd: str, stream=False):
-        return self.client.containers.get(container_id_or_name).exec_run(tty=False, cmd=cmd, stream=stream, privileged=True)
+    def exec_cmd(self, container_id_or_name: str, cmd: str, stream=False, detach=False):
+        return self.client.containers.get(container_id_or_name).exec_run(tty=False, cmd=cmd, stream=stream, privileged=True, detach=detach)
 
 
     """
