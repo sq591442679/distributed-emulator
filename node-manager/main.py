@@ -207,7 +207,16 @@ if __name__ == "__main__":
         logger.error(e.output)
         raise Exception('')
     logger.success(output)    
-    
+    try:
+        output = subprocess.check_output("./sqsq-kernel-modules/install_load_awareness.sh", 
+                                         shell=True, 
+                                         stderr=subprocess.STDOUT, 
+                                         universal_newlines=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(e.output)
+        raise Exception('')
+    logger.success(output)  
+
     dry_run = False
     enable_load_awareness = False
     lofi_delta = 0.05

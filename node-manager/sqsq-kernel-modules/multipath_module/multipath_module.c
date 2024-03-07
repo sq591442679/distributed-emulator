@@ -99,7 +99,7 @@ void fh_remove_hook(struct ftrace_hook *hook) {
 
 asmlinkage void sqsq_fib_select_multipath(struct fib_result *res, const struct flowi4 *fl4)
 {
-	pr_info("%s %p %p\n", __func__, (void *)res, (void*)fl4);
+	// pr_info("%s %p %p\n", __func__, (void *)res, (void*)fl4);
 
 	if (likely(res->fi->nh)) {
 		struct nh_info *nhi;
