@@ -2361,10 +2361,10 @@ const char *ospf_get_name(const struct ospf *ospf)
  * return whether curent time (sec) is greater than ospf->init_time + WARMUP_PERIOD
  * 
  */
-bool check_lofi(const struct ospf *ospf)
+bool is_lofi(const struct ospf *ospf)
 {
 	__time_t current_time = monotime(NULL);
-	if (IS_OSPF || lofi_n == 255) {
+	if (lofi_n == 255) {
 		return false;
 	}
 	if (current_time - ospf->start_time > WARMUP_PERIOD) {

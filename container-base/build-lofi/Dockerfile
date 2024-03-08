@@ -57,13 +57,16 @@ RUN echo "log file /var/log/frr/sqsq_ospfd.log" >> /etc/frr/frr.conf \
     && echo "log record-priority" >> /etc/frr/frr.conf \
     && echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf && sysctl -p
 
-COPY udp-applications /udp-applications
-COPY load_awareness /load_awareness
-RUN chmod -R 777 /udp-applications \ 
-    && chmod -R 777 /load_awareness \ 
-    && /load_wawreness/compile.sh
-
+COPY ./udp-applications/ /udp-applications
+COPY ./load_awareness/ /load_awareness
 COPY get_ifindex.sh /get_ifindex.sh
+COPY monitor_network.sh /monitor_network.sh
+RUN chmod -R 777 /udp-applications \ 
+    && chmod 777 /get_ifindex.sh \ 
+    && chmod 777 /monitor_network.sh \ 
+    && chmod -R 777 /load_awareness \ 
+    && /load_awareness/compile.sh 
+
 
 # copied from https://github.com/robertdebock/docker-ubuntu-systemd/blob/focal/Dockerfile
 # Enable systemd.
@@ -101,7 +104,8 @@ COPY get_ifindex.sh /get_ifindex.sh
 # VOLUME [ "/sys/fs/cgroup" ]
 
 # CMD ["/lib/systemd/systemd"]
-CMD ["/bin/bash", "-c", "while true; do :; done"]
+# CMD ["/bin/bash", "-c", "while true; do :; done"]
+CMD ["/bin/bash", "/monitor_network.sh"]
 
 # maunally starting: 
 # docker run \

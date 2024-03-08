@@ -221,7 +221,7 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
         logger.error(f", veth_dict: {veth_dict}, eth_dict: {eth_dict}")
         raise Exception("bad ret_dict")
 
-    # logger.info(f"veth_dict: {veth_dict}, eth_dict: {eth_dict}")
+    logger.info(f"veth_dict: {veth_dict}, eth_dict: {eth_dict}")
 
     return [veth_dict, eth_dict]
 
@@ -334,14 +334,14 @@ class Network:
 
         for container_name, eth_name in self.inner_eth_dict.items():
             command = ['sh', '-c', f"ifconfig {eth_name} down"]
-            self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
-            # process = Process(target=self.docker_client.exec_cmd, args=(container_name, command))
-            # process.start()
+            # self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
+            process = Process(target=self.docker_client.exec_cmd, args=(container_name, command))
+            process.start()
 
         current_sim_time = time.time() - start_time
-        self.print_link_event(current_sim_time, "down")
-        # process = Process(target=self.print_link_event, args=(current_sim_time, "down"))
-        # process.start()
+        # self.print_link_event(current_sim_time, "down")
+        process = Process(target=self.print_link_event, args=(current_sim_time, "down"))
+        process.start()
 
 
     def open_link(self, start_time: float, random_instance: random.Random, poisson_lambda: float):
@@ -352,14 +352,14 @@ class Network:
 
         for container_name, eth_name in self.inner_eth_dict.items():
             command = ['sh', '-c', f"ifconfig {eth_name} up"]
-            self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
-            # process = Process(target=self.docker_client.exec_cmd, args=(container_name, command))
-            # process.start()
+            # self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
+            process = Process(target=self.docker_client.exec_cmd, args=(container_name, command))
+            process.start()
 
         current_sim_time = time.time() - start_time
-        self.print_link_event(current_sim_time, "up")
-        # process = Process(target=self.print_link_event, args=(current_sim_time, "up"))
-        # process.start()
+        # self.print_link_event(current_sim_time, "up")
+        process = Process(target=self.print_link_event, args=(current_sim_time, "up"))
+        process.start()
 
 
 def generate_link_failure(docker_client: DockerClient, link_failure_rate: float, seed: int = None):

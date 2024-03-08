@@ -679,7 +679,7 @@ int can_disseminate(struct ospf_area *area, struct ospf_neighbor *inbr, struct o
 	if (lsa->data->type == OSPF_ROUTER_LSA) {
 		struct router_lsa *r_lsa = (struct router_lsa *)(lsa->data);
 		struct ospf *ospf = area->ospf;
-		if (check_lofi(ospf)) {
+		if (is_lofi(ospf)) {
 			uint8_t ttl = r_lsa->ttl;
 			if (ttl > 0) {
 				/**

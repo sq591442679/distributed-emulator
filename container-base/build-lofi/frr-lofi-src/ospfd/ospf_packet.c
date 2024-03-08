@@ -1208,7 +1208,7 @@ static void ospf_db_desc_proc(struct stream *s, struct ospf_interface *oi,
 		 * @sqsq
 		 * never try to synchronise LSAs in Lofi
 		 */
-		if (check_lofi(oi->ospf)) {
+		if (is_lofi(oi->ospf)) {
 			// vty_out(oi->ospf->vty, "DD discard\n");
 			continue;
 		}

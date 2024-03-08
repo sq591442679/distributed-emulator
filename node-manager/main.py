@@ -146,45 +146,44 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # added by sqsq
     # ----------------------------------------------------------
     time.sleep(10)
-    logger.info("transmission starting...")
     process_list.clear()
 
-    generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, link_failure_rate, 42))
-    process_list.append(generate_link_failure_process)
-
-    manager = Manager()
-    shared_result_list = manager.list() # shared_result_list: list[dict]
-    start_transmission_test_process = Process(target=start_transmission_test, args=(docker_client, send_interval, shared_result_list))
-    process_list.append(start_transmission_test_process)
-
-    queue = Queue() # queue of dict
-    start_packet_capture_process = Process(target=start_packet_capture, args=(queue, ))
-    process_list.append(start_packet_capture_process)
-
-    for process_copy in process_list:
-        process_copy.start()
-    for process_copy in process_list:
-        process_copy.join()
-    
-    drop_rate = shared_result_list[0]['drop rate']
-    delay = shared_result_list[0]['delay']
-
-    queue_element = queue.get()
-    throughput = queue_element['throughput']
-    control_overhead = queue_element['control overhead']
-
     if not dry_run:
+        generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, link_failure_rate, 42))
+        process_list.append(generate_link_failure_process)
+
+        manager = Manager()
+        shared_result_list = manager.list() # shared_result_list: list[dict]
+        start_transmission_test_process = Process(target=start_transmission_test, args=(docker_client, send_interval, shared_result_list))
+        process_list.append(start_transmission_test_process)
+
+        queue = Queue() # queue of dict
+        start_packet_capture_process = Process(target=start_packet_capture, args=(queue, ))
+        process_list.append(start_packet_capture_process)
+
+        logger.info("transmission starting...")
+        for process_copy in process_list:
+            process_copy.start()
+        for process_copy in process_list:
+            process_copy.join()
+        
+        drop_rate = shared_result_list[0]['drop rate']
+        delay = shared_result_list[0]['delay']
+
+        queue_element = queue.get()
+        throughput = queue_element['throughput']
+        control_overhead = queue_element['control overhead']
+
         with open('./result.csv', 'a') as f:
             print(f"{lofi_n},{enable_load_awareness},{lofi_delta},{link_failure_rate},{test},{drop_rate},{delay},{throughput},{control_overhead}", file=f)
-    else:
-        logger.info(f"n:{lofi_n}, fr:{link_failure_rate}, test:{test},\n"
-                    f"drop rate:{drop_rate}, delay:{delay},\n"
-                    f"throughput:{throughput}, overhead:{control_overhead}")
 
-    # set_monitor_process.kill()
-    # update_position_process.kill()
-    os.system("./stop_and_kill_constellation.sh")
-    os.system("clear")
+        # set_monitor_process.kill()
+        # update_position_process.kill()
+        os.system("./stop_and_kill_constellation.sh")
+        os.system("clear")
+    else:
+        while True:
+            pass
     # ----------------------------------------------------------
 
 
@@ -217,13 +216,13 @@ if __name__ == "__main__":
         raise Exception('')
     logger.success(output)  
 
-    dry_run = False
+    dry_run = True
     enable_load_awareness = False
     lofi_delta = 0.05
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-    lofi_n_list = [0, 1, 2, 3, 4]
-    link_failure_rate_list = [0.01, 0.05, 0.1]
-    # lofi_n_list = [1, 2, 3, 4]
+    # lofi_n_list = [0, 1, 2, 3, 4]
+    link_failure_rate_list = [0.01, 0.1]
+    lofi_n_list = [1, 4]
 
     if not os.path.exists('./result.csv') and not dry_run:
         with open('./result.csv', 'w') as f:
@@ -233,7 +232,7 @@ if __name__ == "__main__":
     for link_failure_rate in link_failure_rate_list:
         for lofi_n in lofi_n_list:
             for test in range(1, TEST_NUM + 1):
-                run(enable_load_awareness, lofi_n, link_failure_rate, 0.1, test, dry_run)
+                run(enable_load_awareness, lofi_delta, lofi_n, link_failure_rate, UDP_SEND_INTERVAL, test, dry_run)
 
     os.system("./sqsq-kernel-modules/uninstall_modules.sh")
 

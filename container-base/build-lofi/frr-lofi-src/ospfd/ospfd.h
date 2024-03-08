@@ -51,7 +51,6 @@
  * sqsq
  */
 extern uint8_t lofi_n;
-#define IS_OSPF					false
 
 /* @sqsq */
 #define WARMUP_PERIOD			10  // NOTE need to be synchronised with emulator/common.py
@@ -797,7 +796,7 @@ extern int q_spaces_compare_func(const struct q_space *a,
 /*
 @sqsq
 */
-extern bool check_lofi(const struct ospf *ospf);
+extern bool is_lofi(const struct ospf *ospf);
 
 /**
  * @sqsq

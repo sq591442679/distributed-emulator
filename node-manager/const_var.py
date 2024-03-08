@@ -24,13 +24,13 @@ LIGHT_SPEED = 300
 
 # DELAY BANDWIDTH LOSS
 NETWORK_DELAY = 150 # unit ms, 150 means 150ms
-NETWORK_BANDWIDTH = 10 # unit Mbps
+NETWORK_BANDWIDTH = 100 # unit Mbps
 NETWORK_LOSS = 0 # percent 0 means 0%
 QUEUE_CAPACITY = 100    # unit: pkt
 
 # CONSTELLATION PARAMETERS
-ORBIT_NUM = 6
-SAT_PER_ORBIT = 11
+ORBIT_NUM = 7
+SAT_PER_ORBIT = 7
 
 # SUBMISSION SIZE
 SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION = 5
@@ -42,16 +42,17 @@ SUBMISSION_SIZE_FOR_UPDATE_NETWORK_DELAY = 1
 
 # LINK FAILURE  added by sqsq
 # NOTE: about the SIMULATION_DURATION, it should consider OSPF_LSA_MAXAGE and arp aging time
-LINK_FAILURE_DURATION = 20      # unit: s
+LINK_FAILURE_DURATION = 20     # unit: s
 SIMULATION_DURATION = 1000      # unit: s
 
 # TRANSMISSION PAIR added by sqsq
-SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(3, 3)]
-RECEIVER_NODE_ID = (5, 8)
+SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(0, 1)]
+RECEIVER_NODE_ID = (5, 5)
 # SENDER_NODE_ID_LIST: List[Tuple[int, int]] = []
 # RECEIVER_NODE_ID = (0, 0)
 
 # used for tle generation and position update
 TIME_BASE = datetime(2024, 1, 1)
 
-TEST_NUM = 1
+TEST_NUM = 5
+UDP_SEND_INTERVAL = 0.01

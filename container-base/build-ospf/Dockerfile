@@ -59,9 +59,12 @@ RUN echo "log file /var/log/frr/sqsq_ospfd.log" >> /etc/frr/frr.conf \
     && echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf && sysctl -p
 
 COPY udp-applications /udp-applications
-RUN chmod -R 777 /udp-applications
-
 COPY get_ifindex.sh /get_ifindex.sh
+COPY monitor_network.sh /monitor_network.sh
+RUN chmod -R 777 /udp-applications \ 
+    && chmod 777 /get_ifindex.sh \ 
+    && chmod 777 /monitor_network.sh
+
 
 # copied from https://github.com/robertdebock/docker-ubuntu-systemd/blob/focal/Dockerfile
 # Enable systemd.
@@ -99,7 +102,8 @@ COPY get_ifindex.sh /get_ifindex.sh
 # VOLUME [ "/sys/fs/cgroup" ]
 
 # CMD ["/lib/systemd/systemd"]
-CMD ["/bin/bash", "-c", "while true; do :; done"]
+# CMD ["/bin/bash", "-c", "while true; do :; done"]
+CMD ["/monitor_network.sh"]
 
 # maunally starting: 
 # docker run \
