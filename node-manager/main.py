@@ -122,9 +122,6 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         for process_start_load_wawreness in process_list:
             process_start_load_wawreness.join()
     # -------------------------------------------------------------------
-            
-    while True:
-        pass
     
     # set monitor
     # ----------------------------------------------------------
@@ -150,6 +147,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # ----------------------------------------------------------
     time.sleep(10)
     process_list.clear()
+    logger.info('test starting...')
 
     if not dry_run:
         generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, link_failure_rate, 42))
@@ -162,7 +160,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
         queue = Queue() # queue of dict
         start_packet_capture_process = Process(target=start_packet_capture, args=(queue, ))
-        # process_list.append(start_packet_capture_process)
+        process_list.append(start_packet_capture_process)
 
         logger.info("transmission starting...")
         for process_copy in process_list:
