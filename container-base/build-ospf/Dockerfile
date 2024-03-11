@@ -103,7 +103,7 @@ RUN chmod -R 777 /udp-applications \
 
 # CMD ["/lib/systemd/systemd"]
 # CMD ["/bin/bash", "-c", "while true; do :; done"]
-CMD ["/monitor_network.sh"]
+CMD ["/bin/bash", "/monitor_network.sh"]
 
 # maunally starting: 
 # docker run \

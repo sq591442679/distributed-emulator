@@ -11,7 +11,7 @@ log_event() {
 
 ip monitor | while read -r line; do
     if [[ "$line" == *"state"* ]]; then
-        interface=$(echo "$line" | awk '{print $NF}')
+        interface=$(echo "$line" | awk -F '@if' '{print $1}' | awk '{print $NF}')
         state=$(echo "$line" | grep -oP "(?<=state )[^ ]+")
 
         log_event "Interface state changed to $state" "$interface"

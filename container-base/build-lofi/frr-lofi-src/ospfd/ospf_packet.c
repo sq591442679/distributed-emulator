@@ -4166,6 +4166,9 @@ void ospf_ls_upd_send(struct ospf_neighbor *nbr, struct list *update, int flag,
 	struct route_node *rn;
 	struct listnode *node;
 
+	/** @sqsq */
+	zlog_debug("entered %s: %lld", __func__,  monotime(NULL));
+
 	oi = nbr->oi;
 
 	p.family = AF_INET;

@@ -24,18 +24,23 @@ class DockerClient:
         index = satellite_id_tuple_to_index(node_id)
 
         if successful_init:
-            container_info = self.client.containers.run(self.image_name, detach=True, environment=[
-                'NODE_ID=' + node_id_str,
-                'HOST_IP=' + self.host_ip,
-                'BROAD_PORT=' + port,
-                'THRESHOLD=' + str(5.0),
-                "SATELLITE_NUM=" + str(satellite_num),
-                "MONITOR_IP=" + "172.17.0.2",
-                "DISPLAY=unix:0.0",
-                "GDK_SCALE",
-                "GDK_DPI_SCALE",
-            ], cap_add=['NET_ADMIN'], name=node_id_str, volumes=[
-                VOLUME1, VOLUME2, V_EDIT], privileged=True, ports={'8765/tcp': 30000 + index})
+            container_info = self.client.containers.run(self.image_name, 
+                                                        detach=True, 
+                                                        environment=[
+                                                            'NODE_ID=' + node_id_str,
+                                                            'HOST_IP=' + self.host_ip,
+                                                            'BROAD_PORT=' + port,
+                                                            'THRESHOLD=' + str(5.0),
+                                                            "SATELLITE_NUM=" + str(satellite_num),
+                                                            "MONITOR_IP=" + "172.17.0.2",
+                                                            "DISPLAY=unix:0.0",
+                                                            "GDK_SCALE",
+                                                            "GDK_DPI_SCALE", ],
+                                                        cap_add=['NET_ADMIN'], 
+                                                        name=node_id_str, 
+                                                        volumes=[VOLUME1, VOLUME2, V_EDIT], 
+                                                        privileged=True, 
+                                                        ports={'8765/tcp': 30000 + index})
         else:
             container_info = self.client.containers.run(self.image_name, detach=True, environment=[
                 'NODE_ID=' + node_id_str,
@@ -49,6 +54,11 @@ class DockerClient:
                 "GDK_DPI_SCALE",
             ], cap_add=['NET_ADMIN'], name=node_id_str, volumes=[
                 VOLUME1, VOLUME2, V_EDIT], privileged=True)
+
+        # added by sqsq
+        # disconnect the newly created container from docker0
+        os.system(f"docker network disconnect bridge {container_info.name}")        
+        
         return container_info.id
 
     def create_ground_container(self, node_id_g: str):

@@ -876,6 +876,9 @@ static struct ospf_lsa *ospf_router_lsa_originate(struct ospf_area *area)
 	/* Update LSA origination count. */
 	area->ospf->lsa_originate_count++;
 
+	/** sqsq */
+	zlog_debug("in %s, calling ospf_flood_through_area", __func__);
+
 	/* Flooding new LSA through area. */
 	ospf_flood_through_area(area, NULL, new);
 
@@ -913,6 +916,9 @@ static struct ospf_lsa *ospf_router_lsa_refresh(struct ospf_lsa *lsa)
 	new->data->ls_seqnum = lsa_seqnum_increment(lsa);
 
 	ospf_lsa_install(area->ospf, NULL, new);
+
+	/** sqsq */
+	zlog_debug("in %s, calling ospf_flood_through_area", __func__);
 
 	/* Flood LSA through area. */
 	ospf_flood_through_area(area, NULL, new);

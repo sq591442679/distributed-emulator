@@ -125,6 +125,9 @@ def write_into_frr_conf(host_name, network_list, prefix_list, lofi_n: int):
         else:               # we use lofi
             lofi_n_command = f"ospf lofi {lofi_n}"
             
+        # note the value of retransmit interval. according to rfc2328:
+        # The setting of this value should be conservative or needless retransmissions will result. S
+        # ample value for a local area network: 5 seconds.
         full_str = \
             f"""
 log file /var/log/frr/sqsq_ospfd.log
@@ -134,25 +137,25 @@ interface eth1
     ip ospf area 0.0.0.0
     ip ospf hello-interval 1
     ip ospf dead-interval 4
-    ip ospf retransmit-interval 2
+    ip ospf retransmit-interval 5
 interface eth2
     ip ospf network point-to-point
     ip ospf area 0.0.0.0
     ip ospf hello-interval 1
     ip ospf dead-interval 4
-    ip ospf retransmit-interval 2
+    ip ospf retransmit-interval 5
 interface eth3
     ip ospf network point-to-point
     ip ospf area 0.0.0.0
     ip ospf hello-interval 1
     ip ospf dead-interval 4
-    ip ospf retransmit-interval 2
+    ip ospf retransmit-interval 5
 interface eth4
     ip ospf network point-to-point
     ip ospf area 0.0.0.0
     ip ospf hello-interval 1
     ip ospf dead-interval 4
-    ip ospf retransmit-interval 2
+    ip ospf retransmit-interval 5
 
 router ospf
     {lofi_n_command}

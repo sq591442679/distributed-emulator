@@ -122,6 +122,9 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         for process_start_load_wawreness in process_list:
             process_start_load_wawreness.join()
     # -------------------------------------------------------------------
+            
+    while True:
+        pass
     
     # set monitor
     # ----------------------------------------------------------
@@ -159,7 +162,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
         queue = Queue() # queue of dict
         start_packet_capture_process = Process(target=start_packet_capture, args=(queue, ))
-        process_list.append(start_packet_capture_process)
+        # process_list.append(start_packet_capture_process)
 
         logger.info("transmission starting...")
         for process_copy in process_list:
@@ -216,7 +219,6 @@ if __name__ == "__main__":
         raise Exception('')
     logger.success(output)  
 
-    dry_run = True
     enable_load_awareness = False
     lofi_delta = 0.05
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
@@ -224,7 +226,7 @@ if __name__ == "__main__":
     link_failure_rate_list = [0.01, 0.1]
     lofi_n_list = [1, 4]
 
-    if not os.path.exists('./result.csv') and not dry_run:
+    if not os.path.exists('./result.csv') and not DRY_RUN:
         with open('./result.csv', 'w') as f:
             print('lofi_n,load_awareness,lofi_delta,link_failure_rate,test,drop_rate,delay,throughput,control_overhead', file=f)
         os.system("chmod 777 ./result.csv")
@@ -232,7 +234,7 @@ if __name__ == "__main__":
     for link_failure_rate in link_failure_rate_list:
         for lofi_n in lofi_n_list:
             for test in range(1, TEST_NUM + 1):
-                run(enable_load_awareness, lofi_delta, lofi_n, link_failure_rate, UDP_SEND_INTERVAL, test, dry_run)
+                run(enable_load_awareness, lofi_delta, lofi_n, link_failure_rate, UDP_SEND_INTERVAL, test, DRY_RUN)
 
     os.system("./sqsq-kernel-modules/uninstall_modules.sh")
 
