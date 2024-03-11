@@ -198,6 +198,9 @@ if __name__ == "__main__":
     
     os.system("./stop_and_kill_constellation.sh")
 
+    with open("eth_dict.txt", "w") as f:
+        print("", flush=True, file=f)
+
     # start kernel modules, added by sqsq
     os.system("./sqsq-kernel-modules/uninstall_modules.sh")
     try:

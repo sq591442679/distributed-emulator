@@ -468,6 +468,20 @@ int ospf_flood_through_interface(struct ospf_interface *oi,
 	/* Remember if new LSA is added to a retransmit list. */
 	retx_flag = 0;
 
+	/** 
+	 * @sqsq 
+	 * */
+	if (!can_disseminate(oi->area, inbr, lsa)) {
+		/** @sqsq */
+		zlog_debug("%s: %lld, no longer flood %s", __func__,  monotime(NULL), dump_lsa_key(lsa));
+		return (inbr && inbr->oi == oi);
+	}
+	else {
+		if (is_lofi(oi->area->ospf)) {
+			decrease_lsa_ttl(lsa);
+		}
+	}
+
 	/* Each of the neighbors attached to this interface are examined,
 	   to determine whether they must receive the new LSA.  The following
 	   steps are executed for each neighbor: */
@@ -577,6 +591,11 @@ int ospf_flood_through_interface(struct ospf_interface *oi,
 		   for the adjacency. The LSA will be retransmitted
 		   at intervals until an acknowledgment is seen from
 		   the neighbor. */
+
+		/** sqsq */
+		zlog_debug("in %s, called ospf_ls_retransmit_add, %s, lsa.ttl=%u",
+					 __func__, dump_lsa_key(lsa), ((struct router_lsa *)(lsa->data))->ttl);
+
 		ospf_ls_retransmit_add(onbr, lsa);
 		retx_flag = 1;
 	}
@@ -664,7 +683,7 @@ int ospf_flood_through_interface(struct ospf_interface *oi,
 
 /** 
  * @sqsq 
- * should be called before really conducting flood through area.
+ * should be called before really conducting flood through interface.
  * if LoFi is activated and lsa should be disseminated, then its ttl will be decreased
  * returns true if can disseminate lsa, false if cannot.
 */
@@ -672,11 +691,11 @@ int can_disseminate(struct ospf_area *area, struct ospf_neighbor *inbr, struct o
 {
 	/**
 	 * @sqsq
-	 * if the ttl of lsa <= 1, then do not flood it out,
+	 * if the ttl of lsa < 1, then do not flood it out,
 	 * but still need to return 1,
 	 * because the ospf_flood() function needs to send back an LSACK
 	 */
-	zlog_debug("entered %s: %lld", __func__,  monotime(NULL));
+	// zlog_debug("entered %s: %lld", __func__,  monotime(NULL));
 	if (lsa->data->type == OSPF_ROUTER_LSA) {
 		struct router_lsa *r_lsa = (struct router_lsa *)(lsa->data);
 		struct ospf *ospf = area->ospf;
@@ -690,9 +709,7 @@ int can_disseminate(struct ospf_area *area, struct ospf_neighbor *inbr, struct o
 				 * receiving/originating LSAs with TTL=0 means current router should update LSDB accorindly,
 				 * but no further disseminate
 				 */
-				r_lsa->ttl--;
-				lsa->data->checksum = ospf_lsa_checksum(lsa->data);
-				zlog_info("ttl:%u", ttl);
+				// zlog_info("ttl:%u", ttl);
 				return true;
 			}
 			else {
@@ -709,6 +726,17 @@ int can_disseminate(struct ospf_area *area, struct ospf_neighbor *inbr, struct o
 	}
 }
 
+/** @sqsq */
+void decrease_lsa_ttl(struct ospf_lsa *lsa)
+{
+	if (lsa->data->type == OSPF_ROUTER_LSA) {
+		struct router_lsa *r_lsa = (struct router_lsa *)(lsa->data);
+		uint8_t ttl = r_lsa->ttl;
+		r_lsa->ttl--;
+		lsa->data->checksum = ospf_lsa_checksum(lsa->data);	
+	}
+}
+
 
 int ospf_flood_through_area(struct ospf_area *area, struct ospf_neighbor *inbr,
 			    struct ospf_lsa *lsa)
@@ -716,18 +744,6 @@ int ospf_flood_through_area(struct ospf_area *area, struct ospf_neighbor *inbr,
 	struct listnode *node, *nnode;
 	struct ospf_interface *oi;
 	int lsa_ack_flag = 0;
-
-	/** 
-	 * @sqsq 
-	 * when conducting can_disseminate(),
-	 * TTL (if any) is decreased internaly
-	 * */
-	if (!can_disseminate(area, inbr, lsa)) {
-		/** @sqsq */
-		zlog_debug("%s: %lld, no longer flood", __func__,  monotime(NULL));
-		lsa_ack_flag = 1;
-		return lsa_ack_flag;
-	}
 
 	assert(area);
 	/* All other types are specific to a single area (Area A).  The
@@ -875,8 +891,6 @@ int ospf_flood_through(struct ospf *ospf, struct ospf_neighbor *inbr,
 			zlog_debug("%s: LOCAL NSSA FLOOD of Type-7.", __func__);
 	/* Fallthrough */
 	default:
-		/** sqsq */
-		zlog_debug("in %s, calling ospf_flood_through_area", __func__);
 		lsa_ack_flag = ospf_flood_through_area(lsa->area, inbr, lsa);
 		break;
 	}
@@ -1145,9 +1159,6 @@ void ospf_lsa_flush_area(struct ospf_lsa *lsa, struct ospf_area *area)
 			   dump_lsa_key(lsa));
 	monotime(&lsa->tv_recv);
 	lsa->tv_orig = lsa->tv_recv;
-
-	/** sqsq */
-	zlog_debug("in %s, calling ospf_flood_through_area", __func__);
 
 	ospf_flood_through_area(area, NULL, lsa);
 	ospf_lsa_maxage(ospf, lsa);

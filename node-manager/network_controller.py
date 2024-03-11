@@ -221,6 +221,9 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
         logger.error(f", veth_dict: {veth_dict}, eth_dict: {eth_dict}")
         raise Exception("bad ret_dict")
 
+    with open("eth_dict.txt", "a") as f:
+        print(f"veth_dict: {veth_dict}, eth_dict: {eth_dict}", flush=True, file=f)
+
     logger.info(f"veth_dict: {veth_dict}, eth_dict: {eth_dict}")
 
     return [veth_dict, eth_dict]

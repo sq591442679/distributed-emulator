@@ -71,5 +71,6 @@ extern void ospf_lsdb_init(struct ospf_lsdb *);
 
 /** @sqsq */
 extern int can_disseminate(struct ospf_area *, struct ospf_neighbor *, struct ospf_lsa *);
+extern void decrease_lsa_ttl(struct ospf_lsa *);
 
 #endif /* _ZEBRA_OSPF_FLOOD_H */

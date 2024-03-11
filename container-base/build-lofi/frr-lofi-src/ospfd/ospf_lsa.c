@@ -727,7 +727,12 @@ void ospf_router_lsa_body_set(struct stream **s, struct ospf_area *area)
 	/**
 	 * @sqsq
 	 */
-	stream_putc(*s, lofi_n);
+	if (is_lofi(area->ospf)) {
+		stream_putc(*s, lofi_n);
+	}
+	else {
+		stream_putc(*s, 0);
+	}
 
 	/* Keep pointer to # links. */
 	putp = stream_get_endp(*s);
@@ -877,7 +882,7 @@ static struct ospf_lsa *ospf_router_lsa_originate(struct ospf_area *area)
 	area->ospf->lsa_originate_count++;
 
 	/** sqsq */
-	zlog_debug("in %s, calling ospf_flood_through_area", __func__);
+	zlog_debug("in %s, calling ospf_flood_through_area, lsa:%s", __func__, dump_lsa_key(new));
 
 	/* Flooding new LSA through area. */
 	ospf_flood_through_area(area, NULL, new);
@@ -918,7 +923,7 @@ static struct ospf_lsa *ospf_router_lsa_refresh(struct ospf_lsa *lsa)
 	ospf_lsa_install(area->ospf, NULL, new);
 
 	/** sqsq */
-	zlog_debug("in %s, calling ospf_flood_through_area", __func__);
+	zlog_debug("in %s, calling ospf_flood_through_area., lsa:%s", __func__, new);
 
 	/* Flood LSA through area. */
 	ospf_flood_through_area(area, NULL, new);

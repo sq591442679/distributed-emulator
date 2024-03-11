@@ -3952,6 +3952,9 @@ void ospf_ls_upd_send_lsa(struct ospf_neighbor *nbr, struct ospf_lsa *lsa,
 {
 	struct list *update;
 
+	/** sqsq */
+	zlog_debug("%s: send lsa:[%s]", __func__, dump_lsa_key(lsa));
+
 	update = list_new();
 
 	listnode_add(update, lsa);
@@ -4165,9 +4168,6 @@ void ospf_ls_upd_send(struct ospf_neighbor *nbr, struct list *update, int flag,
 	struct prefix_ipv4 p;
 	struct route_node *rn;
 	struct listnode *node;
-
-	/** @sqsq */
-	zlog_debug("entered %s: %lld", __func__,  monotime(NULL));
 
 	oi = nbr->oi;
 
