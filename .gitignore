@@ -15,7 +15,7 @@ configuration
 #[Build Mid-Files]
 **/cmake-build-debug
 **/__pycache__
-
+git 
 #[Binary Files]
 *.mp4
 .DS_Store
@@ -24,5 +24,4 @@ configuration
 #[Static Library]
 *.a
 
-**.txt
 **.log

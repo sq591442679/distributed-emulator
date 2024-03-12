@@ -197,7 +197,7 @@ if __name__ == "__main__":
     
     os.system("./stop_and_kill_constellation.sh")
 
-    with open("eth_dict.txt", "w") as f:
+    with open("eth_dict.log", "w") as f:
         print("", flush=True, file=f)
     with open("link.log", "w") as f:
         print("", flush=True, file=f)
