@@ -199,6 +199,8 @@ if __name__ == "__main__":
 
     with open("eth_dict.txt", "w") as f:
         print("", flush=True, file=f)
+    with open("link.log", "w") as f:
+        print("", flush=True, file=f)
 
     # start kernel modules, added by sqsq
     os.system("./sqsq-kernel-modules/uninstall_modules.sh")

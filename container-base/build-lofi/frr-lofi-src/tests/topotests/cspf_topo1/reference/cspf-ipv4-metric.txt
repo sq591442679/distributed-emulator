@@ -1,3 +1,0 @@
-Path computation success
-	Cost: 20
-	Edges: 10.0.0.2 10.0.4.4

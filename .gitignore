@@ -23,3 +23,6 @@ configuration
 
 #[Static Library]
 *.a
+
+**.txt
+**.log
