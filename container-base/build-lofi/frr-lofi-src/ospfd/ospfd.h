@@ -51,9 +51,7 @@
  * sqsq
  */
 extern uint8_t lofi_n;
-
-/* @sqsq */
-#define WARMUP_PERIOD			10  // NOTE need to be synchronised with emulator/common.py
+extern uint32_t lofi_warmup_period;
 
 /* Default configuration file name for ospfd. */
 #define OSPF_DEFAULT_CONFIG   "ospfd.conf"

@@ -1,92 +1,183 @@
 
-veth_dict: {'node_5_6': 'veth9aa614b', 'node_6_6': 'veth841281d'}, eth_dict: {'node_5_6': 'eth3', 'node_6_6': 'eth2'}
-veth_dict: {'node_0_0': 'vethebdb0e2', 'node_0_1': 'veth103b61f'}, eth_dict: {'node_0_0': 'eth1', 'node_0_1': 'eth1'}
-veth_dict: {'node_0_5': 'veth95b441d', 'node_1_5': 'veth4d58f9b'}, eth_dict: {'node_0_5': 'eth2', 'node_1_5': 'eth1'}
-veth_dict: {'node_6_1': 'veth1a80bcb', 'node_6_2': 'vetheefff64'}, eth_dict: {'node_6_1': 'eth3', 'node_6_2': 'eth1'}
-veth_dict: {'node_0_6': 'veth6f9fcb4', 'node_0_0': 'veth760f95a'}, eth_dict: {'node_0_6': 'eth2', 'node_0_0': 'eth3'}
-veth_dict: {'node_0_1': 'vethd78b484', 'node_1_1': 'vetha6345fc'}, eth_dict: {'node_0_1': 'eth3', 'node_1_1': 'eth1'}
-veth_dict: {'node_4_2': 'veth6676af9', 'node_4_3': 'vethceb82ee'}, eth_dict: {'node_4_2': 'eth1', 'node_4_3': 'eth1'}
-veth_dict: {'node_3_4': 'veth3866a8f', 'node_4_4': 'veth84b4395'}, eth_dict: {'node_3_4': 'eth2', 'node_4_4': 'eth1'}
-veth_dict: {'node_6_2': 'veth89d3ffb', 'node_6_3': 'vethfbf96ad'}, eth_dict: {'node_6_2': 'eth3', 'node_6_3': 'eth1'}
-veth_dict: {'node_3_6': 'veth1a781a0', 'node_4_6': 'vethea4febc'}, eth_dict: {'node_3_6': 'eth4', 'node_4_6': 'eth1'}
-veth_dict: {'node_1_5': 'veth88655c0', 'node_2_5': 'veth772d112'}, eth_dict: {'node_1_5': 'eth4', 'node_2_5': 'eth1'}
-veth_dict: {'node_2_0': 'vethe2469c9', 'node_2_1': 'vethb925b20'}, eth_dict: {'node_2_0': 'eth3', 'node_2_1': 'eth4'}
-veth_dict: {'node_3_3': 'vethbf56421', 'node_3_4': 'veth85eefa5'}, eth_dict: {'node_3_3': 'eth3', 'node_3_4': 'eth4'}
-veth_dict: {'node_2_3': 'vethd3b0e10', 'node_2_4': 'veth353ab86'}, eth_dict: {'node_2_3': 'eth3', 'node_2_4': 'eth2'}
-veth_dict: {'node_5_4': 'veth65d7fb5', 'node_6_4': 'veth27e83a9'}, eth_dict: {'node_5_4': 'eth4', 'node_6_4': 'eth3'}
-veth_dict: {'node_4_1': 'veth7054a52', 'node_5_1': 'vethcf879e4'}, eth_dict: {'node_4_1': 'eth4', 'node_5_1': 'eth4'}
-veth_dict: {'node_3_0': 'veth75f7278', 'node_3_1': 'vethf6debbe'}, eth_dict: {'node_3_0': 'eth1', 'node_3_1': 'eth2'}
-veth_dict: {'node_5_3': 'vetheaee578', 'node_6_3': 'vethbc1d204'}, eth_dict: {'node_5_3': 'eth4', 'node_6_3': 'eth3'}
-veth_dict: {'node_4_5': 'veth875f7d2', 'node_4_6': 'vetheee643a'}, eth_dict: {'node_4_5': 'eth3', 'node_4_6': 'eth2'}
-veth_dict: {'node_1_5': 'vethe29e8f3', 'node_1_6': 'veth892c2e5'}, eth_dict: {'node_1_5': 'eth3', 'node_1_6': 'eth2'}
-veth_dict: {'node_5_2': 'veth41f4692', 'node_6_2': 'veth1b12a13'}, eth_dict: {'node_5_2': 'eth4', 'node_6_2': 'eth2'}
-veth_dict: {'node_0_5': 'veth5f8e3bb', 'node_0_6': 'veth012b088'}, eth_dict: {'node_0_5': 'eth1', 'node_0_6': 'eth1'}
-veth_dict: {'node_0_0': 'veth6428966', 'node_1_0': 'vethc4e2c2a'}, eth_dict: {'node_0_0': 'eth2', 'node_1_0': 'eth1'}
-veth_dict: {'node_3_6': 'vethabbaf27', 'node_2_6': 'vethf9f568e'}, eth_dict: {'node_3_6': 'eth1', 'node_2_6': 'eth2'}
-veth_dict: {'node_5_3': 'veth14d9216', 'node_5_4': 'veth95f4f41'}, eth_dict: {'node_5_3': 'eth3', 'node_5_4': 'eth2'}
-veth_dict: {'node_0_4': 'veth9224d94', 'node_1_4': 'veth1121b50'}, eth_dict: {'node_0_4': 'eth3', 'node_1_4': 'eth4'}
-veth_dict: {'node_4_4': 'veth78dbae8', 'node_5_4': 'veth40bf79f'}, eth_dict: {'node_4_4': 'eth4', 'node_5_4': 'eth1'}
-veth_dict: {'node_2_6': 'veth2be8344', 'node_2_0': 'vethabedc95'}, eth_dict: {'node_2_6': 'eth1', 'node_2_0': 'eth1'}
-veth_dict: {'node_5_2': 'veth05b9a82', 'node_5_3': 'vethedf11c0'}, eth_dict: {'node_5_2': 'eth3', 'node_5_3': 'eth2'}
-veth_dict: {'node_2_5': 'veth35b3d8c', 'node_3_5': 'vethbfe4bc0'}, eth_dict: {'node_2_5': 'eth4', 'node_3_5': 'eth4'}
-veth_dict: {'node_5_6': 'veth9b3d241', 'node_5_0': 'veth053e08a'}, eth_dict: {'node_5_6': 'eth2', 'node_5_0': 'eth3'}
-veth_dict: {'node_2_2': 'veth58ad3c6', 'node_2_3': 'veth84bb098'}, eth_dict: {'node_2_2': 'eth2', 'node_2_3': 'eth2'}
-veth_dict: {'node_3_2': 'veth9cc426e', 'node_4_2': 'veth5df1481'}, eth_dict: {'node_3_2': 'eth4', 'node_4_2': 'eth3'}
-veth_dict: {'node_2_2': 'veth84530e1', 'node_3_2': 'veth2207c4c'}, eth_dict: {'node_2_2': 'eth3', 'node_3_2': 'eth1'}
-veth_dict: {'node_4_4': 'veth51f98c4', 'node_4_5': 'vethf83aaae'}, eth_dict: {'node_4_4': 'eth3', 'node_4_5': 'eth2'}
-veth_dict: {'node_2_5': 'veth63cf639', 'node_2_6': 'veth1e57638'}, eth_dict: {'node_2_5': 'eth3', 'node_2_6': 'eth4'}
-veth_dict: {'node_3_2': 'veth6bc4fa4', 'node_3_3': 'vethf73683d'}, eth_dict: {'node_3_2': 'eth3', 'node_3_3': 'eth2'}
-veth_dict: {'node_5_1': 'veth72abfea', 'node_6_1': 'vethc4a7256'}, eth_dict: {'node_5_1': 'eth3', 'node_6_1': 'eth1'}
-veth_dict: {'node_1_2': 'veth5bebeee', 'node_2_2': 'vethdbc65da'}, eth_dict: {'node_1_2': 'eth4', 'node_2_2': 'eth4'}
-veth_dict: {'node_1_3': 'veth07362a0', 'node_1_4': 'veth8176c70'}, eth_dict: {'node_1_3': 'eth1', 'node_1_4': 'eth1'}
-veth_dict: {'node_6_5': 'vethfdc4ff4', 'node_5_5': 'vethe4b4561'}, eth_dict: {'node_6_5': 'eth1', 'node_5_5': 'eth2'}
-veth_dict: {'node_0_1': 'veth836b206', 'node_0_2': 'vetheee6b53'}, eth_dict: {'node_0_1': 'eth2', 'node_0_2': 'eth1'}
-veth_dict: {'node_2_4': 'veth3a3a731', 'node_2_5': 'vethbf0c7ad'}, eth_dict: {'node_2_4': 'eth3', 'node_2_5': 'eth2'}
-veth_dict: {'node_5_5': 'veth903dfc7', 'node_5_6': 'veth4eb7d45'}, eth_dict: {'node_5_5': 'eth1', 'node_5_6': 'eth1'}
-veth_dict: {'node_1_0': 'vethf8c7880', 'node_2_0': 'vetha909dbf'}, eth_dict: {'node_1_0': 'eth3', 'node_2_0': 'eth2'}
-veth_dict: {'node_1_3': 'veth4c40cf3', 'node_2_3': 'vethe39be75'}, eth_dict: {'node_1_3': 'eth2', 'node_2_3': 'eth1'}
-veth_dict: {'node_3_4': 'vethcb2fb9a', 'node_2_4': 'vethbeeca0e'}, eth_dict: {'node_3_4': 'eth3', 'node_2_4': 'eth4'}
-veth_dict: {'node_3_1': 'veth8a02328', 'node_4_1': 'veth911c9f3'}, eth_dict: {'node_3_1': 'eth4', 'node_4_1': 'eth1'}
-veth_dict: {'node_1_2': 'veth95c7975', 'node_1_3': 'veth71c8450'}, eth_dict: {'node_1_2': 'eth3', 'node_1_3': 'eth4'}
-veth_dict: {'node_4_6': 'vethaebd871', 'node_5_6': 'vethe61fa20'}, eth_dict: {'node_4_6': 'eth4', 'node_5_6': 'eth4'}
-veth_dict: {'node_4_3': 'veth59e1788', 'node_5_3': 'vethfedf201'}, eth_dict: {'node_4_3': 'eth3', 'node_5_3': 'eth1'}
-veth_dict: {'node_4_1': 'veth2a93447', 'node_4_2': 'vethe125828'}, eth_dict: {'node_4_1': 'eth3', 'node_4_2': 'eth4'}
-veth_dict: {'node_5_1': 'vethf61f8f1', 'node_5_2': 'veth667feb5'}, eth_dict: {'node_5_1': 'eth2', 'node_5_2': 'eth2'}
-veth_dict: {'node_3_6': 'veth02d35e9', 'node_3_0': 'vethfd606e6'}, eth_dict: {'node_3_6': 'eth3', 'node_3_0': 'eth3'}
-veth_dict: {'node_1_6': 'veth23b747f', 'node_2_6': 'veth5ef2c64'}, eth_dict: {'node_1_6': 'eth4', 'node_2_6': 'eth3'}
-veth_dict: {'node_2_1': 'veth751710a', 'node_2_2': 'vethb1de7d9'}, eth_dict: {'node_2_1': 'eth1', 'node_2_2': 'eth1'}
-veth_dict: {'node_1_0': 'veth3617e0d', 'node_1_1': 'vethdeddb2b'}, eth_dict: {'node_1_0': 'eth2', 'node_1_1': 'eth2'}
-veth_dict: {'node_6_4': 'veth4d7d058', 'node_6_5': 'veth7475739'}, eth_dict: {'node_6_4': 'eth2', 'node_6_5': 'eth2'}
-veth_dict: {'node_5_0': 'veth014bf32', 'node_6_0': 'veth1feae99'}, eth_dict: {'node_5_0': 'eth2', 'node_6_0': 'eth2'}
-veth_dict: {'node_0_2': 'vethb921912', 'node_1_2': 'veth2cd51cc'}, eth_dict: {'node_0_2': 'eth3', 'node_1_2': 'eth1'}
-veth_dict: {'node_4_3': 'veth46ba4b8', 'node_4_4': 'vetha1184bd'}, eth_dict: {'node_4_3': 'eth2', 'node_4_4': 'eth2'}
-veth_dict: {'node_0_3': 'vethf137a78', 'node_0_4': 'veth42162d3'}, eth_dict: {'node_0_3': 'eth2', 'node_0_4': 'eth1'}
-veth_dict: {'node_2_1': 'vethb7749a9', 'node_3_1': 'vethd235b14'}, eth_dict: {'node_2_1': 'eth2', 'node_3_1': 'eth1'}
-veth_dict: {'node_0_4': 'vethb59d188', 'node_0_5': 'vethb01b8ca'}, eth_dict: {'node_0_4': 'eth2', 'node_0_5': 'eth3'}
-veth_dict: {'node_3_5': 'veth50fd48d', 'node_4_5': 'veth18ef50f'}, eth_dict: {'node_3_5': 'eth3', 'node_4_5': 'eth1'}
-veth_dict: {'node_3_3': 'veth6ebdc87', 'node_4_3': 'veth7c75a4d'}, eth_dict: {'node_3_3': 'eth4', 'node_4_3': 'eth4'}
-veth_dict: {'node_5_0': 'vethd455313', 'node_4_0': 'veth87dbe9a'}, eth_dict: {'node_5_0': 'eth4', 'node_4_0': 'eth3'}
-veth_dict: {'node_6_6': 'vethdab94cf', 'node_6_0': 'veth552ed43'}, eth_dict: {'node_6_6': 'eth1', 'node_6_0': 'eth1'}
-veth_dict: {'node_1_4': 'vethc4a0361', 'node_2_4': 'vethf0f80cf'}, eth_dict: {'node_1_4': 'eth3', 'node_2_4': 'eth1'}
-veth_dict: {'node_3_1': 'vethbc2da97', 'node_3_2': 'veth772d9ba'}, eth_dict: {'node_3_1': 'eth3', 'node_3_2': 'eth2'}
-veth_dict: {'node_1_6': 'vetha43a59c', 'node_1_0': 'vethf46e7b2'}, eth_dict: {'node_1_6': 'eth3', 'node_1_0': 'eth4'}
-veth_dict: {'node_4_6': 'vethdd0b72b', 'node_4_0': 'veth44788dc'}, eth_dict: {'node_4_6': 'eth3', 'node_4_0': 'eth4'}
-veth_dict: {'node_1_1': 'veth121d808', 'node_2_1': 'veth2cd5713'}, eth_dict: {'node_1_1': 'eth4', 'node_2_1': 'eth3'}
-veth_dict: {'node_0_2': 'vethf6b3a3a', 'node_0_3': 'veth7a2355d'}, eth_dict: {'node_0_2': 'eth2', 'node_0_3': 'eth1'}
-veth_dict: {'node_3_4': 'veth868504a', 'node_3_5': 'vethdaf8cf8'}, eth_dict: {'node_3_4': 'eth1', 'node_3_5': 'eth1'}
-veth_dict: {'node_5_4': 'veth5256a5b', 'node_5_5': 'veth4585009'}, eth_dict: {'node_5_4': 'eth3', 'node_5_5': 'eth4'}
-veth_dict: {'node_1_4': 'veth58dd8e9', 'node_1_5': 'vethe2f20d4'}, eth_dict: {'node_1_4': 'eth2', 'node_1_5': 'eth2'}
-veth_dict: {'node_2_3': 'veth7f238f7', 'node_3_3': 'veth41d69fe'}, eth_dict: {'node_2_3': 'eth4', 'node_3_3': 'eth1'}
-veth_dict: {'node_3_5': 'vethb7a35aa', 'node_3_6': 'vethcd258f6'}, eth_dict: {'node_3_5': 'eth2', 'node_3_6': 'eth2'}
-veth_dict: {'node_4_0': 'veth08d6717', 'node_4_1': 'vetheb2542b'}, eth_dict: {'node_4_0': 'eth2', 'node_4_1': 'eth2'}
-veth_dict: {'node_6_5': 'vethdf65445', 'node_6_6': 'veth3e3f603'}, eth_dict: {'node_6_5': 'eth3', 'node_6_6': 'eth3'}
-veth_dict: {'node_6_3': 'veth21db6cf', 'node_6_4': 'veth4652e04'}, eth_dict: {'node_6_3': 'eth2', 'node_6_4': 'eth1'}
-veth_dict: {'node_6_0': 'veth4ae358f', 'node_6_1': 'veth915be61'}, eth_dict: {'node_6_0': 'eth3', 'node_6_1': 'eth2'}
-veth_dict: {'node_3_0': 'veth1704d1d', 'node_4_0': 'veth9542ab6'}, eth_dict: {'node_3_0': 'eth2', 'node_4_0': 'eth1'}
-veth_dict: {'node_4_5': 'veth1fed8b7', 'node_5_5': 'veth13e081e'}, eth_dict: {'node_4_5': 'eth4', 'node_5_5': 'eth3'}
-veth_dict: {'node_4_2': 'veth0ec819c', 'node_5_2': 'veth99c79a3'}, eth_dict: {'node_4_2': 'eth2', 'node_5_2': 'eth1'}
-veth_dict: {'node_5_0': 'veth29d971c', 'node_5_1': 'vetha0efc6a'}, eth_dict: {'node_5_0': 'eth1', 'node_5_1': 'eth1'}
-veth_dict: {'node_0_6': 'vethe437203', 'node_1_6': 'veth16fcb4f'}, eth_dict: {'node_0_6': 'eth3', 'node_1_6': 'eth1'}
-veth_dict: {'node_1_1': 'vetha31aea2', 'node_1_2': 'vethe089c9d'}, eth_dict: {'node_1_1': 'eth3', 'node_1_2': 'eth2'}
-veth_dict: {'node_2_0': 'veth6e63e82', 'node_3_0': 'vethbdc7f15'}, eth_dict: {'node_2_0': 'eth4', 'node_3_0': 'eth4'}
-veth_dict: {'node_0_3': 'vethdc64ebb', 'node_1_3': 'vetha6f2cee'}, eth_dict: {'node_0_3': 'eth3', 'node_1_3': 'eth3'}
+(0, 0)<-->(0, 1):172.18.0.1/29
+(0, 0)<-->(1, 0):172.18.0.9/29
+(0, 1)<-->(0, 2):172.18.0.17/29
+(0, 1)<-->(1, 1):172.18.0.25/29
+(0, 2)<-->(0, 3):172.18.0.33/29
+(0, 2)<-->(1, 2):172.18.0.41/29
+(0, 3)<-->(0, 4):172.18.0.49/29
+(0, 3)<-->(1, 3):172.18.0.57/29
+(0, 4)<-->(0, 5):172.18.0.65/29
+(0, 4)<-->(1, 4):172.18.0.73/29
+(0, 5)<-->(0, 6):172.18.0.81/29
+(0, 5)<-->(1, 5):172.18.0.89/29
+(0, 6)<-->(0, 0):172.18.0.97/29
+(0, 6)<-->(1, 6):172.18.0.105/29
+(1, 0)<-->(1, 1):172.18.0.113/29
+(1, 0)<-->(2, 0):172.18.0.121/29
+(1, 1)<-->(1, 2):172.18.0.129/29
+(1, 1)<-->(2, 1):172.18.0.137/29
+(1, 2)<-->(1, 3):172.18.0.145/29
+(1, 2)<-->(2, 2):172.18.0.153/29
+(1, 3)<-->(1, 4):172.18.0.161/29
+(1, 3)<-->(2, 3):172.18.0.169/29
+(1, 4)<-->(1, 5):172.18.0.177/29
+(1, 4)<-->(2, 4):172.18.0.185/29
+(1, 5)<-->(1, 6):172.18.0.193/29
+(1, 5)<-->(2, 5):172.18.0.201/29
+(1, 6)<-->(1, 0):172.18.0.209/29
+(1, 6)<-->(2, 6):172.18.0.217/29
+(2, 0)<-->(2, 1):172.18.0.225/29
+(2, 0)<-->(3, 0):172.18.0.233/29
+(2, 1)<-->(2, 2):172.18.0.241/29
+(2, 1)<-->(3, 1):172.18.0.249/29
+(2, 2)<-->(2, 3):172.18.1.1/29
+(2, 2)<-->(3, 2):172.18.1.9/29
+(2, 3)<-->(2, 4):172.18.1.17/29
+(2, 3)<-->(3, 3):172.18.1.25/29
+(2, 4)<-->(2, 5):172.18.1.33/29
+(2, 4)<-->(3, 4):172.18.1.41/29
+(2, 5)<-->(2, 6):172.18.1.49/29
+(2, 5)<-->(3, 5):172.18.1.57/29
+(2, 6)<-->(2, 0):172.18.1.65/29
+(2, 6)<-->(3, 6):172.18.1.73/29
+(3, 0)<-->(3, 1):172.18.1.81/29
+(3, 0)<-->(4, 0):172.18.1.89/29
+(3, 1)<-->(3, 2):172.18.1.97/29
+(3, 1)<-->(4, 1):172.18.1.105/29
+(3, 2)<-->(3, 3):172.18.1.113/29
+(3, 2)<-->(4, 2):172.18.1.121/29
+(3, 3)<-->(3, 4):172.18.1.129/29
+(3, 3)<-->(4, 3):172.18.1.137/29
+(3, 4)<-->(3, 5):172.18.1.145/29
+(3, 4)<-->(4, 4):172.18.1.153/29
+(3, 5)<-->(3, 6):172.18.1.161/29
+(3, 5)<-->(4, 5):172.18.1.169/29
+(3, 6)<-->(3, 0):172.18.1.177/29
+(3, 6)<-->(4, 6):172.18.1.185/29
+(4, 0)<-->(4, 1):172.18.1.193/29
+(4, 0)<-->(5, 0):172.18.1.201/29
+(4, 1)<-->(4, 2):172.18.1.209/29
+(4, 1)<-->(5, 1):172.18.1.217/29
+(4, 2)<-->(4, 3):172.18.1.225/29
+(4, 2)<-->(5, 2):172.18.1.233/29
+(4, 3)<-->(4, 4):172.18.1.241/29
+(4, 3)<-->(5, 3):172.18.1.249/29
+(4, 4)<-->(4, 5):172.18.2.1/29
+(4, 4)<-->(5, 4):172.18.2.9/29
+(4, 5)<-->(4, 6):172.18.2.17/29
+(4, 5)<-->(5, 5):172.18.2.25/29
+(4, 6)<-->(4, 0):172.18.2.33/29
+(4, 6)<-->(5, 6):172.18.2.41/29
+(5, 0)<-->(5, 1):172.18.2.49/29
+(5, 0)<-->(6, 0):172.18.2.57/29
+(5, 1)<-->(5, 2):172.18.2.65/29
+(5, 1)<-->(6, 1):172.18.2.73/29
+(5, 2)<-->(5, 3):172.18.2.81/29
+(5, 2)<-->(6, 2):172.18.2.89/29
+(5, 3)<-->(5, 4):172.18.2.97/29
+(5, 3)<-->(6, 3):172.18.2.105/29
+(5, 4)<-->(5, 5):172.18.2.113/29
+(5, 4)<-->(6, 4):172.18.2.121/29
+(5, 5)<-->(5, 6):172.18.2.129/29
+(5, 5)<-->(6, 5):172.18.2.137/29
+(5, 6)<-->(5, 0):172.18.2.145/29
+(5, 6)<-->(6, 6):172.18.2.153/29
+(6, 0)<-->(6, 1):172.18.2.161/29
+(6, 1)<-->(6, 2):172.18.2.169/29
+(6, 2)<-->(6, 3):172.18.2.177/29
+(6, 3)<-->(6, 4):172.18.2.185/29
+(6, 4)<-->(6, 5):172.18.2.193/29
+(6, 5)<-->(6, 6):172.18.2.201/29
+(6, 6)<-->(6, 0):172.18.2.209/29
+veth_dict: {'node_0_5': 'veth451f016', 'node_1_5': 'vethf312496'}, eth_dict: {'node_0_5': 'eth2', 'node_1_5': 'eth1'}
+veth_dict: {'node_2_0': 'veth84b2113', 'node_2_6': 'veth60d27df'}, eth_dict: {'node_2_0': 'eth1', 'node_2_6': 'eth1'}
+veth_dict: {'node_3_0': 'veth30bd8a6', 'node_3_1': 'vethdccdb1c'}, eth_dict: {'node_3_0': 'eth1', 'node_3_1': 'eth2'}
+veth_dict: {'node_4_2': 'veth1142713', 'node_5_2': 'vethc30afd8'}, eth_dict: {'node_4_2': 'eth2', 'node_5_2': 'eth1'}
+veth_dict: {'node_1_4': 'vethf88f6b0', 'node_1_5': 'veth3c135be'}, eth_dict: {'node_1_4': 'eth2', 'node_1_5': 'eth2'}
+veth_dict: {'node_0_5': 'veth32aea64', 'node_0_6': 'vethd135f97'}, eth_dict: {'node_0_5': 'eth1', 'node_0_6': 'eth1'}
+veth_dict: {'node_6_4': 'veth7499f1b', 'node_6_5': 'veth7a5a93a'}, eth_dict: {'node_6_4': 'eth2', 'node_6_5': 'eth2'}
+veth_dict: {'node_0_1': 'veth3ae77b1', 'node_1_1': 'veth56204f6'}, eth_dict: {'node_0_1': 'eth3', 'node_1_1': 'eth1'}
+veth_dict: {'node_5_4': 'veth6f66db6', 'node_6_4': 'veth1e53256'}, eth_dict: {'node_5_4': 'eth4', 'node_6_4': 'eth3'}
+veth_dict: {'node_3_2': 'veth1a6cfd8', 'node_3_3': 'veth7c7aa55'}, eth_dict: {'node_3_2': 'eth3', 'node_3_3': 'eth2'}
+veth_dict: {'node_5_6': 'veth6317e6f', 'node_6_6': 'veth5b92b8b'}, eth_dict: {'node_5_6': 'eth3', 'node_6_6': 'eth2'}
+veth_dict: {'node_5_2': 'veth8b8b7cf', 'node_5_3': 'veth41b337a'}, eth_dict: {'node_5_2': 'eth3', 'node_5_3': 'eth2'}
+veth_dict: {'node_0_3': 'veth24935f3', 'node_1_3': 'veth4f00e30'}, eth_dict: {'node_0_3': 'eth3', 'node_1_3': 'eth3'}
+veth_dict: {'node_2_5': 'vethe351e53', 'node_3_5': 'vethd4c9583'}, eth_dict: {'node_2_5': 'eth4', 'node_3_5': 'eth4'}
+veth_dict: {'node_4_5': 'veth6ca8658', 'node_5_5': 'veth4a0cf36'}, eth_dict: {'node_4_5': 'eth4', 'node_5_5': 'eth3'}
+veth_dict: {'node_6_2': 'veth57b0926', 'node_5_2': 'veth765ea98'}, eth_dict: {'node_6_2': 'eth2', 'node_5_2': 'eth4'}
+veth_dict: {'node_3_6': 'veth54e7549', 'node_3_0': 'veth75329ad'}, eth_dict: {'node_3_6': 'eth3', 'node_3_0': 'eth3'}
+veth_dict: {'node_2_3': 'vethc135e49', 'node_3_3': 'veth7ce8321'}, eth_dict: {'node_2_3': 'eth4', 'node_3_3': 'eth1'}
+veth_dict: {'node_1_2': 'veth7b52787', 'node_1_3': 'veth6930f82'}, eth_dict: {'node_1_2': 'eth3', 'node_1_3': 'eth4'}
+veth_dict: {'node_1_3': 'veth68c5923', 'node_2_3': 'vetha9bdbff'}, eth_dict: {'node_1_3': 'eth2', 'node_2_3': 'eth1'}
+veth_dict: {'node_4_2': 'veth263d1e4', 'node_4_3': 'veth1b680f0'}, eth_dict: {'node_4_2': 'eth1', 'node_4_3': 'eth1'}
+veth_dict: {'node_0_1': 'vethf532146', 'node_0_2': 'vethba02929'}, eth_dict: {'node_0_1': 'eth2', 'node_0_2': 'eth1'}
+veth_dict: {'node_1_5': 'veth9680069', 'node_2_5': 'veth1a02890'}, eth_dict: {'node_1_5': 'eth4', 'node_2_5': 'eth1'}
+veth_dict: {'node_1_1': 'veth16f9fb0', 'node_2_1': 'vethb01f710'}, eth_dict: {'node_1_1': 'eth4', 'node_2_1': 'eth3'}
+veth_dict: {'node_1_3': 'vethdbdf3f5', 'node_1_4': 'veth8125370'}, eth_dict: {'node_1_3': 'eth1', 'node_1_4': 'eth1'}
+veth_dict: {'node_5_6': 'veth0294ad3', 'node_5_0': 'veth28c22cb'}, eth_dict: {'node_5_6': 'eth2', 'node_5_0': 'eth3'}
+veth_dict: {'node_4_5': 'veth3607cf9', 'node_4_6': 'vethde3f515'}, eth_dict: {'node_4_5': 'eth3', 'node_4_6': 'eth2'}
+veth_dict: {'node_5_4': 'veth4f96f86', 'node_5_5': 'vetha63f604'}, eth_dict: {'node_5_4': 'eth3', 'node_5_5': 'eth4'}
+veth_dict: {'node_3_5': 'veth88ed447', 'node_4_5': 'veth38afea6'}, eth_dict: {'node_3_5': 'eth3', 'node_4_5': 'eth1'}
+veth_dict: {'node_5_1': 'veth0e88918', 'node_6_1': 'vethf3d3c2d'}, eth_dict: {'node_5_1': 'eth3', 'node_6_1': 'eth1'}
+veth_dict: {'node_3_1': 'veth6867aca', 'node_4_1': 'vetha615ab3'}, eth_dict: {'node_3_1': 'eth4', 'node_4_1': 'eth1'}
+veth_dict: {'node_2_6': 'veth053e42c', 'node_3_6': 'veth011c044'}, eth_dict: {'node_2_6': 'eth2', 'node_3_6': 'eth1'}
+veth_dict: {'node_4_1': 'veth87560a0', 'node_5_1': 'veth5750f8f'}, eth_dict: {'node_4_1': 'eth4', 'node_5_1': 'eth4'}
+veth_dict: {'node_2_3': 'vetha0e8640', 'node_2_4': 'veth3020dea'}, eth_dict: {'node_2_3': 'eth3', 'node_2_4': 'eth2'}
+veth_dict: {'node_0_4': 'veth014fcd9', 'node_0_3': 'veth261bb7c'}, eth_dict: {'node_0_4': 'eth1', 'node_0_3': 'eth2'}
+veth_dict: {'node_6_3': 'vethf49178e', 'node_6_4': 'veth48f56fe'}, eth_dict: {'node_6_3': 'eth2', 'node_6_4': 'eth1'}
+veth_dict: {'node_2_5': 'vetha97d280', 'node_2_6': 'veth3e0983d'}, eth_dict: {'node_2_5': 'eth3', 'node_2_6': 'eth4'}
+veth_dict: {'node_0_0': 'veth134db91', 'node_1_0': 'vethfa63feb'}, eth_dict: {'node_0_0': 'eth2', 'node_1_0': 'eth1'}
+veth_dict: {'node_4_0': 'veth1b3bbb9', 'node_5_0': 'vethd52a3e6'}, eth_dict: {'node_4_0': 'eth3', 'node_5_0': 'eth4'}
+veth_dict: {'node_5_0': 'veth43fb173', 'node_5_1': 'veth63304eb'}, eth_dict: {'node_5_0': 'eth1', 'node_5_1': 'eth1'}
+veth_dict: {'node_0_2': 'veth10bfc6e', 'node_1_2': 'vethe59eeaf'}, eth_dict: {'node_0_2': 'eth3', 'node_1_2': 'eth1'}
+veth_dict: {'node_5_1': 'veth700cc20', 'node_5_2': 'vethc6c5f13'}, eth_dict: {'node_5_1': 'eth2', 'node_5_2': 'eth2'}
+veth_dict: {'node_3_3': 'vethe8405c5', 'node_4_3': 'vethb3cbdfa'}, eth_dict: {'node_3_3': 'eth4', 'node_4_3': 'eth4'}
+veth_dict: {'node_0_0': 'veth31723e6', 'node_0_1': 'vethac0084d'}, eth_dict: {'node_0_0': 'eth1', 'node_0_1': 'eth1'}
+veth_dict: {'node_1_5': 'veth1fbfb01', 'node_1_6': 'veth1cf41d4'}, eth_dict: {'node_1_5': 'eth3', 'node_1_6': 'eth2'}
+veth_dict: {'node_2_0': 'vethc72944f', 'node_3_0': 'veth142a826'}, eth_dict: {'node_2_0': 'eth4', 'node_3_0': 'eth4'}
+veth_dict: {'node_2_0': 'vethd8285da', 'node_2_1': 'vethd10e249'}, eth_dict: {'node_2_0': 'eth3', 'node_2_1': 'eth4'}
+veth_dict: {'node_2_2': 'vethd176a4b', 'node_3_2': 'vetha8bacc4'}, eth_dict: {'node_2_2': 'eth3', 'node_3_2': 'eth1'}
+veth_dict: {'node_4_4': 'veth3554203', 'node_5_4': 'veth66c3dd1'}, eth_dict: {'node_4_4': 'eth4', 'node_5_4': 'eth1'}
+veth_dict: {'node_6_2': 'vethb5b7e90', 'node_6_3': 'veth4de8a9a'}, eth_dict: {'node_6_2': 'eth3', 'node_6_3': 'eth1'}
+veth_dict: {'node_4_1': 'veth7b216fb', 'node_4_2': 'vethaf2e868'}, eth_dict: {'node_4_1': 'eth3', 'node_4_2': 'eth4'}
+veth_dict: {'node_2_2': 'veth3b4cca4', 'node_2_3': 'veth7fa14c4'}, eth_dict: {'node_2_2': 'eth2', 'node_2_3': 'eth2'}
+veth_dict: {'node_1_1': 'veth96fe443', 'node_1_2': 'veth2b1f4e2'}, eth_dict: {'node_1_1': 'eth3', 'node_1_2': 'eth2'}
+veth_dict: {'node_5_0': 'veth29f1a6f', 'node_6_0': 'vethe44771b'}, eth_dict: {'node_5_0': 'eth2', 'node_6_0': 'eth2'}
+veth_dict: {'node_3_1': 'veth134c022', 'node_3_2': 'veth66e7ecd'}, eth_dict: {'node_3_1': 'eth3', 'node_3_2': 'eth2'}
+veth_dict: {'node_2_1': 'vetheb64b7e', 'node_3_1': 'veth74160d9'}, eth_dict: {'node_2_1': 'eth2', 'node_3_1': 'eth1'}
+veth_dict: {'node_5_5': 'veth13299f3', 'node_5_6': 'veth6fc54e6'}, eth_dict: {'node_5_5': 'eth1', 'node_5_6': 'eth1'}
+veth_dict: {'node_2_4': 'vetha783722', 'node_3_4': 'veth31d3fac'}, eth_dict: {'node_2_4': 'eth4', 'node_3_4': 'eth3'}
+veth_dict: {'node_1_0': 'veth27dfcd7', 'node_2_0': 'veth5ee39cf'}, eth_dict: {'node_1_0': 'eth3', 'node_2_0': 'eth2'}
+veth_dict: {'node_0_6': 'vethb81b999', 'node_1_6': 'vethb2cfb4e'}, eth_dict: {'node_0_6': 'eth3', 'node_1_6': 'eth1'}
+veth_dict: {'node_4_6': 'veth7ff4093', 'node_5_6': 'veth34b6b62'}, eth_dict: {'node_4_6': 'eth4', 'node_5_6': 'eth4'}
+veth_dict: {'node_2_1': 'vethd9f3ad0', 'node_2_2': 'veth9535617'}, eth_dict: {'node_2_1': 'eth1', 'node_2_2': 'eth1'}
+veth_dict: {'node_5_3': 'veth8ed53c3', 'node_6_3': 'vethab4f454'}, eth_dict: {'node_5_3': 'eth4', 'node_6_3': 'eth3'}
+veth_dict: {'node_1_0': 'vethf4f598a', 'node_1_1': 'veth6e05966'}, eth_dict: {'node_1_0': 'eth2', 'node_1_1': 'eth2'}
+veth_dict: {'node_0_4': 'veth1c6a709', 'node_1_4': 'vethd7afe12'}, eth_dict: {'node_0_4': 'eth3', 'node_1_4': 'eth4'}
+veth_dict: {'node_4_3': 'veth1946ebe', 'node_5_3': 'vethccce7b2'}, eth_dict: {'node_4_3': 'eth3', 'node_5_3': 'eth1'}
+veth_dict: {'node_4_0': 'veth2b224f2', 'node_4_1': 'veth9cfd4bc'}, eth_dict: {'node_4_0': 'eth2', 'node_4_1': 'eth2'}
+veth_dict: {'node_3_3': 'veth037f0fc', 'node_3_4': 'veth1d0b9ff'}, eth_dict: {'node_3_3': 'eth3', 'node_3_4': 'eth4'}
+veth_dict: {'node_5_3': 'veth1ebccf3', 'node_5_4': 'veth66f550f'}, eth_dict: {'node_5_3': 'eth3', 'node_5_4': 'eth2'}
+veth_dict: {'node_5_5': 'veth48d206f', 'node_6_5': 'veth34c9813'}, eth_dict: {'node_5_5': 'eth2', 'node_6_5': 'eth1'}
+veth_dict: {'node_3_5': 'veth7535134', 'node_3_6': 'veth7ba2795'}, eth_dict: {'node_3_5': 'eth2', 'node_3_6': 'eth2'}
+veth_dict: {'node_4_4': 'veth2d769b7', 'node_4_5': 'vethf93194c'}, eth_dict: {'node_4_4': 'eth3', 'node_4_5': 'eth2'}
+veth_dict: {'node_6_1': 'veth22097fa', 'node_6_2': 'vethc1b3306'}, eth_dict: {'node_6_1': 'eth3', 'node_6_2': 'eth1'}
+veth_dict: {'node_3_4': 'veth3bb052f', 'node_4_4': 'veth2f01662'}, eth_dict: {'node_3_4': 'eth2', 'node_4_4': 'eth1'}
+veth_dict: {'node_6_6': 'veth702dd90', 'node_6_0': 'vethda18a76'}, eth_dict: {'node_6_6': 'eth1', 'node_6_0': 'eth1'}
+veth_dict: {'node_3_2': 'vetha52d2c2', 'node_4_2': 'vethc327e4b'}, eth_dict: {'node_3_2': 'eth4', 'node_4_2': 'eth3'}
+veth_dict: {'node_3_6': 'veth4ab9f64', 'node_4_6': 'veth9f5db30'}, eth_dict: {'node_3_6': 'eth4', 'node_4_6': 'eth1'}
+veth_dict: {'node_6_5': 'veth37e2c0f', 'node_6_6': 'veth135b61c'}, eth_dict: {'node_6_5': 'eth3', 'node_6_6': 'eth3'}
+veth_dict: {'node_3_5': 'veth9d38129', 'node_3_4': 'veth51beb73'}, eth_dict: {'node_3_5': 'eth1', 'node_3_4': 'eth1'}
+veth_dict: {'node_1_4': 'vethcd33608', 'node_2_4': 'veth0750e54'}, eth_dict: {'node_1_4': 'eth3', 'node_2_4': 'eth1'}
+veth_dict: {'node_0_4': 'veth17b1e63', 'node_0_5': 'vethd39fe51'}, eth_dict: {'node_0_4': 'eth2', 'node_0_5': 'eth3'}
+veth_dict: {'node_3_0': 'veth3d51ff5', 'node_4_0': 'veth5fa9acf'}, eth_dict: {'node_3_0': 'eth2', 'node_4_0': 'eth1'}
+veth_dict: {'node_1_2': 'vethdae0992', 'node_2_2': 'veth12f83bf'}, eth_dict: {'node_1_2': 'eth4', 'node_2_2': 'eth4'}
+veth_dict: {'node_0_2': 'vethbd7cf74', 'node_0_3': 'vethee69e6e'}, eth_dict: {'node_0_2': 'eth2', 'node_0_3': 'eth1'}
+veth_dict: {'node_0_6': 'veth01598af', 'node_0_0': 'vethb7b6684'}, eth_dict: {'node_0_6': 'eth2', 'node_0_0': 'eth3'}
+veth_dict: {'node_1_6': 'vethf701808', 'node_2_6': 'vethb0f4c17'}, eth_dict: {'node_1_6': 'eth4', 'node_2_6': 'eth3'}
+veth_dict: {'node_4_6': 'veth0853994', 'node_4_0': 'veth9807867'}, eth_dict: {'node_4_6': 'eth3', 'node_4_0': 'eth4'}
+veth_dict: {'node_2_4': 'veth9b5dd03', 'node_2_5': 'veth30b9fe3'}, eth_dict: {'node_2_4': 'eth3', 'node_2_5': 'eth2'}
+veth_dict: {'node_6_0': 'veth701250f', 'node_6_1': 'veth5be9f07'}, eth_dict: {'node_6_0': 'eth3', 'node_6_1': 'eth2'}
+veth_dict: {'node_1_6': 'veth6b7606c', 'node_1_0': 'veth47faa4f'}, eth_dict: {'node_1_6': 'eth3', 'node_1_0': 'eth4'}
+veth_dict: {'node_4_3': 'veth606b174', 'node_4_4': 'vethbe20c2c'}, eth_dict: {'node_4_3': 'eth2', 'node_4_4': 'eth2'}

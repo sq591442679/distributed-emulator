@@ -237,6 +237,11 @@ def generate_mission_for_network(link_connections, satellites_tmp, docker_client
             container_id1 = satellite_map[node_id1].container_id
             # end container id
             container_id2 = satellite_map[node_id2].container_id
+
+            # added by sqsq
+            with open("eth_dict.txt", "a") as f:
+                print(f"{node_id1}<-->{node_id2}:{subnet_ip_str}/29", flush=True, file=f)
+
             # tmp mission generated
             tmp_mission = (node_id1, node_id2, container_id1, container_id2, network_index, ipam_config)
             # add the tmp mission into submission list

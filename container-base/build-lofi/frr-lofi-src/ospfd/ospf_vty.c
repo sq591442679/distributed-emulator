@@ -264,6 +264,37 @@ DEFUN (
 	return CMD_SUCCESS;
 }
 
+/**
+ * @sqsq
+ * set lofi warmup period
+ */
+DEFUN (
+	ospf_warmup,
+	ospf_warmup_cmd,
+	"ospf warmup_period (0-65535)",
+	"OSPF specific commands\n"
+	"warmup period for the OSPF process before really using lofi\n"
+	"unit: s\n"
+)
+{
+	int idx = 0;
+	uint32_t n = 0;
+
+	// get arguments
+	char *n_str = NULL;
+
+	argv_find(argv, argc, "(0-65535)", &idx);
+	n_str = argv[idx]->arg;
+	n = strtol(n_str, NULL, 10);
+
+	lofi_warmup_period = n;
+
+	// zlog_debug("%s lofi_n:%d", __func__, lofi_n);
+
+	return CMD_SUCCESS;
+}
+
+
 
 DEFUN (no_router_ospf,
        no_router_ospf_cmd,
@@ -11841,7 +11872,21 @@ DEFUN (show_ip_ospf_lofi,
 		"OSPF information\n"
 		"Show parameter n of Lofi\n")
 {
-	vty_out(vty, "%d\n", (int)lofi_n);
+	vty_out(vty, "%u\n", lofi_n);
+	return CMD_SUCCESS;
+}
+
+/**
+ * @sqsq
+ */
+DEFUN (show_ip_ospf_warmup,
+		show_ip_ospf_warmup_cmd,
+		"show ip ospf warmup_period",
+		SHOW_STR IP_STR
+		"OSPF information\n"
+		"Show warmup period of Lofi\n")
+{
+	vty_out(vty, "%u\n", lofi_warmup_period);
 	return CMD_SUCCESS;
 }
 
@@ -12782,9 +12827,10 @@ void ospf_vty_show_init(void)
 	install_element(VIEW_NODE, &show_ip_ospf_external_aggregator_cmd);
 
 	/** @sqsq
-	 * "show ip ospf lofi" command
+	 * "show ip ospf lofi" command and "show ip ospf warmup_period" command
 	 */
 	install_element(VIEW_NODE, &show_ip_ospf_lofi_cmd);
+	install_element(VIEW_NODE, &show_ip_ospf_warmup_cmd);
 }
 
 /* Initialization of OSPF interface. */
@@ -13048,6 +13094,7 @@ void ospf_vty_init(void)
 
 	/** @sqsq */
 	install_element(OSPF_NODE, &ospf_lofi_cmd);
+	install_element(OSPF_NODE, &ospf_warmup_cmd);
 
 	/* "passive-interface" commands. */
 	install_element(OSPF_NODE, &ospf_passive_interface_default_cmd);

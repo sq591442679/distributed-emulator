@@ -84,6 +84,7 @@ extern struct zclient *zclient;
 
 /** @sqsq */
 uint8_t lofi_n = 255;
+uint32_t lofi_warmup_period = 300;	// unit: s
 
 
 static void ospf_remove_vls_through_area(struct ospf *, struct ospf_area *);
@@ -2358,7 +2359,7 @@ const char *ospf_get_name(const struct ospf *ospf)
 
 /*
  * sqsq
- * return whether curent time (sec) is greater than ospf->init_time + WARMUP_PERIOD
+ * return whether curent time (sec) is greater than ospf->init_time + lofi_warmup_period
  * 
  */
 bool is_lofi(const struct ospf *ospf)
@@ -2367,7 +2368,7 @@ bool is_lofi(const struct ospf *ospf)
 	if (lofi_n == 255) {
 		return false;
 	}
-	if (current_time - ospf->start_time > WARMUP_PERIOD) {
+	if (current_time - ospf->start_time > lofi_warmup_period) {
 		return true;
 	}
 	else {

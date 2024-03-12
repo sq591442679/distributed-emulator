@@ -2,6 +2,7 @@ import networkx as nx
 import pickle
 from loguru import logger
 from tools import *
+from const_var import *
 
 class ConstellationGraph(object):
 
@@ -122,8 +123,10 @@ def write_into_frr_conf(host_name, network_list, prefix_list, lofi_n: int):
               f"{host_name}.conf", "w") as f:
         if lofi_n == -1:    # we use ospf
             lofi_n_command = ""
+            warmup_command = ""
         else:               # we use lofi
             lofi_n_command = f"ospf lofi {lofi_n}"
+            warmup_command = f"ospf warmup_period {WARMUP_PERIOD}"
             
         # note the value of retransmit interval. according to rfc2328:
         # The setting of this value should be conservative or needless retransmissions will result. S
@@ -137,28 +140,29 @@ interface eth1
     ip ospf area 0.0.0.0
     ip ospf hello-interval 1
     ip ospf dead-interval 4
-    ip ospf retransmit-interval 5
+    ip ospf retransmit-interval 2
 interface eth2
     ip ospf network point-to-point
     ip ospf area 0.0.0.0
     ip ospf hello-interval 1
     ip ospf dead-interval 4
-    ip ospf retransmit-interval 5
+    ip ospf retransmit-interval 2
 interface eth3
     ip ospf network point-to-point
     ip ospf area 0.0.0.0
     ip ospf hello-interval 1
     ip ospf dead-interval 4
-    ip ospf retransmit-interval 5
+    ip ospf retransmit-interval 2
 interface eth4
     ip ospf network point-to-point
     ip ospf area 0.0.0.0
     ip ospf hello-interval 1
     ip ospf dead-interval 4
-    ip ospf retransmit-interval 5
+    ip ospf retransmit-interval 2
 
 router ospf
     {lofi_n_command}
+    {warmup_command}
     ospf router-id 0.0.{node_id[0]}.{node_id[1]}
     # redistribute connected
 """

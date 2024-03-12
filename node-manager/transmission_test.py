@@ -118,7 +118,7 @@ unit: MBps
 """
 def start_packet_capture(queue: Queue):
     start_time = time.time()
-    interfaces = [interface for interface in get_all_interfaces() if interface.startswith('br-')]
+    interfaces = [interface for interface in get_all_interfaces() if interface.startswith('veth')]
 
     try:
         while time.time() - start_time <= SIMULATION_DURATION:

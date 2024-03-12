@@ -43,6 +43,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # check for ospf
     if image_name == "ospf:latest":
         lofi_n = -1
+        enable_load_awareness = False
     # ---------------------------------
 
     # create position updater
@@ -125,8 +126,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     
     # set monitor
     # ----------------------------------------------------------
-    # set_monitor_process = Process(target=set_monitor, args=(monitor_payloads, ground_stations, stop_process_state, 20))
-    # set_monitor_process.start()
+    set_monitor_process = Process(target=set_monitor, args=(monitor_payloads, ground_stations, stop_process_state, 20))
+    set_monitor_process.start()
     # ----------------------------------------------------------
 
     # start position broadcaster and update network delay
@@ -145,7 +146,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # start link failure generation and UDP send & recv
     # added by sqsq
     # ----------------------------------------------------------
-    time.sleep(10)
+    time.sleep(WARMUP_PERIOD)
     process_list.clear()
     logger.info('test starting...')
 

@@ -23,7 +23,7 @@ V_EDIT = "%s/../satellite_node_docker/video_trans:/edit"%WD
 LIGHT_SPEED = 300
 
 # DELAY BANDWIDTH LOSS
-NETWORK_DELAY = 150 # unit ms, 150 means 150ms
+NETWORK_DELAY = 60 # unit ms, 150 means 150ms
 NETWORK_BANDWIDTH = 100 # unit Mbps
 NETWORK_LOSS = 0 # percent 0 means 0%
 QUEUE_CAPACITY = 100    # unit: pkt
@@ -56,4 +56,5 @@ TIME_BASE = datetime(2024, 1, 1)
 
 TEST_NUM = 5
 UDP_SEND_INTERVAL = 0.01
-DRY_RUN = False
+DRY_RUN = True
+WARMUP_PERIOD = 30      # unit: s
