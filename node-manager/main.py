@@ -16,7 +16,7 @@ from satellite_config import Config
 from tle_generator import generate_tle
 from delete_containers_and_networks import delete_containers_with_multiple_processes, \
     delete_networks_with_multiple_processes
-from network_controller import generate_link_failure
+from network_controller import generate_link_failure, update_network_delay
 from global_var import connect_order_map, satellite_map, reinit_global_var
 from ground_station import create_station_from_json
 from tools import *
@@ -86,6 +86,14 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     ground_stations = {}
 
     # -------------------------------------------------------------------
+
+    for node_id in sorted(list(satellite_map.keys())):
+        satellite_node = satellite_map[node_id]
+        node_id_str = satellite_id_tuple_to_str(node_id)
+        position_datas[node_id_str][LATITUDE_KEY], position_datas[node_id_str][LONGITUDE_KEY], position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
+        # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
+    update_network_delay(docker_client, position_datas, connect_order_map)
+
     # start frr    added by sqsq
     process_list: typing.List[Process] = []
     logger.info('copying frr.conf to containers')
@@ -179,7 +187,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         with open('./result.csv', 'a') as f:
             print(f"{lofi_n},{enable_load_awareness},{lofi_delta},{link_failure_rate},{test},{drop_rate},{delay},{throughput},{control_overhead}", file=f)
 
-        # set_monitor_process.kill()
+        set_monitor_process.kill()
         # update_position_process.kill()
         os.system("./stop_and_kill_constellation.sh")
         os.system("clear")
@@ -228,7 +236,7 @@ if __name__ == "__main__":
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
     # lofi_n_list = [0, 1, 2, 3, 4]
     link_failure_rate_list = [0.01, 0.1]
-    lofi_n_list = [1, 4]
+    lofi_n_list = [1]
 
     if not os.path.exists('./result.csv') and not DRY_RUN:
         with open('./result.csv', 'w') as f:

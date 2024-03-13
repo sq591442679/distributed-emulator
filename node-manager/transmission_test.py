@@ -120,6 +120,8 @@ def start_packet_capture(queue: Queue):
     start_time = time.time()
     interfaces = [interface for interface in get_all_interfaces() if interface.startswith('veth')]
 
+    logger.info(f'sniffing on {interfaces}')
+
     try:
         while time.time() - start_time <= SIMULATION_DURATION:
             sniff(prn=packet_capture_callback, filter="udp dst port 12345 or ip proto 89", 

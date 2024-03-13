@@ -34,7 +34,7 @@ def area2line(y: int, x: int, x_limit: int, y_limit: int) -> int:
 
 
 def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, delta, period) -> Tuple[dict, dict]:
-    satellites = {}
+    satellite_infos = {}
     index_2d = []
     topo = {}
     freq = 1 / period  # if the period is 1, the freq is 1Hz, if the period is 0.5, the freq is 2Hz
@@ -54,7 +54,7 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
             # refactored id by sqsq
             # index_1d.append(len(satellites))
             index_1d.append((i, j))
-            satellites[(i, j)] = [
+            satellite_infos[(i, j)] = [
                 "NODE_%d_%d" % (i, j),
                 this_line_1 + str(str_checksum(this_line_1)),
                 this_line_2 + str(str_checksum(this_line_2))
@@ -71,7 +71,7 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
     ]
     """
 
-    for i in range(len(satellites)):
+    for i in range(len(satellite_infos)):
         y = i // orbit_satellite_num  # orbit index
         x = i % orbit_satellite_num  # satellite index
 
@@ -88,7 +88,7 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
         # refactored id by sqsq
         # topo[str(i)] = array
         topo[(y, x)] = array
-    return satellites, topo
+    return satellite_infos, topo
 
 
 if __name__ == "__main__":

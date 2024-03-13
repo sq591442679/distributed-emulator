@@ -6,7 +6,7 @@ from typing import List, Tuple
 LATITUDE_KEY = 'lat'
 LONGITUDE_KEY = 'lon'
 HEIGHT_KEY = 'hei'
-R_EARTH = 6371000
+R_EARTH = 6371000       # unit: m
 HOST_PREFIX_LEN = 16
 
 # BROAD_CAST_SEND_INTERVAL
@@ -20,12 +20,12 @@ VOLUME2 = "/tmp/.X11-unix:/tmp/.X11-unix"
 V_EDIT = "%s/../satellite_node_docker/video_trans:/edit"%WD
         
 # LIGHT_SPEED
-LIGHT_SPEED = 300
+LIGHT_SPEED = 3e8       # unit: m/s
 
 # DELAY BANDWIDTH LOSS
-NETWORK_DELAY = 60 # unit ms, 150 means 150ms
+NETWORK_DELAY = 60      # unit ms, 150 means 150ms
 NETWORK_BANDWIDTH = 100 # unit Mbps
-NETWORK_LOSS = 0 # percent 0 means 0%
+NETWORK_LOSS = 0        # percent 0 means 0%
 QUEUE_CAPACITY = 100    # unit: pkt
 
 # CONSTELLATION PARAMETERS
@@ -42,7 +42,7 @@ SUBMISSION_SIZE_FOR_UPDATE_NETWORK_DELAY = 1
 
 # LINK FAILURE  added by sqsq
 # NOTE: about the SIMULATION_DURATION, it should consider OSPF_LSA_MAXAGE and arp aging time
-LINK_FAILURE_DURATION = 20     # unit: s
+LINK_FAILURE_DURATION = 20      # unit: s
 SIMULATION_DURATION = 1000      # unit: s
 
 # TRANSMISSION PAIR added by sqsq
@@ -56,5 +56,5 @@ TIME_BASE = datetime(2024, 1, 1)
 
 TEST_NUM = 5
 UDP_SEND_INTERVAL = 0.01
-DRY_RUN = False
+DRY_RUN = True
 WARMUP_PERIOD = 30      # unit: s

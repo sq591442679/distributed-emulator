@@ -55,16 +55,15 @@ def create_network_object_with_multiple_process(docker_client, missions, submiss
                 break
 
 
-def get_laser_delay_ms(position1: dict, position2: dict) -> int:
-    lat1, lon1, hei1 = position1[LATITUDE_KEY], position1[LONGITUDE_KEY], position1[HEIGHT_KEY]
-    lat2, lon2, hei2 = position2[LATITUDE_KEY], position2[LONGITUDE_KEY], position2[HEIGHT_KEY]
+def get_laser_delay_ms(position1: dict, position2: dict) -> float:
+    # NOTE: levation calculated by ephem doesn't consider R_EARTH
+    lat1, lon1, hei1 = position1[LATITUDE_KEY], position1[LONGITUDE_KEY], position1[HEIGHT_KEY] + R_EARTH
+    lat2, lon2, hei2 = position2[LATITUDE_KEY], position2[LONGITUDE_KEY], position2[HEIGHT_KEY] + R_EARTH
     x1, y1, z1 = hei1 * cos(lat1) * cos(lon1), hei1 * cos(lat1) * sin(lon1), hei1 * sin(lat1)
     x2, y2, z2 = hei2 * cos(lat2) * cos(lon2), hei2 * cos(lat2) * sin(lon2), hei2 * sin(lat2)
     dist_square = (x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2  # UNIT: m^2
     # logger.info(f"distance: {int(sqrt(dist_square))} light speed: {LIGHT_SPEED}")
-    return int(sqrt(dist_square) / LIGHT_SPEED)  # UNIT: ms
-    # ZHF MODIFY
-    # return 0
+    return sqrt(dist_square) / LIGHT_SPEED * 1000  # UNIT: ms
 
 
 def get_network_key(docker_client: DockerClient, container_id1: str, container_id2: str) -> str:
@@ -236,7 +235,7 @@ class Network:
                  bridge_id: str,
                  container_id1: str,
                  container_id2: str,
-                 delay: int,
+                 delay: float,
                  band_width: int,
                  loss_percent: int,
                  queue_capacity: int):
@@ -282,20 +281,25 @@ class Network:
     '''
     def init_info(self):
         for container_name, inner_eth_name in self.inner_eth_dict.items():
-            command = ['sh', '-c', f'tc qdisc add dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth}Mbit limit {self.queue_capacity}']
+            formated_delay = '%.2f' % self.delay
+            command = ['sh', '-c', f'tc qdisc add dev {inner_eth_name} root netem delay {formated_delay}ms rate {self.bandwidth}Mbit limit {self.queue_capacity}']
             ret = self.docker_client.exec_cmd(container_name, command)
             if ret[0] != 0:
                 logger.error(ret[1].decode().strip())
                 raise Exception('')
 
     def update_info(self):
+        formated_delay = '%.2f' % self.delay
         for container_name, inner_eth_name in self.inner_eth_dict.items():
-            command = ['sh', '-c', f'tc qdisc replace dev {inner_eth_name} root netem delay {self.delay}ms rate {self.bandwidth} Mbitlimit {self.queue_capacity}']
+            command = ['sh', '-c', f'tc qdisc replace dev {inner_eth_name} root netem delay {formated_delay}ms rate {self.bandwidth}Mbit limit {self.queue_capacity}']
             ret = self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
 
-    def update_delay_param(self, set_time: int):
+    def update_delay_param(self, set_time: float):
         self.delay = set_time
         if not self.is_down:
+            container_name1 = self.docker_client.client.containers.get(self.container_id1).name
+            container_name2 = self.docker_client.client.containers.get(self.container_id2).name
+            # logger.info(f"updating delay between {container_name1}<-->{container_name2}: {set_time}")
             self.update_info()
 
     def update_bandwidth_param(self, band_width: int):
