@@ -87,12 +87,16 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # -------------------------------------------------------------------
 
+    # added by sqsq
+    # set the initial position
+    # -------------------------------------------------------------------
     for node_id in sorted(list(satellite_map.keys())):
         satellite_node = satellite_map[node_id]
         node_id_str = satellite_id_tuple_to_str(node_id)
         position_datas[node_id_str][LATITUDE_KEY], position_datas[node_id_str][LONGITUDE_KEY], position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
         # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
     update_network_delay(docker_client, position_datas, connect_order_map)
+    # -------------------------------------------------------------------
 
     # start frr    added by sqsq
     process_list: typing.List[Process] = []
@@ -118,7 +122,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # -------------------------------------------------------------------
         
     # -------------------------------------------------------------------
-    # start load awareness, added bysqsq
+    # start load awareness, added by sqsq
     process_list.clear()    
     cmd = f"/load_wawreness/load_awareness {lofi_delta} {QUEUE_CAPACITY} {NETWORK_BANDWIDTH*1000000} {1024 * 8} " \
             + f"{NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY}"
@@ -179,6 +183,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         
         drop_rate = shared_result_list[0]['drop rate']
         delay = shared_result_list[0]['delay']
+        ttl_rate = shared_result_list[0]['ttl_drop_ratio']
 
         queue_element = queue.get()
         throughput = queue_element['throughput']
@@ -234,13 +239,13 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-    # lofi_n_list = [0, 1, 2, 3, 4]
+    lofi_n_list = [0, 1, 2, 3, 4]
     link_failure_rate_list = [0.01, 0.1]
-    lofi_n_list = [1]
+    # lofi_n_list = [1]
 
     if not os.path.exists('./result.csv') and not DRY_RUN:
         with open('./result.csv', 'w') as f:
-            print('lofi_n,load_awareness,lofi_delta,link_failure_rate,test,drop_rate,delay,throughput,control_overhead', file=f)
+            print('lofi_n,load_awareness,lofi_delta,link_failure_rate,test,drop_rate,delay,throughput,control_overhead, ttl_rate', file=f)
         os.system("chmod 777 ./result.csv")
 
     for link_failure_rate in link_failure_rate_list:

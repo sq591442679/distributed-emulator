@@ -56,5 +56,5 @@ TIME_BASE = datetime(2024, 1, 1)
 
 TEST_NUM = 5
 UDP_SEND_INTERVAL = 0.01
-DRY_RUN = True
+DRY_RUN = False
 WARMUP_PERIOD = 30      # unit: s

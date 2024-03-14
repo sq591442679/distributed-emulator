@@ -8,6 +8,7 @@ import re
 from scapy.all import sniff, UDP, IP
 import time
 import json
+import subprocess
 
 from loguru import logger
 from const_var import *
@@ -50,10 +51,11 @@ shared_result_list: list[dict]
 def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared_result_list) -> None:
     logger.info("UDP receiver starting")
     receiver_node_name = satellite_id_tuple_to_str(RECEIVER_NODE_ID)
+    expected_recv_cnt = int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))
     ret = docker_client.exec_cmd(receiver_node_name, 
                                  f"python3 /udp-applications/udp_receiver.py "
                                  f"{receiver_ip} {receiver_port} "
-                                 f"{SIMULATION_DURATION + 10} {int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))}")
+                                 f"{SIMULATION_DURATION + 10} {expected_recv_cnt}")
     if ret[0] != 0:
         logger.error(ret[1].decode().strip())
     else:
@@ -76,6 +78,9 @@ shared_result_list: list[dict]
 """
 def start_transmission_test(docker_client: DockerClient, send_interval: float, shared_result_list):
     global receiver_ip
+
+    os.system("dmesg -c")
+
     receiver_ip = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
     process_list: typing.List[Process] = []
     
@@ -89,9 +94,16 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
         process.start()
     for process in process_list:
         process.join()
-    
-    logger.success("UDP send and receive completed")
-    return shared_result_list
+
+    command = "dmesg -c | grep 'ttl exceed packet cnt:'"
+    expected_recv_cnt = int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))
+    output = subprocess.check_output(command, shell=True, text=True)
+    ttl_drop_cnt = int(output.split(':')[-1].strip())
+    ttl_drop_ratio = ttl_drop_cnt / expected_recv_cnt
+
+    shared_result_list[0]['ttl_drop_ratio'] = format(ttl_drop_ratio * 100, "%.1f%%")
+    # logger.success("UDP send and receive completed")
+    # return (shared_result_list, ttl_drop_ratio)
 
 
 def get_all_interfaces():
@@ -130,7 +142,7 @@ def start_packet_capture(queue: Queue):
         pass
     
     res_dict = {}
-    res_dict["throughput"] = "%.3f" % (total_data_bytes / 1e6 / SIMULATION_DURATION)
-    res_dict["control overhead"] = "%.3f" % (total_control_bytes / 1e6 / SIMULATION_DURATION)
+    res_dict["throughput"] = "%.6f" % (total_data_bytes / 1e6 / SIMULATION_DURATION)
+    res_dict["control overhead"] = "%.6f" % (total_control_bytes / 1e6 / SIMULATION_DURATION)
 
     queue.put(res_dict)

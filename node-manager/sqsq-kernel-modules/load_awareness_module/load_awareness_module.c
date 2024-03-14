@@ -68,7 +68,7 @@ static int __kprobes handler_pre_ip_output(struct kprobe *p, struct pt_regs *reg
 			rcu_read_unlock();
 			dev_put(dev);
 		}
-		pr_info("%s handle:%x qlen_list[%d]:[%d]\n", __func__, handle, i, qlen_list[i]);
+		// pr_info("%s handle:%x qlen_list[%d]:[%d]\n", __func__, handle, i, qlen_list[i]);
 	}
 
 	for (i = 0; i < 4; ++i) {
