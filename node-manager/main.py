@@ -183,14 +183,14 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         
         drop_rate = shared_result_list[0]['drop rate']
         delay = shared_result_list[0]['delay']
-        ttl_rate = shared_result_list[0]['ttl_drop_ratio']
+        ttl_rate = shared_result_list[1]['ttl_drop_ratio']
 
         queue_element = queue.get()
         throughput = queue_element['throughput']
         control_overhead = queue_element['control overhead']
 
         with open('./result.csv', 'a') as f:
-            print(f"{lofi_n},{enable_load_awareness},{lofi_delta},{link_failure_rate},{test},{drop_rate},{delay},{throughput},{control_overhead}", file=f)
+            print(f"{lofi_n},{enable_load_awareness},{lofi_delta},{link_failure_rate},{test},{drop_rate},{delay},{throughput},{control_overhead},{ttl_rate}", file=f)
 
         set_monitor_process.kill()
         # update_position_process.kill()
@@ -217,24 +217,16 @@ if __name__ == "__main__":
 
     # start kernel modules, added by sqsq
     os.system("./sqsq-kernel-modules/uninstall_modules.sh")
-    try:
-        output = subprocess.check_output("./sqsq-kernel-modules/install_multipath.sh", 
-                                         shell=True, 
-                                         stderr=subprocess.STDOUT, 
-                                         universal_newlines=True)
-    except subprocess.CalledProcessError as e:
-        logger.error(e.output)
-        raise Exception('')
-    logger.success(output)    
-    try:
-        output = subprocess.check_output("./sqsq-kernel-modules/install_load_awareness.sh", 
-                                         shell=True, 
-                                         stderr=subprocess.STDOUT, 
-                                         universal_newlines=True)
-    except subprocess.CalledProcessError as e:
-        logger.error(e.output)
-        raise Exception('')
-    logger.success(output)  
+    for module_path in ["./sqsq-kernel-modules/install_multipath.sh", "./sqsq-kernel-modules/install_load_awareness.sh"]:
+        try:
+            output = subprocess.check_output(module_path, 
+                                            shell=True, 
+                                            stderr=subprocess.STDOUT, 
+                                            universal_newlines=True)
+        except subprocess.CalledProcessError as e:
+            logger.error(e.output)
+            raise Exception('')
+        logger.success(output)    
 
     enable_load_awareness = False
     lofi_delta = 0.05

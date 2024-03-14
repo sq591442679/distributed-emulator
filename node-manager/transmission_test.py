@@ -79,7 +79,17 @@ shared_result_list: list[dict]
 def start_transmission_test(docker_client: DockerClient, send_interval: float, shared_result_list):
     global receiver_ip
 
-    os.system("dmesg -c")
+    os.system("dmesg -c > /dev/null")
+    for module_path in ["./sqsq-kernel-modules/packet_drop.sh"]:
+        try:
+            output = subprocess.check_output(module_path, 
+                                            shell=True, 
+                                            stderr=subprocess.STDOUT, 
+                                            universal_newlines=True)
+        except subprocess.CalledProcessError as e:
+            logger.error(e.output)
+            raise Exception('')
+        logger.success(output) 
 
     receiver_ip = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
     process_list: typing.List[Process] = []
@@ -95,13 +105,17 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
     for process in process_list:
         process.join()
 
+    os.system("rmmod packet_drop_module")
     command = "dmesg -c | grep 'ttl exceed packet cnt:'"
     expected_recv_cnt = int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))
     output = subprocess.check_output(command, shell=True, text=True)
     ttl_drop_cnt = int(output.split(':')[-1].strip())
     ttl_drop_ratio = ttl_drop_cnt / expected_recv_cnt
 
-    shared_result_list[0]['ttl_drop_ratio'] = format(ttl_drop_ratio * 100, "%.1f%%")
+    shared_result_list.append({'ttl_drop_ratio': "%.1f%%" % (ttl_drop_ratio * 100)})
+
+    logger.info(shared_result_list)
+
     # logger.success("UDP send and receive completed")
     # return (shared_result_list, ttl_drop_ratio)
 
