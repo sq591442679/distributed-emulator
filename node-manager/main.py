@@ -45,6 +45,23 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         lofi_n = -1
         enable_load_awareness = False
     # ---------------------------------
+        
+    # ---------------------------------
+    # start kernel modules, added by sqsq
+    os.system("./sqsq-kernel-modules/uninstall_modules.sh")
+    for module_path in ["./sqsq-kernel-modules/install_multipath.sh", 
+                        "./sqsq-kernel-modules/install_load_awareness.sh", 
+                        "./sqsq-kernel-modules/install_packet_drop.sh"]:
+        try:
+            output = subprocess.check_output(module_path, 
+                                            shell=True, 
+                                            stderr=subprocess.STDOUT, 
+                                            universal_newlines=True)
+        except subprocess.CalledProcessError as e:
+            logger.error(e.output)
+            raise Exception('')
+        logger.success(output)    
+    # ---------------------------------
 
     # create position updater
     # ----------------------------------------------------------
@@ -180,6 +197,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
             process_copy.start()
         for process_copy in process_list:
             process_copy.join()
+
+        logger.info(shared_result_list)
         
         drop_rate = shared_result_list[0]['drop rate']
         delay = shared_result_list[0]['delay']
@@ -200,6 +219,11 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         while True:
             pass
     # ----------------------------------------------------------
+        
+    # ----------------------------------------------------------
+    # uninstall kernel modules
+    os.system("./sqsq-kernel-modules/uninstall_modules.sh")
+    # ----------------------------------------------------------
 
 
 if __name__ == "__main__":
@@ -214,19 +238,6 @@ if __name__ == "__main__":
         print("", flush=True, file=f)
     with open("link.log", "w") as f:
         print("", flush=True, file=f)
-
-    # start kernel modules, added by sqsq
-    os.system("./sqsq-kernel-modules/uninstall_modules.sh")
-    for module_path in ["./sqsq-kernel-modules/install_multipath.sh", "./sqsq-kernel-modules/install_load_awareness.sh"]:
-        try:
-            output = subprocess.check_output(module_path, 
-                                            shell=True, 
-                                            stderr=subprocess.STDOUT, 
-                                            universal_newlines=True)
-        except subprocess.CalledProcessError as e:
-            logger.error(e.output)
-            raise Exception('')
-        logger.success(output)    
 
     enable_load_awareness = False
     lofi_delta = 0.05
@@ -245,6 +256,6 @@ if __name__ == "__main__":
             for test in range(1, TEST_NUM + 1):
                 run(enable_load_awareness, lofi_delta, lofi_n, link_failure_rate, UDP_SEND_INTERVAL, test, DRY_RUN)
 
-    os.system("./sqsq-kernel-modules/uninstall_modules.sh")
+    
 
     

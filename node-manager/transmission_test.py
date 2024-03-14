@@ -80,16 +80,6 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
     global receiver_ip
 
     os.system("dmesg -c > /dev/null")
-    for module_path in ["./sqsq-kernel-modules/packet_drop.sh"]:
-        try:
-            output = subprocess.check_output(module_path, 
-                                            shell=True, 
-                                            stderr=subprocess.STDOUT, 
-                                            universal_newlines=True)
-        except subprocess.CalledProcessError as e:
-            logger.error(e.output)
-            raise Exception('')
-        logger.success(output) 
 
     receiver_ip = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
     process_list: typing.List[Process] = []
@@ -105,7 +95,7 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
     for process in process_list:
         process.join()
 
-    os.system("rmmod packet_drop_module")
+    os.system("rmmod packet_drop_module")   # need to uninstall here to get drop cnt
     command = "dmesg -c | grep 'ttl exceed packet cnt:'"
     expected_recv_cnt = int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))
     output = subprocess.check_output(command, shell=True, text=True)

@@ -25,3 +25,7 @@ echo "All containers and networks have been removed."
 # give docker daemon a fresh restart
 systemctl restart docker
 echo "Docker daemon restarted"
+
+# uninstall kernel modules
+currentpath=$(dirname "$(readlink -f "$0")")
+bash $currentpath/sqsq-kernel-modules/uninstall_modules.sh
