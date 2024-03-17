@@ -923,7 +923,7 @@ static struct ospf_lsa *ospf_router_lsa_refresh(struct ospf_lsa *lsa)
 	ospf_lsa_install(area->ospf, NULL, new);
 
 	/** sqsq */
-	zlog_debug("in %s, calling ospf_flood_through_area., lsa:%s", __func__, new);
+	zlog_debug("in %s, calling ospf_flood_through_area, lsa:%s", __func__, dump_lsa_key(new));
 
 	/* Flood LSA through area. */
 	ospf_flood_through_area(area, NULL, new);
@@ -3470,9 +3470,13 @@ int ospf_lsa_more_recent(struct ospf_lsa *l1, struct ospf_lsa *l2)
 		return -1;
 
 	/* compare LS checksum. */
-	r = ntohs(l1->data->checksum) - ntohs(l2->data->checksum);
-	if (r)
-		return r;
+	/** 
+	 * sqsq
+	 * commented this lines becayse in lofi, checksum will change during flooding
+	 */
+	// r = ntohs(l1->data->checksum) - ntohs(l2->data->checksum);
+	// if (r)
+	// 	return r;
 
 	/* compare LS age. */
 	if (IS_LSA_MAXAGE(l1) && !IS_LSA_MAXAGE(l2))

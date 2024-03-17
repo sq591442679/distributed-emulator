@@ -95,14 +95,17 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
     for process in process_list:
         process.join()
 
-    os.system("rmmod packet_drop_module")   # need to uninstall here to get drop cnt
-    command = "dmesg -c | grep 'ttl exceed packet cnt:'"
     expected_recv_cnt = int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))
-    output = subprocess.check_output(command, shell=True, text=True)
-    ttl_drop_cnt = int(output.split(':')[-1].strip())
-    ttl_drop_ratio = ttl_drop_cnt / expected_recv_cnt
-
-    shared_result_list.append({'ttl_drop_ratio': "%.1f%%" % (ttl_drop_ratio * 100)})
+    os.system("rmmod packet_drop_module")   # need to uninstall here to get drop cnt
+    commands = ["dmesg | grep 'ttl exceed packet cnt:'", "dmesg | grep 'no entry packet cnt:'"]
+    result_keys = ['ttl_drop_ratio', 'no_entry_ratio']
+    for i in range(len(commands)):
+        command = commands[i]
+        result_key = result_keys[i]
+        output = subprocess.check_output(command, shell=True, text=True)
+        drop_cnt = int(output.split(':')[-1].strip())
+        drop_ratio = drop_cnt / expected_recv_cnt
+        shared_result_list.append({result_key: "%.1f%%" % (drop_ratio * 100)})
 
     logger.info(shared_result_list)
 

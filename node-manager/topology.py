@@ -135,6 +135,13 @@ def write_into_frr_conf(host_name, network_list, prefix_list, lofi_n: int):
             f"""
 log file /var/log/frr/sqsq_ospfd.log
 log record-priority
+
+router ospf
+    {lofi_n_command}
+    {warmup_command}
+    ospf router-id 0.0.{node_id[0]}.{node_id[1]}
+    # redistribute connected
+
 interface eth1
     ip ospf network point-to-point
     ip ospf area 0.0.0.0
@@ -159,12 +166,6 @@ interface eth4
     ip ospf hello-interval 1
     ip ospf dead-interval 4
     ip ospf retransmit-interval 2
-
-router ospf
-    {lofi_n_command}
-    {warmup_command}
-    ospf router-id 0.0.{node_id[0]}.{node_id[1]}
-    # redistribute connected
 """
         # commented by sqsq
         # these lines may be useless for frr configuration

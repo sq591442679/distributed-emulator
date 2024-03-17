@@ -44,23 +44,9 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     if image_name == "ospf:latest":
         lofi_n = -1
         enable_load_awareness = False
-    # ---------------------------------
-        
-    # ---------------------------------
-    # start kernel modules, added by sqsq
-    os.system("./sqsq-kernel-modules/uninstall_modules.sh")
-    for module_path in ["./sqsq-kernel-modules/install_multipath.sh", 
-                        "./sqsq-kernel-modules/install_load_awareness.sh", 
-                        "./sqsq-kernel-modules/install_packet_drop.sh"]:
-        try:
-            output = subprocess.check_output(module_path, 
-                                            shell=True, 
-                                            stderr=subprocess.STDOUT, 
-                                            universal_newlines=True)
-        except subprocess.CalledProcessError as e:
-            logger.error(e.output)
-            raise Exception('')
-        logger.success(output)    
+    elif lofi_n == -1:
+        image_name = "ospf:latest"
+        enable_load_awareness = False
     # ---------------------------------
 
     # create position updater
@@ -120,7 +106,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     logger.info('copying frr.conf to containers')
     for id in satellite_map.keys():
         id_str = satellite_id_tuple_to_str(id)
-        process_copy = Process(target=docker_client.copy_to_container, args=(id_str, f'../configuration/frr/{id_str}.conf', f'/etc/frr/frr.conf'))
+        process_copy = Process(target=docker_client.copy_to_container, 
+                               args=(id_str, f'../configuration/frr/{id_str}.conf', f'/etc/frr/frr.conf'))
         process_list.append(process_copy)
     for process_copy in process_list:
         process_copy.start()
@@ -130,13 +117,31 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     process_list.clear()
     logger.info('starting frr in containers')
     for id in satellite_map.keys():
-        process_start_frr = Process(target=docker_client.exec_cmd, args=(satellite_id_tuple_to_str(id), './usr/lib/frr/frrinit.sh start'))
+        process_start_frr = Process(target=docker_client.exec_cmd, 
+                                    args=(satellite_id_tuple_to_str(id), './usr/lib/frr/frrinit.sh start'))
         process_list.append(process_start_frr)
     for process_start_frr in process_list:
         process_start_frr.start()
     for process_start_frr in process_list:
         process_start_frr.join()
     # -------------------------------------------------------------------
+        
+    # ---------------------------------
+    # start kernel modules, added by sqsq
+    os.system("./sqsq-kernel-modules/uninstall_modules.sh")
+    for module_path in ["./sqsq-kernel-modules/install_multipath.sh", 
+                        "./sqsq-kernel-modules/install_load_awareness.sh", 
+                        "./sqsq-kernel-modules/install_packet_drop.sh"]:
+        try:
+            output = subprocess.check_output(module_path, 
+                                            shell=True, 
+                                            stderr=subprocess.STDOUT, 
+                                            universal_newlines=True)
+        except subprocess.CalledProcessError as e:
+            logger.error(e.output)
+            raise Exception('')
+        logger.success(output)    
+    # ---------------------------------
         
     # -------------------------------------------------------------------
     # start load awareness, added by sqsq
@@ -145,7 +150,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
             + f"{NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY}"
     if enable_load_awareness:
         for id in satellite_map.keys():
-            process_start_load_wawreness = Process(target=docker_client.exec_cmd, args=(satellite_id_tuple_to_str(id), cmd, False, True))
+            process_start_load_wawreness = Process(target=docker_client.exec_cmd, 
+                                                   args=(satellite_id_tuple_to_str(id), cmd, False, True))
             process_list.append(process_start_load_wawreness)
         for process_start_load_wawreness in process_list:
             process_start_load_wawreness.start()
@@ -155,7 +161,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     
     # set monitor
     # ----------------------------------------------------------
-    set_monitor_process = Process(target=set_monitor, args=(monitor_payloads, ground_stations, stop_process_state, 20))
+    set_monitor_process = Process(target=set_monitor, 
+                                  args=(monitor_payloads, ground_stations, stop_process_state, 20))
     set_monitor_process.start()
     # ----------------------------------------------------------
 
@@ -180,12 +187,14 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     logger.info('test starting...')
 
     if not dry_run:
-        generate_link_failure_process = Process(target=generate_link_failure, args=(docker_client, link_failure_rate, 42))
+        generate_link_failure_process = Process(target=generate_link_failure, 
+                                                args=(docker_client, link_failure_rate, 42))
         process_list.append(generate_link_failure_process)
 
         manager = Manager()
         shared_result_list = manager.list() # shared_result_list: list[dict]
-        start_transmission_test_process = Process(target=start_transmission_test, args=(docker_client, send_interval, shared_result_list))
+        start_transmission_test_process = Process(target=start_transmission_test, 
+                                                  args=(docker_client, send_interval, shared_result_list))
         process_list.append(start_transmission_test_process)
 
         queue = Queue() # queue of dict
@@ -203,13 +212,17 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         drop_rate = shared_result_list[0]['drop rate']
         delay = shared_result_list[0]['delay']
         ttl_rate = shared_result_list[1]['ttl_drop_ratio']
+        no_entry_rate = shared_result_list[2]['no_entry_ratio']
 
         queue_element = queue.get()
         throughput = queue_element['throughput']
         control_overhead = queue_element['control overhead']
 
         with open('./result.csv', 'a') as f:
-            print(f"{lofi_n},{enable_load_awareness},{lofi_delta},{link_failure_rate},{test},{drop_rate},{delay},{throughput},{control_overhead},{ttl_rate}", file=f)
+            print(f"{lofi_n},{enable_load_awareness},{lofi_delta},"
+                  f"{link_failure_rate},{test},"
+                  f"{drop_rate},{delay},{throughput},{control_overhead},"
+                  f"{ttl_rate},{no_entry_rate}", file=f)
 
         set_monitor_process.kill()
         # update_position_process.kill()
@@ -242,19 +255,23 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-    lofi_n_list = [0, 1, 2, 3, 4]
-    link_failure_rate_list = [0.01, 0.1]
+    lofi_n_list = [0, 1, 2, 3, 4, 5]
+    link_failure_rate_list = [0.01]
     # lofi_n_list = [1]
 
     if not os.path.exists('./result.csv') and not DRY_RUN:
         with open('./result.csv', 'w') as f:
-            print('lofi_n,load_awareness,lofi_delta,link_failure_rate,test,drop_rate,delay,throughput,control_overhead, ttl_rate', file=f)
+            print('lofi_n,load_awareness,lofi_delta,'
+                  'link_failure_rate,test,'
+                  'drop_rate,delay,throughput,control_overhead,'
+                  'ttl_rate,no_entry_rate', file=f)
         os.system("chmod 777 ./result.csv")
 
     for link_failure_rate in link_failure_rate_list:
         for lofi_n in lofi_n_list:
             for test in range(1, TEST_NUM + 1):
-                run(enable_load_awareness, lofi_delta, lofi_n, link_failure_rate, UDP_SEND_INTERVAL, test, DRY_RUN)
+                run(enable_load_awareness, lofi_delta, lofi_n, 
+                    link_failure_rate, UDP_SEND_INTERVAL, test, DRY_RUN)
 
     
 
