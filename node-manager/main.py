@@ -129,9 +129,13 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # ---------------------------------
     # start kernel modules, added by sqsq
     os.system("./sqsq-kernel-modules/uninstall_modules.sh")
-    for module_path in ["./sqsq-kernel-modules/install_multipath.sh", 
-                        "./sqsq-kernel-modules/install_load_awareness.sh", 
-                        "./sqsq-kernel-modules/install_packet_drop.sh"]:
+    module_script_list = []
+    if lofi_n != -1:
+        module_script_list.append("./sqsq-kernel-modules/install_multipath.sh")
+    if enable_load_awareness:
+        module_script_list.append("./sqsq-kernel-modules/install_load_awareness.sh")
+    module_script_list.append("./sqsq-kernel-modules/install_packet_drop.sh")
+    for module_path in module_script_list:
         try:
             output = subprocess.check_output(module_path, 
                                             shell=True, 
@@ -182,13 +186,14 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # start link failure generation and UDP send & recv
     # added by sqsq
     # ----------------------------------------------------------
+    logger.info('waiting for init...')
     time.sleep(WARMUP_PERIOD)
     process_list.clear()
     logger.info('test starting...')
 
     if not dry_run:
         generate_link_failure_process = Process(target=generate_link_failure, 
-                                                args=(docker_client, link_failure_rate, 42))
+                                                args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, 42))
         process_list.append(generate_link_failure_process)
 
         manager = Manager()
@@ -255,8 +260,8 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-    lofi_n_list = [0, 1, 2, 3, 4, 5]
-    link_failure_rate_list = [0.01]
+    lofi_n_list = [4, 5]
+    link_failure_rate_list = [0.005]
     # lofi_n_list = [1]
 
     if not os.path.exists('./result.csv') and not DRY_RUN:

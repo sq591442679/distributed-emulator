@@ -27,6 +27,8 @@
 #include <net/route.h>
 #include <net/xfrm.h>
 
+static const int MAIN_TABLE_ID = 254;
+
 static atomic64_t ttl_drop_cnt = ATOMIC64_INIT(0);
 static atomic64_t no_entry_cnt = ATOMIC64_INIT(0);
 
@@ -35,6 +37,7 @@ static struct kprobe kp_ip_forward = {
 };
 
 struct my_data {    // used to record parameter of ip_route_input_slow and 
+    struct fib_table *tb;
     struct fib_result *res;
     struct flowi4 *flp;
 };
@@ -60,19 +63,23 @@ static int ip_forward_pre_handler(struct kprobe *p, struct pt_regs *regs)
 static int fib_table_lookup_entry_handler(struct kretprobe_instance *ri, struct pt_regs *regs)
 {
     struct my_data *data = (struct my_data *)ri->data;
-    struct fib_result *res = (struct fib_result *)regs->dx;
+    struct fib_table *tb = (struct fib_table *)regs->di;
     struct flowi4 *flp = (struct flowi4 *)regs->si;
-
-    pr_info("%s.daddr: %u\n", __func__, flp->daddr);
-    pr_info("%s.res: %p\n", __func__, res);
-    pr_info("%s: type:%d\n", __func__, res->type);
+    struct fib_result *res = (struct fib_result *)regs->dx;
+    
+    // pr_info("%s.daddr: %pI4\n", __func__, &(flp->daddr));
+    // pr_info("%s.res: %p\n", __func__, res);
+    // pr_info("%s: type:%d\n", __func__, res->type);
 
     if (!data) {
         pr_err("%s: !data\n", __func__);
         return -ENOMEM;
     }
 
+    data->flp = flp;
     data->res = res;
+    data->tb = tb;
+    
     // if (res->type == RTN_UNICAST) {
     //     pr_info("UNICAST\n");
     //     data->res = res;
@@ -87,16 +94,24 @@ static int fib_table_lookup_entry_handler(struct kretprobe_instance *ri, struct 
 static int fib_table_lookup_ret_handler(struct kretprobe_instance *ri, struct pt_regs *regs)
 {
     struct my_data *data = (struct my_data *)ri->data;
+    struct fib_table *tb;
+    struct flowi4 *flp;
     struct fib_result *res;
 
-    if (!data || !data->res) {
+    if (!data || !data->res || !data->flp || !data->tb) {
+        pr_err("%s: %p %p %p %p\n", __func__, data, data->res, data->flp, data->tb);
         return 0;
     }
 
+    tb = data->tb;
+    flp = data->flp;
     res = data->res;
 
-    if (res->type == RTN_UNREACHABLE) {
-        atomic64_inc(&no_entry_cnt);
+    if ((int)regs_return_value(regs) == -EAGAIN) {
+        if (tb->tb_id == MAIN_TABLE_ID) {
+            pr_info("%s: %pI4\n", __func__, &(flp->daddr));
+            atomic64_inc(&no_entry_cnt);
+        }   
     }
 
     return 0;

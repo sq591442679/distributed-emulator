@@ -117,7 +117,6 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
     container_name_list: List[str] = [docker_client.client.containers.get(container_id).name
                                       for container_id in container_id_list]
     iflink_of_veth: Dict[str, str] = {}                     # veth_name -> iflink of veth
-    # ifindex_of_container: Dict[str, Dict[str, str]] = {}    # container_name -> (eth_name -> ifindex of this eth)
     
     for veth_name in veth_list:                             # build iflink_of_veth
         iflink: str = os.popen(f"cat /sys/class/net/{veth_name}/iflink").read().strip()
@@ -369,15 +368,12 @@ class Network:
         process.start()
 
 
-def generate_link_failure(docker_client: DockerClient, link_failure_rate: float, seed: int = None):
+def generate_link_failure(docker_client: DockerClient, link_failure_rate: float, receiver_node_id: tuple, seed: int = None):
     """
     added by sqsq
     for link failure generating
     @parameter seed: use this seed to generate random seeds of each network in random_instance_dict
     """
-    if abs(link_failure_rate - 0) < 1e-6:
-        return
-    
     random_instance_dict: Dict[Network, random.Random] = {}
     if seed is not None:
         random.seed(seed)
@@ -405,6 +401,9 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float,
          if (flag):
              break
          for network in network_dict.values():
+
+            if satellite_id_tuple_to_str(receiver_node_id) in network.inner_eth_dict.keys():
+                continue    # do not close links on dst node
 
             current_sim_time = time.time() - start_time
             # logger.debug(f"current_simtime: {current_sim_time}")
