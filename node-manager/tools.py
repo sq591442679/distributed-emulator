@@ -18,7 +18,13 @@ def ip_to_subnet(ip: str, prefix_len: int) -> str:
         ip_int % 256
     )
 
-
+def ip_str_to_int(ip: str) -> int:
+    ret = 0
+    ip_list = ip.split('.')
+    for net in ip_list:
+        ret <<= 8
+        ret |= int(net)
+    return ret
 # added by sqsq
 # NOTE: x, y all begin from 0
 def satellite_id_tuple_to_index(id: tuple) -> int:
@@ -47,4 +53,5 @@ if __name__ == "__main__":
     # print(ip_to_subnet("172.17.8.3", 24))
     # print(ip_to_subnet("172.17.9.3", 8))
     # print(ip_to_subnet("172.17.0.3", 15))
+    print(ip_str_to_int("10.134.180.139"))
     pass

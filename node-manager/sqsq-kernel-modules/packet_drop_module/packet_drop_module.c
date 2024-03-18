@@ -1,7 +1,3 @@
-/**
- * FIXME
- */
-
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/kprobes.h>
@@ -28,6 +24,10 @@
 #include <net/xfrm.h>
 
 static const int MAIN_TABLE_ID = 254;
+static __be32 dst_ip = 0u;
+
+module_param(dst_ip, uint, S_IRUGO);
+MODULE_PARM_DESC(dst_ip, "data packet destination used for packet drop monitor");
 
 static atomic64_t ttl_drop_cnt = ATOMIC64_INIT(0);
 static atomic64_t no_entry_cnt = ATOMIC64_INIT(0);
@@ -108,7 +108,7 @@ static int fib_table_lookup_ret_handler(struct kretprobe_instance *ri, struct pt
     res = data->res;
 
     if ((int)regs_return_value(regs) == -EAGAIN) {
-        if (tb->tb_id == MAIN_TABLE_ID) {
+        if (tb->tb_id == MAIN_TABLE_ID && flp->daddr == (__be32)dst_ip) {
             pr_info("%s: %pI4\n", __func__, &(flp->daddr));
             atomic64_inc(&no_entry_cnt);
         }   

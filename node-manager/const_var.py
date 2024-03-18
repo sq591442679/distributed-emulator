@@ -24,9 +24,9 @@ LIGHT_SPEED = 3e8       # unit: m/s
 
 # DELAY BANDWIDTH LOSS
 NETWORK_DELAY = 60      # unit ms, 150 means 150ms
-NETWORK_BANDWIDTH = 100 # unit Mbps
+NETWORK_BANDWIDTH = 10000 # unit Mbps
 NETWORK_LOSS = 0        # percent 0 means 0%
-QUEUE_CAPACITY = 100    # unit: pkt
+QUEUE_CAPACITY = 10000    # unit: pkt
 
 # CONSTELLATION PARAMETERS
 ORBIT_NUM = 6

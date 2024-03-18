@@ -7,4 +7,4 @@ currentpath=$(dirname "$(readlink -f "$0")")
 cd $currentpath/packet_drop_module
 
 make -j$(nproc)
-echo 'shanqian' | sudo -S insmod packet_drop_module.ko
+echo 'shanqian' | sudo -S insmod packet_drop_module.ko dst_ip=$1

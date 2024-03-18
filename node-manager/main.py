@@ -20,7 +20,7 @@ from network_controller import generate_link_failure, update_network_delay
 from global_var import connect_order_map, satellite_map, reinit_global_var
 from ground_station import create_station_from_json
 from tools import *
-from transmission_test import start_transmission_test, start_packet_capture
+from transmission_test import start_transmission_test, start_packet_capture, get_ip_of_node_id
 
 
 def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int, 
@@ -130,11 +130,15 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # start kernel modules, added by sqsq
     os.system("./sqsq-kernel-modules/uninstall_modules.sh")
     module_script_list = []
+
+    receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
+    receiver_ip_int = ip_str_to_int(receiver_ip_str)
+
     if lofi_n != -1:
         module_script_list.append("./sqsq-kernel-modules/install_multipath.sh")
     if enable_load_awareness:
         module_script_list.append("./sqsq-kernel-modules/install_load_awareness.sh")
-    module_script_list.append("./sqsq-kernel-modules/install_packet_drop.sh")
+    module_script_list.append(f"./sqsq-kernel-modules/install_packet_drop.sh {receiver_ip_int}")
     for module_path in module_script_list:
         try:
             output = subprocess.check_output(module_path, 
@@ -260,8 +264,8 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-    lofi_n_list = [4, 5]
-    link_failure_rate_list = [0.005]
+    lofi_n_list = [0, 1, 2, 3, 4, 5, -1]
+    link_failure_rate_list = [0.008]
     # lofi_n_list = [1]
 
     if not os.path.exists('./result.csv') and not DRY_RUN:
