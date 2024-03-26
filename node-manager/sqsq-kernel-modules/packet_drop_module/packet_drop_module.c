@@ -107,9 +107,14 @@ static int fib_table_lookup_ret_handler(struct kretprobe_instance *ri, struct pt
     flp = data->flp;
     res = data->res;
 
-    if ((int)regs_return_value(regs) == -EAGAIN) {
-        if (tb->tb_id == MAIN_TABLE_ID && flp->daddr == (__be32)dst_ip) {
-            pr_info("%s: %pI4\n", __func__, &(flp->daddr));
+    // if (tb->tb_id == MAIN_TABLE_ID && flp->daddr == htonl((__be32)dst_ip)) {
+    //     pr_info("%s: %pI4\n", __func__, &(flp->daddr));
+    // }
+
+    if ((int)regs_return_value(regs) != 0) {
+        // pr_info("%s: %pI4 %pI4\n", __func__, &(flp->daddr), &dst_ip);
+        if (tb->tb_id == MAIN_TABLE_ID && flp->daddr == htonl((__be32)dst_ip)) {
+            pr_info("%s: %pI4, ret:%d\n", __func__, &(flp->daddr), (int)regs_return_value(regs));
             atomic64_inc(&no_entry_cnt);
         }   
     }

@@ -264,9 +264,9 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-    lofi_n_list = [0, 1, 2, 3, 4, 5, -1]
-    link_failure_rate_list = [0.008]
-    # lofi_n_list = [1]
+    # lofi_n_list = [0, 1, 2, 3, 4, 5, -1]
+    link_failure_rate_list = [0.05]
+    lofi_n_list = [5, -1]
 
     if not os.path.exists('./result.csv') and not DRY_RUN:
         with open('./result.csv', 'w') as f:

@@ -316,8 +316,8 @@ class Network:
         container_name_list = sorted(list(self.inner_eth_dict.keys()))
         with open("link.log", "a") as f:
             print(
-                '{"sim_time": %.3f, "link": "%s <--> %s", "type": "%s"}'
-                % (current_sim_time, container_name_list[0], container_name_list[1], type),
+                f'time:{datetime.now()}, sim_time:{current_sim_time}, '
+                f'link:{container_name_list[0]}<-->{container_name_list[1]}, type:{type}',
                 file=f,
                 flush=True
             )    
