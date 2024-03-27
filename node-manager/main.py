@@ -105,9 +105,9 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     process_list: typing.List[Process] = []
     logger.info('copying frr.conf to containers')
     for id in satellite_map.keys():
-        id_str = satellite_id_tuple_to_str(id)
+        container_name = satellite_id_tuple_to_str(id)
         process_copy = Process(target=docker_client.copy_to_container, 
-                               args=(id_str, f'../configuration/frr/{id_str}.conf', f'/etc/frr/frr.conf'))
+                               args=(container_name, f'../configuration/frr/{container_name}.conf', f'/etc/frr/frr.conf'))
         process_list.append(process_copy)
     for process_copy in process_list:
         process_copy.start()
@@ -264,9 +264,9 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-    # lofi_n_list = [0, 1, 2, 3, 4, 5, -1]
+    # lofi_n_list = [0, 1, 2, 3, 4]
     link_failure_rate_list = [0.05]
-    lofi_n_list = [5, -1]
+    lofi_n_list = [2]
 
     if not os.path.exists('./result.csv') and not DRY_RUN:
         with open('./result.csv', 'w') as f:

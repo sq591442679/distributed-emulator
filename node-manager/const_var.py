@@ -54,7 +54,7 @@ RECEIVER_NODE_ID = (5, 5)
 # used for tle generation and position update
 TIME_BASE = datetime(2024, 1, 1)
 
-TEST_NUM = 20
+TEST_NUM = 1
 UDP_SEND_INTERVAL = 0.01
 DRY_RUN = False
 WARMUP_PERIOD = 30      # unit: s

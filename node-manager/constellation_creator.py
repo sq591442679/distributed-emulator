@@ -38,8 +38,8 @@ def create_satellite_submission(mission_index,
     """
     for id_tuple in mission:
         node_id_str = satellite_id_tuple_to_str(id_tuple)
-        # after docker_client create satellite the container_id will be returned
-        container_id = docker_client.create_satellite(
+        # after docker_client create satellite the container_name will be returned
+        container_name = docker_client.create_satellite(
             id_tuple,
             udp_listening_port,
             satellite_num,
@@ -47,7 +47,7 @@ def create_satellite_submission(mission_index,
         )
 
         logger.success(f"create satellite {node_id_str} successfully")
-        send_pipe.send(f"{mission_index}|{node_id_str}|{container_id}")
+        send_pipe.send(f"{mission_index}|{node_id_str}|{container_name}")
     send_pipe.send("finished")
 
 # modified by sqsq: added parameter satellite_id_list
@@ -153,7 +153,7 @@ def multiprocess_generate_containers(submission_size_tmp,
                                      satellites_tmp):
     submission_size = submission_size_tmp  # the size of the submission
     finished_submission_count = 0  # the count of the finished submission
-    rcv_pipe, send_pipe = Pipe()  # the pipe for receiving the container_id
+    rcv_pipe, send_pipe = Pipe()  # the pipe for receiving the container_name
     satellite_id_to_satellite = PriorityQueue()  # the priority queue for the (satellite_id, satellite) pair
     satellite_id_list = list(link_connections.keys())
     mission_list = generate_submission_list(submission_size, satellite_id_list)  # modified by sqsq 
@@ -171,7 +171,7 @@ def multiprocess_generate_containers(submission_size_tmp,
         process_list.append(process)
         process.start()
 
-    # collect the generated container_id
+    # collect the generated container_name
     while True:
         rcv_string = rcv_pipe.recv()
         # logger.info(rcv_string)
@@ -182,13 +182,13 @@ def multiprocess_generate_containers(submission_size_tmp,
                 send_pipe.close()
                 break
         else:
-            mission_index, node_id_str, container_id = rcv_string.split("|")
+            mission_index, node_id_str, container_name = rcv_string.split("|")
             node_id = satellite_str_to_id_tuple(node_id_str)
             tmp_satellite_node = SatelliteNode((
                 satellite_infos[node_id][0],
                 satellite_infos[node_id][1],
                 satellite_infos[node_id][2],
-            ), node_id, container_id)
+            ), node_id, container_name)
             satellite_map[tmp_satellite_node.node_id] = tmp_satellite_node
             satellite_id_to_satellite.put((node_id, tmp_satellite_node))
             position_datas[node_id_str] = {
@@ -234,16 +234,16 @@ def generate_mission_for_network(link_connections, satellites_tmp, docker_client
             else:
                 connect_order_map[node_id1] = [node_id2]
             # start container id
-            container_id1 = satellite_map[node_id1].container_id
+            container_name1 = satellite_map[node_id1].container_name
             # end container id
-            container_id2 = satellite_map[node_id2].container_id
+            container_name2 = satellite_map[node_id2].container_name
 
             # added by sqsq
             with open("eth_dict.log", "a") as f:
                 print(f"{node_id1}<-->{node_id2}:{subnet_ip_str}/29", flush=True, file=f)
 
             # tmp mission generated
-            tmp_mission = (node_id1, node_id2, container_id1, container_id2, network_index, ipam_config)
+            tmp_mission = (node_id1, node_id2, container_name1, container_name2, network_index, ipam_config)
             # add the tmp mission into submission list
             final_mission_list.append(tmp_mission)
             # update network index
@@ -277,15 +277,15 @@ def generate_submission_list_for_network(missions, submission_size_tmp):
 def create_network_submission(submission, docker_client, send_pipe):
     for single_mission in submission:
         # split and get the mission info
-        node_id1, node_id2, container_id1, container_id2, network_index, ipam_config = single_mission
+        node_id1, node_id2, container_name1, container_name2, network_index, ipam_config = single_mission
         node_id1_str = satellite_id_tuple_to_str(node_id1)
         node_id2_str = satellite_id_tuple_to_str(node_id2)
         # logger.info(single_mission)
         # create network
         net_id = docker_client.create_network_with_ipam_config(network_index, ipam_config)
         # connect the node to the network
-        docker_client.connect_node(container_id1, net_id, node_id1_str)
-        docker_client.connect_node(container_id2, net_id, node_id2_str)
+        docker_client.connect_node(container_name1, net_id, node_id1_str)
+        docker_client.connect_node(container_name2, net_id, node_id2_str)
         # print link connection information
         # result = subprocess.run("ip link show | grep -c 'veth'", shell=True, capture_output=True, text=True)
         # logger.info("connect satellite %s and %s, total veth: %s, connected container num: %d" % 
@@ -296,7 +296,7 @@ def create_network_submission(submission, docker_client, send_pipe):
         else:
             logger.success(f"connect satellite {node_id1_str} and {node_id2_str} succeed")
         # send the net_id info
-        send_pipe.send(f"{net_id}|{container_id1}|{container_id2}")
+        send_pipe.send(f"{net_id}|{container_name1}|{container_name2}")
         # modify interface map
         interface_map_lock.acquire()
         modify_interface_map(node_id1, node_id2, interface_map)
@@ -341,8 +341,8 @@ def multiple_process_generate_networks(link_connections, satellites_tmp, docker_
                 rcv_pipe.close()
                 break
         else:
-            net_id, container_id1, container_id2 = pipe_rcv_string.split("|")
-            network_object_mission.append((net_id, container_id1, container_id2))
+            net_id, container_name1, container_name2 = pipe_rcv_string.split("|")
+            network_object_mission.append((net_id, container_name1, container_name2))
 
     # logger.info(network_object_mission)
 
@@ -406,11 +406,11 @@ def constellation_creator(docker_client,
     # ---------------------------------------------------------------------
     # traverse all the satellite
     clear_frr_conf()
-    for container_id_key in satellite_map.keys():
+    for node_id in satellite_map.keys():
         # get satellite
-        container_id = satellite_map[container_id_key].container_id
+        container_name = satellite_map[node_id].container_name
         # get interface and prefix length of container
-        interfaces, prefix_len = docker_client.get_container_interfaces(container_id)
+        interfaces, prefix_len = docker_client.get_container_interfaces(container_name)
         toDelete = -1.
         # traverse all the interfaces and delete the host interface
         for i in range(len(interfaces)):
@@ -418,26 +418,26 @@ def constellation_creator(docker_client,
                 toDelete = i
                 break
         if toDelete >= 0:
-            satellite_map[container_id_key].host_ip = interfaces[toDelete]
+            satellite_map[node_id].host_ip = interfaces[toDelete]
             del interfaces[toDelete]
             del prefix_len[toDelete]
         # get the subnet of each interface
         sub_nets = [ip_to_subnet(interfaces[i], prefix_len[i]) for i in range(len(prefix_len))]
         # write the interface into the frr file
-        write_into_frr_conf(satellite_id_tuple_to_str(container_id_key), sub_nets, prefix_len, lofi_n)
+        write_into_frr_conf(satellite_id_tuple_to_str(node_id), sub_nets, prefix_len, lofi_n)
         # traverse all the subnets
         for sub_index in range(len(sub_nets)):
             # sub is the subnet
             sub = sub_nets[sub_index]
             # subnet_ip is a map {subnet_str->interface}
-            satellite_map[container_id_key].subnet_ip[sub] = interfaces[sub_index]
+            satellite_map[node_id].subnet_ip[sub] = interfaces[sub_index]
             # if the subnet is in the subnet map
             if sub in subnet_map.keys():
                 # append the satellite into the subnet map
-                subnet_map[sub].append(satellite_map[container_id_key])
+                subnet_map[sub].append(satellite_map[node_id])
             else:
                 # create a new subnet
-                subnet_map[sub] = [satellite_map[container_id_key]]
+                subnet_map[sub] = [satellite_map[node_id]]
 
     # 进行每一条星间链路的打印
     GenerateNetworkX(subnet_map)

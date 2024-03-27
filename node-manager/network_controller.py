@@ -23,12 +23,12 @@ def generate_submission_list_for_network_object_creation(missions, submission_si
 
 
 def network_object_creation_submission(docker_client, submission, send_pipe):
-    for net_id, container_id1, container_id2 in submission:
-        network_key = get_network_key(docker_client, container_id1, container_id2)
+    for net_id, container_name1, container_name2 in submission:
+        network_key = get_network_key(docker_client, container_name1, container_name2)
         network_dict[network_key] = Network(docker_client,
                                         net_id,
-                                        container_id1,
-                                        container_id2,
+                                        container_name1,
+                                        container_name2,
                                         NETWORK_DELAY,
                                         NETWORK_BANDWIDTH,
                                         NETWORK_LOSS,
@@ -66,14 +66,12 @@ def get_laser_delay_ms(position1: dict, position2: dict) -> float:
     return sqrt(dist_square) / LIGHT_SPEED * 1000  # UNIT: ms
 
 
-def get_network_key(docker_client: DockerClient, container_id1: str, container_id2: str) -> str:
+def get_network_key(docker_client: DockerClient, container_name1: str, container_name2: str) -> str:
     """
     modified by sqsq
     network_key is no longer based on container_id, but container_name
     to ensure correspondence during different runs
     """
-    container_name1 = docker_client.client.containers.get(container_id1).name
-    container_name2 = docker_client.client.containers.get(container_id2).name
     if container_name1 > container_name2:
         return container_name2 + container_name1
     else:
@@ -103,7 +101,7 @@ def get_vethes_of_bridge(interface_name: str) -> list:
 
 
 
-def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docker_client: DockerClient) -> List[Dict[str, str]]:
+def get_inner_eth_dict(container_name_list: List[str], veth_list: List[str], docker_client: DockerClient) -> List[Dict[str, str]]:
     """
     added by sqsq
     e.g., for a veth3dr431, find it corresponds to eth3 in node_1_1
@@ -114,8 +112,6 @@ def get_inner_eth_dict(container_id_list: List[str], veth_list: List[str], docke
     """    
     veth_dict: Dict[str, str] = {}
     eth_dict: Dict[str, str] = {}
-    container_name_list: List[str] = [docker_client.client.containers.get(container_id).name
-                                      for container_id in container_id_list]
     iflink_of_veth: Dict[str, str] = {}                     # veth_name -> iflink of veth
     
     for veth_name in veth_list:                             # build iflink_of_veth
@@ -232,8 +228,8 @@ class Network:
     def __init__(self,
                  docker_client: DockerClient,
                  bridge_id: str,
-                 container_id1: str,
-                 container_id2: str,
+                 container_name1: str,
+                 container_name2: str,
                  delay: float,
                  band_width: int,
                  loss_percent: int,
@@ -241,9 +237,9 @@ class Network:
         # 为保证network key的唯一性，设置map中key的字符串拼接顺序为小id在前,大id在后
         self.docker_client = docker_client
         self.br_id = bridge_id
-        self.container_id1 = container_id1
-        self.container_id2 = container_id2
-        self.network_key = get_network_key(docker_client, container_id1, container_id2)
+        self.container_name1 = container_name1
+        self.container_name2 = container_name2
+        self.network_key = get_network_key(docker_client, container_name1, container_name2)
         self.br_interface_name = get_bridge_interface_name(bridge_id)
         self.veth_interface_list = get_vethes_of_bridge(self.br_interface_name)
         self.delay = delay              # unit: ms
@@ -255,7 +251,7 @@ class Network:
             raise ValueError("wrong veth number of bridge: %d" % len(self.veth_interface_list))
         
         # added by sqsq
-        self.veth_dict, self.inner_eth_dict = get_inner_eth_dict([container_id1, container_id2], 
+        self.veth_dict, self.inner_eth_dict = get_inner_eth_dict([container_name1, container_name2], 
                                                                  self.veth_interface_list, 
                                                                  self.docker_client)
 
@@ -296,8 +292,8 @@ class Network:
     def update_delay_param(self, set_time: float):
         self.delay = set_time
         if not self.is_down:
-            container_name1 = self.docker_client.client.containers.get(self.container_id1).name
-            container_name2 = self.docker_client.client.containers.get(self.container_id2).name
+            container_name1 = self.container_name1
+            container_name2 = self.container_name2
             # logger.info(f"updating delay between {container_name1}<-->{container_name2}: {set_time}")
             self.update_info()
 
@@ -439,9 +435,9 @@ def update_network_delay(docker_client: DockerClient, position_data: dict, topo:
             start_node_id_str = satellite_id_tuple_to_str(start_node_id)
             target_node_id_str = satellite_id_tuple_to_str(target_node_id)
             delay = get_laser_delay_ms(position_data[start_node_id_str],position_data[target_node_id_str])
-            start_container_id = satellite_map[start_node_id].container_id
-            target_container_id = satellite_map[target_node_id].container_id
-            net_object = network_dict[get_network_key(docker_client, start_container_id,target_container_id)]
+            start_container_name = satellite_map[start_node_id].container_name
+            target_container_name = satellite_map[target_node_id].container_name
+            net_object = network_dict[get_network_key(docker_client, start_container_name,target_container_name)]
             net_object.update_delay_param(delay)
 
 

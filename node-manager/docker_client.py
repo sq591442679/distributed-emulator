@@ -59,7 +59,7 @@ class DockerClient:
         # disconnect the newly created container from docker0
         os.system(f"docker network disconnect bridge {container_info.name}")        
         
-        return container_info.id
+        return container_info.name
 
     def create_ground_container(self, node_id_g: str):
         container_info = self.client.containers.run(self.ground_image_name, detach=True, environment=[
@@ -71,21 +71,21 @@ class DockerClient:
         return container_info.id
     
 
-    def stop_satellite(self, container_id: str):
-        self.client.containers.get(container_id).stop()
+    def stop_satellite(self, container_name: str):
+        self.client.containers.get(container_name).stop()
 
-    def rm_satellite(self, container_id: str):
-        self.client.containers.get(container_id).remove(force=True)
+    def rm_satellite(self, container_name: str):
+        self.client.containers.get(container_name).remove(force=True)
 
     def rm_network(self, network_id: str):
         self.client.networks.get(network_id).remove()
 
-    def connect_node(self, container_id: str, network_id: str, alias_name: str):
-        container_object = self.client.containers.get(container_id)
+    def connect_node(self, container_name: str, network_id: str, alias_name: str):
+        container_object = self.client.containers.get(container_name)
         self.client.networks.get(network_id).connect(container_object, aliases=[alias_name])
 
-    def disconnect_node(self, container_id: str, network_id: str):
-        container_object = self.client.containers.get(container_id)
+    def disconnect_node(self, container_name: str, network_id: str):
+        container_object = self.client.containers.get(container_name)
         self.client.networks.get(network_id).disconnect(container_object)
 
     def pull_image(self):
@@ -114,10 +114,10 @@ class DockerClient:
             raise "create net work error"
         return net.id,subnet_ip
 
-    def get_container_interfaces(self, container_id: str):
+    def get_container_interfaces(self, container_name: str):
         ans = []
         free_bit = []
-        container_info = self.client.containers.get(container_id)
+        container_info = self.client.containers.get(container_name)
         nets = container_info.attrs["NetworkSettings"]["Networks"]
         for net_name in nets.keys():
             ans.append(nets[net_name]["IPAddress"])
@@ -131,10 +131,10 @@ class DockerClient:
 
     """
     added by sqsq
-    copy file src to dst in container_id
+    copy file src to dst in container_name
     """
-    def copy_to_container(self, container_id: str, src: str, dst: str):
-        subprocess.run(f"docker cp {src} {container_id}:{dst}", shell=True, stdout=subprocess.DEVNULL)
+    def copy_to_container(self, container_name: str, src: str, dst: str):
+        subprocess.run(f"docker cp {src} {container_name}:{dst}", shell=True, stdout=subprocess.DEVNULL)
 
 if __name__ == '__main__':
     # cli = DockerClient('aaa', 'bbb')
