@@ -264,9 +264,10 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-    # lofi_n_list = [0, 1, 2, 3, 4]
+    lofi_n_list = [1, 2, 3, 4, 5]
     link_failure_rate_list = [0.05]
-    lofi_n_list = [2]
+    # lofi_n_list = [-1, 2, 4]
+    test_nums = [16, 4, 5, 5, 5]
 
     if not os.path.exists('./result.csv') and not DRY_RUN:
         with open('./result.csv', 'w') as f:
@@ -277,8 +278,8 @@ if __name__ == "__main__":
         os.system("chmod 777 ./result.csv")
 
     for link_failure_rate in link_failure_rate_list:
-        for lofi_n in lofi_n_list:
-            for test in range(1, TEST_NUM + 1):
+        for i, lofi_n in enumerate(lofi_n_list):
+            for test in range(1, test_nums[i] + 1):
                 run(enable_load_awareness, lofi_delta, lofi_n, 
                     link_failure_rate, UDP_SEND_INTERVAL, test, DRY_RUN)
 
