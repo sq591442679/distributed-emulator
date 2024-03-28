@@ -23,6 +23,12 @@ from tools import *
 from transmission_test import start_transmission_test, start_packet_capture, get_ip_of_node_id
 
 
+def delete_constellation(docker_client: DockerClient):
+    delete_containers_with_multiple_processes(docker_client, SUBMISSION_SIZE_FOR_DELETE_CONTAINER)
+    delete_networks_with_multiple_processes(docker_client, SUBMISSION_SIZE_FOR_DELETE_NETWORK)
+    os.system("./stop_and_kill_constellation.sh")
+
+
 def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int, 
         link_failure_rate: float, send_interval: float, test: int, dry_run = False):
     reinit_global_var()
@@ -38,6 +44,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     udp_port = config.UDPPort
     monitor_image_name = config.MonitorImageName
     # ---------------------------------
+
+    init_start_time = time.time()
 
     # ---------------------------------
     # check for ospf
@@ -101,13 +109,20 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     update_network_delay(docker_client, position_datas, connect_order_map)
     # -------------------------------------------------------------------
 
+    # -------------------------------------------------------------------
+    init_end_time = time.time()
+    logger.info(f'constellation init time: {init_end_time - init_start_time: .3f}s')
+    # -------------------------------------------------------------------
+
     # start frr    added by sqsq
     process_list: typing.List[Process] = []
     logger.info('copying frr.conf to containers')
     for id in satellite_map.keys():
         container_name = satellite_id_tuple_to_str(id)
         process_copy = Process(target=docker_client.copy_to_container, 
-                               args=(container_name, f'../configuration/frr/{container_name}.conf', f'/etc/frr/frr.conf'))
+                               args=(container_name, 
+                                     f'../configuration/frr/{container_name}.conf', 
+                                     f'/etc/frr/frr.conf'))
         process_list.append(process_copy)
     for process_copy in process_list:
         process_copy.start()
@@ -118,7 +133,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     logger.info('starting frr in containers')
     for id in satellite_map.keys():
         process_start_frr = Process(target=docker_client.exec_cmd, 
-                                    args=(satellite_id_tuple_to_str(id), './usr/lib/frr/frrinit.sh start'))
+                                    args=(satellite_id_tuple_to_str(id), 
+                                          './usr/lib/frr/frrinit.sh start'))
         process_list.append(process_start_frr)
     for process_start_frr in process_list:
         process_start_frr.start()
@@ -233,9 +249,27 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
                   f"{drop_rate},{delay},{throughput},{control_overhead},"
                   f"{ttl_rate},{no_entry_rate}", file=f)
 
+        # copy etwork events from container to host
+        process_list = []
+        for id in satellite_map.keys():
+            container_name = satellite_id_tuple_to_str(id)
+            process_copy = Process(target=docker_client.copy_from_container, 
+                                   args=(container_name, 
+                                         f'/var/log/network_events.log', 
+                                         f'../container-events/{container_name}_network_events.log'))
+            # process_copy = Process(target=docker_client.copy_from_container(), 
+            #                     args=(container_name, 
+            #                           f'/var/log/rtmon.log', 
+            #                           f'../container_events/{container_name}_rtmon.log'))
+            process_list.append(process_copy)
+        for process_copy in process_list:
+            process_copy.start()
+        for process_copy in process_list:
+            process_copy.join()
+
         set_monitor_process.kill()
         # update_position_process.kill()
-        os.system("./stop_and_kill_constellation.sh")
+        delete_constellation(docker_client)
         os.system("clear")
     else:
         while True:
@@ -264,10 +298,13 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-    lofi_n_list = [1, 2, 3, 4, 5]
+    lofi_n_list = [5]
     link_failure_rate_list = [0.05]
     # lofi_n_list = [-1, 2, 4]
-    test_nums = [16, 4, 5, 5, 5]
+    test_nums = [1]
+
+    if (len(lofi_n_list) != len(test_nums)):
+        raise Exception('lofi_n_list and test_nums not correspond')
 
     if not os.path.exists('./result.csv') and not DRY_RUN:
         with open('./result.csv', 'w') as f:

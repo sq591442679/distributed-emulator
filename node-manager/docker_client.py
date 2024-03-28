@@ -136,6 +136,9 @@ class DockerClient:
     def copy_to_container(self, container_name: str, src: str, dst: str):
         subprocess.run(f"docker cp {src} {container_name}:{dst}", shell=True, stdout=subprocess.DEVNULL)
 
+    def copy_from_container(self, container_name: str, src: str, dst: str):
+        subprocess.run(f"docker cp {container_name}:{src} {dst}", shell=True, stdout=subprocess.DEVNULL)
+
 if __name__ == '__main__':
     # cli = DockerClient('aaa', 'bbb')
     # resp = cli.get_container_interfaces("6ad80cb5be8ba205027c157814b0f47eda11c2a635862fba367316df8a2720d0")

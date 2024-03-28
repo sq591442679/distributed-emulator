@@ -11,6 +11,7 @@
 #[Runtime Temperary Files]
 **/tmp
 configuration
+container-events
 
 #[Build Mid-Files]
 **/cmake-build-debug

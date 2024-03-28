@@ -349,10 +349,8 @@ def multiple_process_generate_networks(link_connections, satellites_tmp, docker_
     print_and_store_interface_map(interface_map)
 
     # logger.info(f"generate network object mission size: {len(network_object_mission) / SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION}")
-    start_time = time.time()
+
     create_network_object_with_multiple_process(docker_client, network_object_mission, SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION)
-    end_time = time.time()
-    logger.success(f"network initialize time: {end_time - start_time} s")
 
 
 def constellation_creator(docker_client,
