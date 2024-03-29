@@ -105,7 +105,7 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
         output = subprocess.check_output(command, shell=True, text=True)
         drop_cnt = int(output.split(':')[-1].strip())
         drop_ratio = drop_cnt / expected_recv_cnt
-        shared_result_list.append({result_key: "%.2f" % (drop_ratio)})
+        shared_result_list.append({result_key: "%.1f%%" % (drop_ratio * 100)})
 
     logger.info(shared_result_list)
 

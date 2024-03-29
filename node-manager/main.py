@@ -243,7 +243,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         throughput = queue_element['throughput']
         control_overhead = queue_element['control overhead']
 
-        with open('./result.csv', 'a') as f:
+        with open('./result_tmp.csv', 'a') as f:
             print(f"{lofi_n},{enable_load_awareness},{lofi_delta},"
                   f"{link_failure_rate},{test},"
                   f"{drop_rate},{delay},{throughput},{control_overhead},"
@@ -298,21 +298,21 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     # link_failure_rate_list = [0, 0.01, 0.02, 0.03, 0.04, 0.05]
-    lofi_n_list = [5]
+    lofi_n_list = [0]
     link_failure_rate_list = [0.05]
     # lofi_n_list = [-1, 2, 4]
-    test_nums = [1]
+    test_nums = [5]
 
     if (len(lofi_n_list) != len(test_nums)):
         raise Exception('lofi_n_list and test_nums not correspond')
 
-    if not os.path.exists('./result.csv') and not DRY_RUN:
-        with open('./result.csv', 'w') as f:
+    if not os.path.exists('./result_tmp.csv') and not DRY_RUN:
+        with open('./result_tmp.csv', 'w') as f:
             print('lofi_n,load_awareness,lofi_delta,'
                   'link_failure_rate,test,'
                   'drop_rate,delay,throughput,control_overhead,'
                   'ttl_rate,no_entry_rate', file=f)
-        os.system("chmod 777 ./result.csv")
+        os.system("chmod 777 ./result_tmp.csv")
 
     for link_failure_rate in link_failure_rate_list:
         for i, lofi_n in enumerate(lofi_n_list):
