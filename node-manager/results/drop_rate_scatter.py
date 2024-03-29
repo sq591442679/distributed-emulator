@@ -45,6 +45,11 @@ for i, lofi_n in enumerate(lofi_n_values):
     ax.spines['right'].set_zorder(2)
     
     ax.legend(loc='upper right')
+    
+    # 修改纵坐标刻度标签
+    yticks = [0, 0.1, 0.2]
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([f'{y*100:.0f}%' for y in yticks])
 
 # 调整子图间距
 plt.subplots_adjust(hspace=0.8, wspace=0.3)
