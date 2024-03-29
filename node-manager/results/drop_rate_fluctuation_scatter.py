@@ -1,41 +1,7 @@
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# import os
-# import matplotlib.ticker as ticker
-
-# # 读取CSV文件
-# current_path = os.path.dirname(__file__)
-# df = pd.read_csv(current_path + "/result_fluctuation.csv")
-
-# df['drop_rate'] = df['drop_rate'].str.rstrip('%').astype('float') / 100
-
-# # 筛选出link_failure_rate为0、0.01、0.05的数据
-# filtered_df = df[df['link_failure_rate'].isin([0, 0.01, 0.05])]
-
-# # 重置颜色循环，使用默认颜色
-# plt.gca().set_prop_cycle(None)
-
-# # 绘制散点图
-# for name, group in filtered_df.groupby('link_failure_rate'):
-#     plt.scatter(range(1, len(group) + 1), group['drop_rate'], label=f'link failure rate={name * 100}%', zorder=2)
-# plt.xlabel('Experiment Index')
-# plt.ylabel('Drop Rate')
-# plt.title('Drop Rate vs. Experiment Index')
-# plt.legend()
-# plt.ylim(0, 0.1)  # 设置纵坐标范围
-# plt.xlim(0, 11)    # 设置横坐标范围
-# plt.grid(True, zorder=1)  # 设置网格线zorder为1，使其位于坐标点下方
-
-# # 将y轴的刻度设置为百分比格式
-# plt.gca().yaxis.set_major_formatter(ticker.PercentFormatter(xmax=1, decimals=0))
-
-# plt.show()
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import matplotlib.ticker as ticker
-import math
 
 # 读取CSV文件
 current_path = os.path.dirname(__file__)
