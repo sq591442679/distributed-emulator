@@ -19,23 +19,23 @@ for i, lofi_n in enumerate(lofi_n_values):
     title = f'lofi_n={lofi_n}: Drop Rate'
         
     # 筛选出对应 lofi_n 值的数据
-    lofi_n_data = df[df['lofi_n'] == lofi_n]
+    lofi_n_data = df[(df['lofi_n'] == lofi_n) & (df['link_failure_rate']==0.05)]
 
     # 获取数据行数作为简单的编号
     id = range(1, len(lofi_n_data) + 1)
     drop_rate = lofi_n_data['drop_rate']
     
     mean_drop_rate = drop_rate.mean()
-    
+    var_drop_rate = drop_rate.var(ddof=1)
 
     # 绘制散点图
     ax = axs[i // 2, i % 2]
     ax.scatter(id, drop_rate, zorder=3)
-    ax.axhline(mean_drop_rate, label=f'mean: {mean_drop_rate * 100 :.2f}%', linewidth=3,
+    ax.axhline(mean_drop_rate, label=f'mean: {mean_drop_rate * 100 :.2f}%\nvar: {var_drop_rate: .6f}', linewidth=3,
                color=plt.rcParams['axes.prop_cycle'].by_key()['color'][1], zorder=4)
     ax.set_title(title)
     ax.set_xlabel('tests')
-    ax.set_xlim(0, 100)
+    # ax.set_xlim(0, 100)
     ax.set_ylabel('drop rate')
     ax.set_ylim(0, 0.2)  # 设置y轴范围从0开始
     ax.grid(True)

@@ -254,6 +254,7 @@ class Network:
         self.veth_dict, self.inner_eth_dict = get_inner_eth_dict([container_name1, container_name2], 
                                                                  self.veth_interface_list, 
                                                                  self.docker_client)
+                                        # container name -> veth name / eth name
 
         # added by sqsq
         self.is_down = False    # if True, then do not really update info
@@ -292,9 +293,8 @@ class Network:
     def update_delay_param(self, set_time: float):
         self.delay = set_time
         if not self.is_down:
-            container_name1 = self.container_name1
-            container_name2 = self.container_name2
-            # logger.info(f"updating delay between {container_name1}<-->{container_name2}: {set_time}")
+            link_cost = round(self.delay)
+            self.update_link_cost(link_cost)
             self.update_info()
 
     def update_bandwidth_param(self, band_width: int):
@@ -306,6 +306,12 @@ class Network:
         self.loss = loss_percent
         if not self.is_down:
             self.update_info()
+
+    def update_link_cost(self, cost: int):
+        for container_name, eth_name in self.inner_eth_dict.items():
+            command = ['sh', '-c', 
+                       f'"/load_awareness/change_ospf_cost.sh {eth_name} {cost}"']
+            ret = self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
 
     
     def print_link_event(self, current_sim_time: float, type: str):

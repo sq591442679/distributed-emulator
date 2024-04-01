@@ -59,6 +59,7 @@ RUN echo "log file /var/log/frr/sqsq_ospfd.log" >> /etc/frr/frr.conf \
     && echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf && sysctl -p
 
 COPY udp-applications /udp-applications
+COPY ./load_awareness/ /load_awareness
 COPY get_ifindex.sh /get_ifindex.sh
 COPY monitor_network.sh /monitor_network.sh
 RUN chmod -R 777 /udp-applications \ 
