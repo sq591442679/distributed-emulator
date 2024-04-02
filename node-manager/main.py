@@ -3,6 +3,7 @@ import subprocess
 import os.path
 import time
 import typing
+import sys
 from ctypes import c_bool
 from multiprocessing import Process, Manager, Queue
 from loguru import logger
@@ -212,8 +213,10 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     logger.info('test starting...')
 
     if not dry_run:
+        # generate_link_failure_process = Process(target=generate_link_failure, 
+        #                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, 42))
         generate_link_failure_process = Process(target=generate_link_failure, 
-                                                args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, 42))
+                                                args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, test))
         process_list.append(generate_link_failure_process)
 
         manager = Manager()
@@ -288,6 +291,13 @@ if __name__ == "__main__":
     if sudo_uid is None:
         raise Exception("\nneed to have sudo permission.\n try sudo python3 main.py")
     
+    if DRY_RUN == True:
+        logger.warning('DRY_RUN is set to True, enter y to continue')
+        text = input()
+        if text != "y":
+            logger.info('stop running')
+            sys.exit()
+    
     os.system("./stop_and_kill_constellation.sh")
 
     with open("eth_dict.log", "w") as f:
@@ -298,9 +308,9 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     link_failure_rate_list = [0.05]
-    lofi_n_list = [5]
+    lofi_n_list = [0, 1, 2, 3, 4, 5, 6, -1]
     # lofi_n_list = [-1, 2, 4]
-    test_nums = [30]
+    test_nums = [50, 50, 50, 50, 50, 50, 50, 50]
 
     if (len(lofi_n_list) != len(test_nums)):
         raise Exception('lofi_n_list and test_nums not correspond')
