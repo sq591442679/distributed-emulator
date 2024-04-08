@@ -54,15 +54,15 @@ def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared
     expected_recv_cnt = int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))
     ret = docker_client.exec_cmd(receiver_node_name, 
                                  f"python3 /udp-applications/udp_receiver.py "
-                                 f"{receiver_ip} {receiver_port} "
+                                 f"{receiver_ip} {receiver_port} {SIMULATION_DURATION} "
                                  f"{SIMULATION_DURATION + 10} {expected_recv_cnt}")
     if ret[0] != 0:
         logger.error(ret[1].decode().strip())
     else:
         line = ret[1]
         if len(line.decode().strip()) > 0:
-            shared_result_list.append(json.loads(line.decode().strip()))
             # logger.info(line.decode().strip())
+            shared_result_list.append(json.loads(line.decode().strip()))
 
 
 def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_interval: float) -> None:
@@ -107,7 +107,7 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
         drop_ratio = drop_cnt / expected_recv_cnt
         shared_result_list.append({result_key: "%.1f%%" % (drop_ratio * 100)})
 
-    logger.info(shared_result_list)
+    # logger.info(shared_result_list)
 
     # logger.success("UDP send and receive completed")
     # return (shared_result_list, ttl_drop_ratio)

@@ -26,6 +26,7 @@ nhrpd=no
 eigrpd=no
 babeld=no
 sharpd=no
+staticd=no
 pbrd=no
 bfdd=no
 fabricd=no

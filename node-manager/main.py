@@ -213,10 +213,10 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     logger.info('test starting...')
 
     if not dry_run:
-        # generate_link_failure_process = Process(target=generate_link_failure, 
-        #                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, 42))
         generate_link_failure_process = Process(target=generate_link_failure, 
-                                                args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, test))
+                                                args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, 42))
+        # generate_link_failure_process = Process(target=generate_link_failure, 
+        #                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, test))
         process_list.append(generate_link_failure_process)
 
         manager = Manager()
@@ -237,8 +237,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
         logger.info(shared_result_list)
         
-        drop_rate = shared_result_list[0]['drop rate']
-        delay = shared_result_list[0]['delay']
+        drop_rate = shared_result_list[0][-1]['drop rate'].strip()
+        delay = shared_result_list[0][-1]['delay'].strip()
         ttl_rate = shared_result_list[1]['ttl_drop_ratio']
         no_entry_rate = shared_result_list[2]['no_entry_ratio']
 
@@ -260,10 +260,6 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
                                    args=(container_name, 
                                          f'/var/log/network_events.log', 
                                          f'../container-events/{container_name}_network_events.log'))
-            # process_copy = Process(target=docker_client.copy_from_container(), 
-            #                     args=(container_name, 
-            #                           f'/var/log/rtmon.log', 
-            #                           f'../container_events/{container_name}_rtmon.log'))
             process_list.append(process_copy)
         for process_copy in process_list:
             process_copy.start()
@@ -273,6 +269,10 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         set_monitor_process.kill()
         # update_position_process.kill()
         delete_constellation(docker_client)
+
+        while True:
+            pass
+
         os.system("clear")
     else:
         while True:
@@ -308,9 +308,9 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     link_failure_rate_list = [0.05]
-    lofi_n_list = [0, 1, 2, 3, 4, 5, 6, -1]
+    lofi_n_list = [5]
     # lofi_n_list = [-1, 2, 4]
-    test_nums = [50, 50, 50, 50, 50, 50, 50, 50]
+    test_nums = [1]
 
     if (len(lofi_n_list) != len(test_nums)):
         raise Exception('lofi_n_list and test_nums not correspond')
