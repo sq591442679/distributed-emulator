@@ -15,6 +15,7 @@ import random
 from docker_client import DockerClient
 from typing import Dict, List
 from pyroute2 import NetNS
+from pyroute2.netlink.rtnl import TC_H_ROOT
 
 def generate_submission_list_for_network_object_creation(missions, submission_size: int):
     submission_list = []
@@ -210,18 +211,44 @@ class Network:
     '''
     def init_info(self):
         for container_name, inner_eth_name in self.inner_eth_dict.items():
-            formated_delay = '%.2f' % self.delay
-            command = ['sh', '-c', f'tc qdisc add dev {inner_eth_name} root netem delay {formated_delay}ms rate {self.bandwidth}Mbit limit {self.queue_capacity}']
-            ret = self.docker_client.exec_cmd(container_name, command)
-            if ret[0] != 0:
-                logger.error(ret[1].decode().strip())
-                raise Exception('')
+            satellite_id = satellite_str_to_id_tuple(container_name)
+            container_pid = satellite_map[satellite_id].container_pid
+            netns_path = f'/proc/{container_pid}/ns/net'
+            with NetNS(netns_path) as ns:
+                idx = ns.link_lookup(ifname=inner_eth_name)[0]
+                ns.tc(command="add", 
+                      kind="netem", 
+                      index=idx, 
+                      handle=0x00010000, 
+                      parent=TC_H_ROOT, 
+                      delay=round(self.delay * 1000), 
+                      rate=f"{self.bandwidth}mbit", 
+                      limit=self.queue_capacity)
+            # command = ['sh', '-c', f'tc qdisc add dev {inner_eth_name} root netem delay {round(self.delay)}ms rate {self.bandwidth}Mbit limit {self.queue_capacity}']
+            # logger.info(f"{container_name}.{inner_eth_name}: {command}")
+            # ret = self.docker_client.exec_cmd(container_name, command)
+            # if ret[0] != 0:
+            #     logger.error(ret[1].decode().strip())
+            #     raise Exception('')
 
     def update_info(self):
-        formated_delay = '%.2f' % self.delay
         for container_name, inner_eth_name in self.inner_eth_dict.items():
-            command = ['sh', '-c', f'tc qdisc replace dev {inner_eth_name} root netem delay {formated_delay}ms rate {self.bandwidth}Mbit limit {self.queue_capacity}']
-            ret = self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
+            satellite_id = satellite_str_to_id_tuple(container_name)
+            container_pid = satellite_map[satellite_id].container_pid
+            netns_path = f'/proc/{container_pid}/ns/net'
+            with NetNS(netns_path) as ns:
+                idx = ns.link_lookup(ifname=inner_eth_name)[0]
+                ns.tc(command="replace", 
+                      kind="netem", 
+                      index=idx, 
+                      handle=0x00010000, 
+                      parent=TC_H_ROOT, 
+                      delay=round(self.delay * 1000), 
+                      rate=f"{self.bandwidth}mbit", 
+                      limit=self.queue_capacity)
+            # command = ['sh', '-c', f'tc qdisc replace dev {inner_eth_name} root netem delay {round(self.delay)}ms rate {self.bandwidth}Mbit limit {self.queue_capacity}']
+            # logger.info(f"{container_name}.{inner_eth_name}: {command}")
+            # ret = self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
 
     def update_delay_param(self, set_time: float):
         self.delay = set_time
