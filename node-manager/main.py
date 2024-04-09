@@ -30,6 +30,12 @@ def delete_constellation(docker_client: DockerClient):
     os.system("./stop_and_kill_constellation.sh")
 
 
+def logger_file_filter(record):
+    if "now drop rate" in record["message"]:
+        return True
+    return False
+
+
 def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int, 
         link_failure_rate: float, send_interval: float, test: int, dry_run = False):
     reinit_global_var()
@@ -270,6 +276,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         # update_position_process.kill()
         delete_constellation(docker_client)
 
+        logger.success('finished 1 test')
         while True:
             pass
 
@@ -291,6 +298,9 @@ if __name__ == "__main__":
     if sudo_uid is None:
         raise Exception("\nneed to have sudo permission.\n try sudo python3 main.py")
     
+    # record long-term result to file
+    logger.add("long_term_result.txt", filter=logger_file_filter)
+
     if DRY_RUN == True:
         logger.warning('DRY_RUN is set to True, enter y to continue')
         text = input()

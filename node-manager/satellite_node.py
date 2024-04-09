@@ -2,6 +2,7 @@ import ephem
 from datetime import datetime
 from global_var import satellites
 from loguru import logger
+import subprocess
 
 from tools import *
 
@@ -34,6 +35,7 @@ class SatelliteNode:
         self.satellite = ephem.readtle(tle_info[0], tle_info[1], tle_info[2])
         self.node_id = node_id              # tuple of (orbit number, inner orbir order)
         self.container_name = container_name    # str of hex used for docker
+        self.container_pid = subprocess.check_output(['docker', 'inspect', '--format', '{{.State.Pid}}', container_name]).decode().strip()
         self.topo = []
         self.host_ip = ''
         self.subnet_ip = {}  # {subnet_str: interface}

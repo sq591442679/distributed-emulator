@@ -16,7 +16,7 @@ for i, data in enumerate([data1, data2, data3, data4, data5]):
 
 plt.xlabel('time (s)')
 plt.ylabel('packet drop rate')
-plt.title('66 satellites, 5% failure, packet drop rate over time')
+plt.title('66 satellites, 5% failure, n=5, packet drop rate over time')
 plt.xlim(0, 100)
 plt.ylim(0, 23.5)
 

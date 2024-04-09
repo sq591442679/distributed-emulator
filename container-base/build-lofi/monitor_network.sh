@@ -20,11 +20,11 @@ ip monitor | while read -r line; do
         interface=$(echo "$line" | awk -F '@if' '{print $1}' | awk '{print $NF}')
         state=$(echo "$line" | grep -oP "(?<=state )[^ ]+")
         log_interface "Interface state changed to $state" "$interface"
-    elif [[ "$line" == *"id"* ]]; then
-        CURRENT_HASH=$(ip route | md5sum)
-        if [ "$LAST_HASH" != "$CURRENT_HASH" ]; then
-            log_routing_table
-            LAST_HASH=$CURRENT_HASH
-        fi
+    # elif [[ "$line" == *"id"* ]]; then
+    #     CURRENT_HASH=$(ip route | md5sum)
+    #     if [ "$LAST_HASH" != "$CURRENT_HASH" ]; then
+    #         log_routing_table
+    #         LAST_HASH=$CURRENT_HASH
+    #     fi
     fi
 done
