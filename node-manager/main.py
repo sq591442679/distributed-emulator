@@ -243,8 +243,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
         logger.info(shared_result_list)
         
-        drop_rate = shared_result_list[0][-1]['drop rate'].strip()
-        delay = shared_result_list[0][-1]['delay'].strip()
+        drop_rate = shared_result_list[0]['drop rate'].strip()
+        delay = shared_result_list[0]['delay'].strip()
         ttl_rate = shared_result_list[1]['ttl_drop_ratio']
         no_entry_rate = shared_result_list[2]['no_entry_ratio']
 
@@ -277,8 +277,9 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         delete_constellation(docker_client)
 
         logger.success('finished 1 test')
-        while True:
-            pass
+
+        # while True:
+        #     pass
 
         os.system("clear")
     else:
@@ -299,7 +300,7 @@ if __name__ == "__main__":
         raise Exception("\nneed to have sudo permission.\n try sudo python3 main.py")
     
     # record long-term result to file
-    logger.add("long_term_result.txt", filter=logger_file_filter)
+    logger.add("long_term_result.log", filter=logger_file_filter)
 
     if DRY_RUN == True:
         logger.warning('DRY_RUN is set to True, enter y to continue')
@@ -320,7 +321,7 @@ if __name__ == "__main__":
     link_failure_rate_list = [0.05]
     lofi_n_list = [5]
     # lofi_n_list = [-1, 2, 4]
-    test_nums = [1]
+    test_nums = [5]
 
     if (len(lofi_n_list) != len(test_nums)):
         raise Exception('lofi_n_list and test_nums not correspond')
