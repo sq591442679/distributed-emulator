@@ -1,18 +1,8 @@
-FROM ubuntu_python:latest
+FROM satellite_base:latest
 
 LABEL mantainer="sqsq" description="LoFi image"
 
 ENV container docker
-
-# install libnl
-COPY libnl-src /libnl
-RUN chmod -R 777 /libnl \
-    && cd /libnl \ 
-    && autoreconf -ivf \ 
-    && ./configure --prefix=/usr \  
-    && make -j$(nproc) \ 
-    && make install -j$(nproc) \ 
-    && make clean
 
 # add frr users and groups
 RUN groupadd -r -g 92 frr \ 
@@ -57,14 +47,8 @@ RUN echo "log file /var/log/frr/sqsq_ospfd.log" >> /etc/frr/frr.conf \
     && echo "log record-priority" >> /etc/frr/frr.conf \
     && echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf && sysctl -p
 
-COPY ./udp-applications/ /udp-applications
 COPY ./load_awareness/ /load_awareness
-COPY get_ifindex.sh /get_ifindex.sh
-COPY monitor_network.sh /monitor_network.sh
-RUN chmod -R 777 /udp-applications \ 
-    && chmod 777 /get_ifindex.sh \ 
-    && chmod 777 /monitor_network.sh \ 
-    && chmod -R 777 /load_awareness \ 
+RUN chmod -R 777 /load_awareness \ 
     && /load_awareness/compile.sh 
 
 

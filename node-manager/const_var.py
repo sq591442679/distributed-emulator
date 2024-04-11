@@ -43,7 +43,7 @@ SUBMISSION_SIZE_FOR_UPDATE_NETWORK_DELAY = 1
 # LINK FAILURE  added by sqsq
 # NOTE: about the SIMULATION_DURATION, it should consider OSPF_LSA_MAXAGE and arp aging time
 LINK_FAILURE_DURATION = 5       # unit: s
-SIMULATION_DURATION = 1000      # unit: s, better do not exceed OSPF_LSA_MAXAGE (3600)
+SIMULATION_DURATION = 100      # unit: s, better do not exceed OSPF_LSA_MAXAGE (3600)
 
 # TRANSMISSION PAIR added by sqsq
 SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(0, 1)]
@@ -56,5 +56,7 @@ TIME_BASE = datetime(2024, 1, 1)
 
 TEST_NUM = 1
 UDP_SEND_INTERVAL = 0.01
-DRY_RUN = True
+DRY_RUN = False
 WARMUP_PERIOD = 30      # unit: s
+
+RECORD_LONG_TERM_RESULT = True

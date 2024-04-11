@@ -72,7 +72,7 @@ static int nl_recv_message(struct nl_msg *msg, void *arg) {
                 new_cost = 150;
             }
             
-            snprintf(command, sizeof(command), "/load_awareness/change_ospf_cost.sh %s %d\n", interface_name[i], new_cost);
+            snprintf(command, sizeof(command), "/change_ospf_cost.sh %s %d\n", interface_name[i], new_cost);
             // printf(command);
             
             ret = system(command);

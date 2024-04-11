@@ -61,7 +61,8 @@ def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared
     else:
         line = ret[1]
         if len(line.decode().strip()) > 0:
-            logger.info(line.decode().strip())
+            if RECORD_LONG_TERM_RESULT:
+                logger.info(line.decode().strip())
             # json.loads(line.decode().strip())[:-1] is long-term results
             shared_result_list.append(json.loads(line.decode().strip())[-1])
 

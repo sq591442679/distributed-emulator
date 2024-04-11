@@ -8,7 +8,7 @@ from math import cos, sin, sqrt
 from typing import Dict, List, Tuple
 from const_var import *
 from satellite_node import SatelliteNode
-from global_var import network_dict,satellite_map
+from global_var import network_dict, satellite_map
 from threading import Thread
 from tools import *
 import random

@@ -319,9 +319,9 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     link_failure_rate_list = [0.05]
-    lofi_n_list = [5]
+    lofi_n_list = [6, 7, 8, 9]
     # lofi_n_list = [-1, 2, 4]
-    test_nums = [5]
+    test_nums = [5, 5, 5, 5]
 
     if (len(lofi_n_list) != len(test_nums)):
         raise Exception('lofi_n_list and test_nums not correspond')
@@ -336,6 +336,9 @@ if __name__ == "__main__":
 
     for link_failure_rate in link_failure_rate_list:
         for i, lofi_n in enumerate(lofi_n_list):
+            if RECORD_LONG_TERM_RESULT:
+                with open('./long_term_result.log', 'a') as f:
+                    print(f"failure: {link_failure_rate}, n: {lofi_n}", file=f, flush=True)
             for test in range(1, test_nums[i] + 1):
                 run(enable_load_awareness, lofi_delta, lofi_n, 
                     link_failure_rate, UDP_SEND_INTERVAL, test, DRY_RUN)
