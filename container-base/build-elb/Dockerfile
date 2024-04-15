@@ -4,7 +4,7 @@ LABEL mantainer="sqsq" description="ELB image"
 
 ENV container docker
 
-RUN pip install py
+RUN pip install psutil
 
 COPY elb_server.py /elb_server.py
 COPY Interface.py /Interface.py

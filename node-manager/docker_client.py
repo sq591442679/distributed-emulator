@@ -35,7 +35,11 @@ class DockerClient:
                                                             "MONITOR_IP=" + "172.17.0.2",
                                                             "DISPLAY=unix:0.0",
                                                             "GDK_SCALE",
-                                                            "GDK_DPI_SCALE", ],
+                                                            "GDK_DPI_SCALE",
+                                                            f"QUEUE_CAPACITY={QUEUE_CAPACITY}",
+                                                            f"NODE_X={node_id[0]}",
+                                                            f"NODE_Y={node_id[1]}",
+                                                        ],
                                                         cap_add=['NET_ADMIN'], 
                                                         name=node_id_str, 
                                                         volumes=[VOLUME1, VOLUME2, V_EDIT], 
@@ -52,6 +56,9 @@ class DockerClient:
                 "DISPLAY=unix:0.0",
                 "GDK_SCALE",
                 "GDK_DPI_SCALE",
+                f"QUEUE_CAPACITY={QUEUE_CAPACITY}",
+                f"NODE_X={node_id[0]}",
+                f"NODE_Y={node_id[1]}",
             ], cap_add=['NET_ADMIN'], name=node_id_str, volumes=[
                 VOLUME1, VOLUME2, V_EDIT], privileged=True)
 
