@@ -103,7 +103,7 @@ int main(int argc, char const *argv[])
     struct nl_msg *delta_msg = nlmsg_alloc();
     struct nlmsghdr *hdr;
 
-    if (argc != 8) {
+    if (argc != 9) {
         perror("parameter invalid\n");
         return -1;
     }

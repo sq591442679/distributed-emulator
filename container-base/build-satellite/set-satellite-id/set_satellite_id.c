@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <math.h>
 
-#define NETLINK_SATELLITE_ID	25
-#define SATELLITE_ID_PID		3699369
+#define NETLINK_SATELLITE_ID	29
+#define SATELLITE_ID_PID		369369
 
 u_int32_t satellite_id;     
 
@@ -25,7 +25,7 @@ int main(int argc, char const *argv[])
     struct nl_msg *delta_msg = nlmsg_alloc();
     struct nlmsghdr *hdr;
 
-    if (argc != 1) {
+    if (argc != 2) {
         perror("parameter invalid\n");
         return -1;
     }
@@ -52,6 +52,9 @@ int main(int argc, char const *argv[])
     }
     // printf("netlink data len:%d\n", nlmsg_datalen(hdr));
     printf("sent satellite_id:%u\n", satellite_id);
+
+	nlmsg_free(delta_msg);
+	nl_socket_free(sk);
 
     return 0;
 }

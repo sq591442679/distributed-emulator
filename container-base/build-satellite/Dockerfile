@@ -4,6 +4,9 @@ LABEL mantainer="sqsq" description="satellite base image"
 
 ENV container docker
 
+RUN apt-get update -y
+RUN apt-get install -y kmod
+
 # install libnl
 COPY libnl-src /libnl
 RUN chmod -R 777 /libnl \

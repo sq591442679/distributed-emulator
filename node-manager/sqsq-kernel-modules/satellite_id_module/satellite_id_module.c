@@ -16,7 +16,7 @@
 #include <net/sock.h>
 #include <net/sch_generic.h>
 
-#define NETLINK_SATELLITE_ID	25
+#define NETLINK_SATELLITE_ID	29
 #define SATELLITE_ID_PID		369369
 
 static void netlink_receive_satellite_id(struct sk_buff *skb)
@@ -31,11 +31,11 @@ static void netlink_receive_satellite_id(struct sk_buff *skb)
 		}
 
 		satellite_id = *((__u32 *)NLMSG_DATA(hdr));
-		// pr_info("%s satellite_id: %u\n", __func__, satellite_id);
+		pr_info("%s satellite_id: %u\n", __func__, satellite_id);
 
-		sock_net(skb->sk)->satellite_id_sock = satellite_id;
+		sock_net(skb->sk)->satellite_id = satellite_id;
 
-		pr_info("%pI4    %d\n", &satellite_id, __str__);
+		pr_info("%pI4    %s\n", &satellite_id, __func__);
 	}
 	else {
 		pr_err("%s skb error!\n", __func__);
@@ -54,7 +54,7 @@ static void init_netlink_sockets(void)
 			memset(&cfg, 0, sizeof(struct netlink_kernel_cfg));
 
 			cfg.groups = 1;
-			cfg.input = netlink_recv_delta;
+			cfg.input = netlink_receive_satellite_id;
 
 			nl_sk = netlink_kernel_create(net, NETLINK_SATELLITE_ID, &cfg);
 
@@ -94,5 +94,5 @@ static void satellite_id_module_exit(void)
 
 module_init(satellite_id_module_init);
 module_exit(satellite_id_module_exit);
-MODULE_LICENSE("GPL")
-MODULE_AUTHOR("sqsq")
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("sqsq");
