@@ -1,6 +1,7 @@
 import logging
 import docker
 import subprocess
+import socket
 from const_var import *
 from tools import *
 from subnet_allocator import SubnetAllocator, ip2str
@@ -64,7 +65,11 @@ class DockerClient:
 
         # added by sqsq
         # disconnect the newly created container from docker0
-        os.system(f"docker network disconnect bridge {container_info.name}")        
+        os.system(f"docker network disconnect bridge {container_info.name}")  
+
+		# set satellite id in kernel net
+        satellite_id = socket.htonl(ip_str_to_int(f"0.0.{node_id[0]}.{node_id[1]}"))
+        self.exec_cmd(container_info.name, f"/set-satellite-id/set_satellite_id {satellite_id}")
         
         return container_info.name
 

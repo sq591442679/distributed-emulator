@@ -165,6 +165,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     if enable_load_awareness:
         module_script_list.append("./sqsq-kernel-modules/install_load_awareness.sh")
     module_script_list.append(f"./sqsq-kernel-modules/install_packet_drop.sh {receiver_ip_int}")
+    module_script_list.append(f"./sqsq-kernel-modules/install_satellite_id.sh")
     for module_path in module_script_list:
         try:
             output = subprocess.check_output(module_path, 
@@ -226,7 +227,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
                                                 args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, 42))
         # generate_link_failure_process = Process(target=generate_link_failure, 
         #                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, test))
-        process_list.append(generate_link_failure_process)
+        generate_link_failure_process.start()
 
         manager = Manager()
         shared_result_list = manager.list() # shared_result_list: list[dict]
@@ -243,6 +244,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
             process_copy.start()
         for process_copy in process_list:
             process_copy.join()
+        generate_link_failure_process.kill()
 
         logger.info(shared_result_list)
         

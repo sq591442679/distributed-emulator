@@ -25,6 +25,8 @@ def ip_str_to_int(ip: str) -> int:
         ret <<= 8
         ret |= int(net)
     return ret
+
+
 # added by sqsq
 # NOTE: x, y all begin from 0
 def satellite_id_tuple_to_index(id: tuple) -> int:

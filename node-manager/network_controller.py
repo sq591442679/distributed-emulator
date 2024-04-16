@@ -341,6 +341,7 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float,
     added by sqsq
     for link failure generating
     @parameter seed: use this seed to generate random seeds of each network in random_instance_dict
+    NOTE: this is a endless loop, it will stop only when being killed in main.py
     """
     random_instance_dict: Dict[Network, random.Random] = {}
     if seed is not None:
@@ -364,10 +365,7 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float,
         random_instance = random_instance_dict[network]
         network.set_down_moment(0.0, random_instance, poisson_lambda)
     
-    flag = False
     while True:
-         if (flag):
-             break
          for network in network_dict.values():
 
             if satellite_id_tuple_to_str(receiver_node_id) in network.inner_eth_dict.keys():
@@ -394,10 +392,6 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float,
                     continue
 
                 current_sim_time = time.time() - start_time
-                if current_sim_time >= SIMULATION_DURATION:
-                    break
-            else:   # sim time exceeded, loop should stop
-                flag = True  
 
 
 def update_network_delay(docker_client: DockerClient, position_data: dict, topo: dict):
