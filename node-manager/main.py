@@ -244,6 +244,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 		#                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, test))
 		generate_link_failure_process.start()
 
+		time.sleep(10)
 		manager = Manager()
 		shared_result_list = manager.list() # shared_result_list: list[dict]
 		start_transmission_test_process = Process(target=start_transmission_test, 

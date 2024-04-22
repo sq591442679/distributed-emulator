@@ -49,6 +49,7 @@ int main(int argc, char const *argv[])
     ret = nl_send_auto(sk, delta_msg);
     if (ret < 0) {
         perror("nl_sned_auto failed\n");
+		return ret;
     }
     // printf("netlink data len:%d\n", nlmsg_datalen(hdr));
     printf("sent satellite_id:%u\n", satellite_id);
