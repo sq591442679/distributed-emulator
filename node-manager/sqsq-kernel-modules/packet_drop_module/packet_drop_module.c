@@ -73,18 +73,21 @@ static unsigned long long get_epoch_time_ns(void)
 
 static int ip_forward_pre_handler(struct kprobe *p, struct pt_regs *regs)
 {
-    struct sk_buff *skb = (struct sk_buff *)regs->di;
+	if (regs != NULL) {
+		struct sk_buff *skb = (struct sk_buff *)regs->di;
+		if (skb != NULL && ip_hdr(skb) != NULL) {
+			if (ip_hdr(skb)->ttl <= 1) {
+				struct net *net = dev_net(skb->dev);
+				if (net != NULL && net != &init_net) {
+					__be32 satellite_id = net->satellite_id;
+					// pr_info("%s,%pI4,%llu,ttl\n", __func__, &satellite_id, get_epoch_time_ns());
 
-	if (ip_hdr(skb)->ttl <= 1) {
-		struct net *net = dev_net(skb->dev);
-		if (net != NULL && net != &init_net) {
-			__be32 satellite_id = net->satellite_id;
-			pr_info("%s,%pI4,%llu,ttl\n", __func__, &satellite_id, get_epoch_time_ns());
-
-			atomic64_inc(&ttl_drop_cnt);
+					atomic64_inc(&ttl_drop_cnt);
+				}
+			}		
 		}
+			
 	}
-
     return 0;   
 }
 
@@ -94,7 +97,7 @@ static int ip_route_input_slow_ret_handler(struct kretprobe_instance *ri, struct
 		struct sk_buff *skb = (struct sk_buff *)regs->di;
 		__be32 daddr = (__be32)regs->si;
 		struct fib_result *res = (struct fib_result *)regs->r9;
-		if (res) {
+		if (res != NULL && skb != NULL) {
 			struct net *net = dev_net(skb->dev);
 			uint8_t type = res->type;
 			pr_info("%s      daddr: %pI4, res: %p, type:%u\n", __func__, &daddr, res, type);
@@ -102,9 +105,11 @@ static int ip_route_input_slow_ret_handler(struct kretprobe_instance *ri, struct
 				(type == RTN_BLACKHOLE || type == RTN_UNREACHABLE || type == RTN_PROHIBIT || type == RTN_THROW)) {
 				if (net != NULL && net != &init_net) {
 					__be32 satellite_id = net->satellite_id;
-					pr_info("%s,%pI4,%llu,no entry\n", __func__, &satellite_id, get_epoch_time_ns());
+					if (satellite_id != 0x7f7f7f7f) {
+						pr_info("%s,%pI4,%llu,no entry\n", __func__, &satellite_id, get_epoch_time_ns());
 
-					atomic64_inc(&no_entry_cnt);
+						atomic64_inc(&no_entry_cnt);
+					}
 				}
 			}
 		}
@@ -133,9 +138,11 @@ static int ip_route_output_flow_ret_handler(struct kretprobe_instance *ri, struc
 					if (daddr == dst_ip) {
 						if (IS_ERR(rt)) {
 							__be32 satellite_id = net->satellite_id;
-							pr_info("%s,%pI4,%llu,no entry\n", __func__, &satellite_id, get_epoch_time_ns());
+							if (satellite_id != 0x7f7f7f7f) {
+								pr_info("%s,%pI4,%llu,no entry\n", __func__, &satellite_id, get_epoch_time_ns());
 
-							atomic64_inc(&no_entry_cnt);
+								atomic64_inc(&no_entry_cnt);
+							}
 						}			
 					}
 				}
