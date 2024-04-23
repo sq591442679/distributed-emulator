@@ -17,7 +17,6 @@
 #include <net/sch_generic.h>
 
 #define NETLINK_SATELLITE_ID	29
-#define SATELLITE_ID_PID		369369
 
 static void netlink_receive_satellite_id(struct sk_buff *skb)
 {

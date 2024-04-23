@@ -11,7 +11,6 @@
 #include <math.h>
 
 #define NETLINK_RECV_PACKET	30
-#define LOAD_AWARENESS_PID	258258
 #define ARRAY_SIZE          4
 #define MAX_COST            65535
 
@@ -122,7 +121,7 @@ int main(int argc, char const *argv[])
 
     nl_socket_disable_seq_check(sk);
 
-    nl_socket_set_local_port(sk, LOAD_AWARENESS_PID);
+    nl_socket_set_local_port(sk, 0);	// let kernel select pid automatically
 
     nl_connect(sk, NETLINK_RECV_PACKET);
 
@@ -130,7 +129,7 @@ int main(int argc, char const *argv[])
     nl_socket_modify_cb(sk, NL_CB_MSG_IN, NL_CB_CUSTOM, nl_recv_message, NULL);
 
     // send qlen_amplitude_threshold to kernel
-    hdr = nlmsg_put(delta_msg, LOAD_AWARENESS_PID, NL_AUTO_SEQ, NETLINK_RECV_PACKET, sizeof(qlen_amplitude_threshold), NLM_F_CREATE);
+    hdr = nlmsg_put(delta_msg, 0, NL_AUTO_SEQ, NETLINK_RECV_PACKET, sizeof(qlen_amplitude_threshold), NLM_F_CREATE);
     if (hdr == NULL) {
         perror("nlmsg_put failed\n");
     }

@@ -11,7 +11,6 @@
 #include <math.h>
 
 #define NETLINK_SATELLITE_ID	29
-#define SATELLITE_ID_PID		369369
 
 u_int32_t satellite_id;     
 
@@ -32,16 +31,18 @@ int main(int argc, char const *argv[])
 
     satellite_id = (u_int32_t)atoi(argv[1]);
 
+	printf("received parameter: %u\n", satellite_id);
+
     sk = nl_socket_alloc();
 
     nl_socket_disable_seq_check(sk);
 
-    nl_socket_set_local_port(sk, SATELLITE_ID_PID);
+    nl_socket_set_local_port(sk, 0);	// automatically allocate pid
 
     nl_connect(sk, NETLINK_SATELLITE_ID);
 
     // send satellite_id to kernel
-    hdr = nlmsg_put(delta_msg, SATELLITE_ID_PID, NL_AUTO_SEQ, NETLINK_SATELLITE_ID, sizeof(satellite_id), NLM_F_CREATE);
+    hdr = nlmsg_put(delta_msg, 0, NL_AUTO_SEQ, NETLINK_SATELLITE_ID, sizeof(satellite_id), NLM_F_CREATE);
     if (hdr == NULL) {
         perror("nlmsg_put failed\n");
     }

@@ -125,6 +125,30 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 	logger.info(f'constellation init time: {init_end_time - init_start_time: .3f}s')
 	# -------------------------------------------------------------------
 
+	# ---------------------------------
+	# install kernel modules, added by sqsq
+	os.system("./sqsq-kernel-modules/uninstall_modules.sh")
+	module_script_list = []
+
+	if lofi_n != -1:
+		module_script_list.append("./sqsq-kernel-modules/install_multipath.sh")
+	if enable_load_awareness:
+		module_script_list.append("./sqsq-kernel-modules/install_load_awareness.sh")
+	module_script_list.append(f"./sqsq-kernel-modules/install_satellite_id.sh")
+	for module_path in module_script_list:
+		try:
+			output = subprocess.check_output(module_path, 
+											shell=True, 
+											stderr=subprocess.STDOUT, 
+											universal_newlines=True)
+		except subprocess.CalledProcessError as e:
+			logger.error(e.output)
+			raise Exception('')
+		logger.success(output)    
+	module_script_list.clear()
+	# ---------------------------------
+
+	# -------------------------------------------------------------------
 	# start frr    added by sqsq
 	process_list: typing.List[Process] = []
 	logger.info('copying frr.conf to containers')
@@ -151,33 +175,9 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 		process_start_frr.start()
 	for process_start_frr in process_list:
 		process_start_frr.join()
+	logger.info('waiting for frr init')
+	time.sleep(WARMUP_PERIOD)
 	# -------------------------------------------------------------------
-		
-	# ---------------------------------
-	# start kernel modules, added by sqsq
-	os.system("./sqsq-kernel-modules/uninstall_modules.sh")
-	module_script_list = []
-
-	receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
-	receiver_ip_int = ip_str_to_int(receiver_ip_str)
-
-	if lofi_n != -1:
-		module_script_list.append("./sqsq-kernel-modules/install_multipath.sh")
-	if enable_load_awareness:
-		module_script_list.append("./sqsq-kernel-modules/install_load_awareness.sh")
-	module_script_list.append(f"./sqsq-kernel-modules/install_packet_drop.sh {receiver_ip_int}")
-	module_script_list.append(f"./sqsq-kernel-modules/install_satellite_id.sh")
-	for module_path in module_script_list:
-		try:
-			output = subprocess.check_output(module_path, 
-											shell=True, 
-											stderr=subprocess.STDOUT, 
-											universal_newlines=True)
-		except subprocess.CalledProcessError as e:
-			logger.error(e.output)
-			raise Exception('')
-		logger.success(output)    
-	# ---------------------------------
 		
 	# -------------------------------------------------------------------
 	# start load awareness, added by sqsq
@@ -203,8 +203,10 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 	for id in satellite_map.keys():
 		satellite_name = satellite_id_tuple_to_str(id)
 		satellite_id = socket.htonl(ip_str_to_int(f"0.0.{id[0]}.{id[1]}"))
-		logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}")
+		logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
+			  f"/set-satellite-id/set_satellite_id {satellite_id}")
 		ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
+		logger.info(ret[1].decode().strip())
 		if ret[0] != 0:
 			logger.error(ret[1].decode().strip())
 	# -------------------------------------------------------------------
@@ -232,8 +234,6 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 	# start link failure generation and UDP send & recv
 	# added by sqsq
 	# ----------------------------------------------------------
-	logger.info('waiting for init...')
-	time.sleep(WARMUP_PERIOD)
 	process_list.clear()
 	logger.info('test starting...')
 
@@ -242,9 +242,24 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 												args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, 42))
 		# generate_link_failure_process = Process(target=generate_link_failure, 
 		#                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, test))
-		generate_link_failure_process.start()
+		generate_link_failure_process.start()	# start link failure generation
 
-		time.sleep(10)
+		module_script_list.clear()				# start packet drop monitoring
+		receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
+		receiver_ip_int = ip_str_to_int(receiver_ip_str)
+		module_script_list.append(f"./sqsq-kernel-modules/install_packet_drop.sh {receiver_ip_int}")
+		for module_path in module_script_list:
+			try:
+				output = subprocess.check_output(module_path, 
+												shell=True, 
+												stderr=subprocess.STDOUT, 
+												universal_newlines=True)
+			except subprocess.CalledProcessError as e:
+				logger.error(e.output)
+				raise Exception('')
+			logger.success(output)
+
+		time.sleep(10)							# start udp transmitting
 		manager = Manager()
 		shared_result_list = manager.list() # shared_result_list: list[dict]
 		start_transmission_test_process = Process(target=start_transmission_test, 

@@ -23,7 +23,8 @@
 
 #define NETLINK_RECV_PACKET	30	
 // NOTE: user-specifed netlink type should be smaller than MAX_LINKS in /inlcude/uapi/linux/netlink.h
-#define LOAD_AWARENESS_PID	258258
+
+static int load_awareness_pid;
 
 const char interface_names[4][5] = {"eth1", "eth2", "eth3", "eth4"};
 
@@ -101,7 +102,7 @@ static int __kprobes handler_pre_ip_output(struct kprobe *p, struct pt_regs *reg
 			pr_err("%s recv_packet_nl_sock == NULL!\n", __func__);
 		}
 		else {
-			netlink_unicast(net->recv_packet_nl_sock, nl_skb, LOAD_AWARENESS_PID, MSG_DONTWAIT);
+			netlink_unicast(net->recv_packet_nl_sock, nl_skb, load_awareness_pid, MSG_DONTWAIT);
 		}	
 
 		nlmsg_free(nl_skb);
@@ -117,6 +118,8 @@ static void netlink_recv_delta(struct sk_buff *skb)
 	if (skb->len >= nlmsg_total_size(0)) {
 		struct nlmsghdr *hdr = nlmsg_hdr(skb);
 		__u32 qlen_amplitude_threshold = 0x3f3f3f3f;
+
+		load_awareness_pid = hdr->nlmsg_pid;
 
 		if (nlmsg_len(hdr) != sizeof(qlen_amplitude_threshold)) {
 			pr_err("%s: netlink payload error\n", __func__);
