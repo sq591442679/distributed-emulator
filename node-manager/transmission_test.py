@@ -9,6 +9,7 @@ from scapy.all import sniff, UDP, IP
 import time
 import json
 import subprocess
+import threading
 
 from loguru import logger
 from const_var import *
@@ -21,6 +22,8 @@ receiver_port = 12345
 receiver_ip = ""
 total_data_bytes = 0
 total_control_bytes = 0
+
+should_record_kernel_log = True
 
 """
 find ONE ip address of a certain satellite node
@@ -75,6 +78,12 @@ def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_in
                                  f"{receiver_ip} {receiver_port} {send_interval} {SIMULATION_DURATION}")
     
 
+def start_kernel_log_timer():
+    os.system("dmesg -c >> kernel.log")
+    if should_record_kernel_log:
+        threading.Timer(1, start_kernel_log_timer).start()
+
+
 """
 shared_result_list: list[dict]
 """
@@ -94,8 +103,12 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
 
     for process in process_list:
         process.start()
+        
+    start_kernel_log_timer()	# record kernel log periodically
+
     for process in process_list:
         process.join()
+    should_record_kernel_log = False
 
     expected_recv_cnt = int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))
     os.system("rmmod packet_drop_module")   # need to uninstall here to get drop cnt

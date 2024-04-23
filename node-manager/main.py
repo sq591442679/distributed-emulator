@@ -347,10 +347,10 @@ if __name__ == "__main__":
 	
 	os.system("./stop_and_kill_constellation.sh")
 
-	with open("eth_dict.log", "w") as f:
-		print("", flush=True, file=f)
-	with open("link.log", "w") as f:
-		print("", flush=True, file=f)
+	log_file_list = ["eth_dict.log", "link.log", "long_term_result.log", "kernel.log"]
+	for log_file in log_file_list:
+		with open(log_file, "w") as f:
+			print("", flush=True, file=f)
 
 	# lofi_n = -1 means using ospf
 	# lofi_n = -2 means using elb
