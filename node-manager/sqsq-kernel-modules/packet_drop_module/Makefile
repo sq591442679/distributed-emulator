@@ -1,5 +1,5 @@
 CONFIG_MODULE_SIG=n
-KBUILD_FLAGS += -g -Wall
+KBUILD_FLAGS += -g
 EXTRA_CFLAGS += -I$(PWD)/
 
 obj-m += packet_drop_module.o

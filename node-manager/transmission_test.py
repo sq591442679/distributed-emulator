@@ -79,6 +79,7 @@ def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_in
     
 
 def start_kernel_log_timer():
+    global should_record_kernel_log
     os.system("dmesg -c >> kernel.log")
     if should_record_kernel_log:
         threading.Timer(1, start_kernel_log_timer).start()
@@ -89,8 +90,6 @@ shared_result_list: list[dict]
 """
 def start_transmission_test(docker_client: DockerClient, send_interval: float, shared_result_list):
     global receiver_ip
-
-    os.system("dmesg -c > /dev/null")
 
     receiver_ip = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
     process_list: typing.List[Process] = []
@@ -104,11 +103,14 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
     for process in process_list:
         process.start()
         
-    start_kernel_log_timer()	# record kernel log periodically
+    os.system("dmesg -c > /dev/null")
+    process_timer = Process(target=start_kernel_log_timer, args=())	# record kernel log periodically
+    process_timer.start()
 
     for process in process_list:
         process.join()
     should_record_kernel_log = False
+    process_timer.kill()
 
     expected_recv_cnt = int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))
     os.system("rmmod packet_drop_module")   # need to uninstall here to get drop cnt
