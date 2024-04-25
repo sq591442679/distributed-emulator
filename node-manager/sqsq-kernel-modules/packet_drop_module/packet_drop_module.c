@@ -262,35 +262,35 @@ static int packet_drop_module_init(void)
         pr_info("planted kprobe kp_ip_forward at %p\n", kp_ip_forward.addr);
     }
 
-	ret = register_kretprobe(&krp_ip_route_input_slow);
-	if (ret < 0) {
-        pr_err("register_kretprobe krp_ip_route_input_slow failed\n");
-        return -1;
-    }
-    else {
-		planted_ip_route_input_slow = 1;
-        pr_info("planted kretprobe krp_ip_route_input_slow at %p\n", krp_ip_route_input_slow.kp.addr);
-    }
+	// ret = register_kretprobe(&krp_ip_route_input_slow);
+	// if (ret < 0) {
+    //     pr_err("register_kretprobe krp_ip_route_input_slow failed\n");
+    //     return -1;
+    // }
+    // else {
+	// 	planted_ip_route_input_slow = 1;
+    //     pr_info("planted kretprobe krp_ip_route_input_slow at %p\n", krp_ip_route_input_slow.kp.addr);
+    // }
 
-	ret = register_kretprobe(&krp_ip_route_output_flow);
-	if (ret < 0) {
-        pr_err("register_kretprobe krp_ip_route_output_flow failed\n");
-        return -1;
-    }
-    else {
-		planted_ip_route_output_flow = 1;
-        pr_info("planted kretprobe krp_ip_route_output_flow at %p\n", krp_ip_route_output_flow.kp.addr);
-    }
+	// ret = register_kretprobe(&krp_ip_route_output_flow);
+	// if (ret < 0) {
+    //     pr_err("register_kretprobe krp_ip_route_output_flow failed\n");
+    //     return -1;
+    // }
+    // else {
+	// 	planted_ip_route_output_flow = 1;
+    //     pr_info("planted kretprobe krp_ip_route_output_flow at %p\n", krp_ip_route_output_flow.kp.addr);
+    // }
 
-	ret = register_kretprobe(&krp_ip_rcv_finish_core);
-	if (ret < 0) {
-        pr_err("register_kretprobe krp_ip_rcv_finish_core failed, error code:%d\n", ret);
-        // return -1;
-    }
-    else {
-		planted_ip_rcv_finish_core = 1;
-        pr_info("planted kretprobe krp_ip_rcv_finish_core at %p\n", krp_ip_rcv_finish_core.kp.addr);
-    }
+	// ret = register_kretprobe(&krp_ip_rcv_finish_core);
+	// if (ret < 0) {
+    //     pr_err("register_kretprobe krp_ip_rcv_finish_core failed, error code:%d\n", ret);
+    //     // return -1;
+    // }
+    // else {
+	// 	planted_ip_rcv_finish_core = 1;
+    //     pr_info("planted kretprobe krp_ip_rcv_finish_core at %p\n", krp_ip_rcv_finish_core.kp.addr);
+    // }
 
     return 0;
 } 

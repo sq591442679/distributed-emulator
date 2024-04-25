@@ -3,8 +3,10 @@ KBUILD_FLAGS += -g -Wall
 EXTRA_CFLAGS += -I$(PWD)/
 
 obj-m += multipath_module.o
+multipath_module-objs += multipath.o my_ftrace.o
 
 KERNEL_SRC := /lib/modules/$(shell uname -r)/build
+PWD := $(shell pwd)
 
 # VPATH := $(PWD)
 

@@ -139,9 +139,9 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     module_script_list.append(f"./sqsq-kernel-modules/install_satellite_id.sh")
 
-    # receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
-    # receiver_ip_int = ip_str_to_int(receiver_ip_str)
-    # module_script_list.append(f"./sqsq-kernel-modules/install_packet_drop.sh {receiver_ip_int}")
+    receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
+    receiver_ip_int = ip_str_to_int(receiver_ip_str)
+    module_script_list.append(f"./sqsq-kernel-modules/install_packet_drop.sh {receiver_ip_int}")
     
     for module_path in module_script_list:
         try:
