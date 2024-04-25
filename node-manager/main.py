@@ -249,6 +249,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     logger.info('test starting...')
 
     if not dry_run:
+        simulation_start_time = time.time()
         generate_link_failure_process = Process(target=generate_link_failure, 
                                                 args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, 42))
         # generate_link_failure_process = Process(target=generate_link_failure, 
@@ -259,7 +260,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         manager = Manager()
         shared_result_list = manager.list() # shared_result_list: list[dict]
         start_transmission_test_process = Process(target=start_transmission_test, 
-                                                  args=(docker_client, send_interval, shared_result_list))
+                                                  args=(docker_client, send_interval, shared_result_list, simulation_start_time))
         process_list.append(start_transmission_test_process)
 
         queue = Queue() # queue of dict
@@ -267,10 +268,10 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         process_list.append(start_packet_capture_process)
 
         logger.info("transmission starting...")
-        for process_copy in process_list:
-            process_copy.start()
-        for process_copy in process_list:
-            process_copy.join()
+        for process in process_list:
+            process.start()
+        for process in process_list:
+            process.join()
         generate_link_failure_process.kill()
 
         logger.info(shared_result_list)

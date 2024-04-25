@@ -8,14 +8,14 @@ if __name__ == '__main__':
     target_port = int(sys.argv[2])
     send_interval = float(sys.argv[3])          # unit: s
     total_send_duration = float(sys.argv[4])    # unit: s
+    simulation_start_time = float(sys.argv[5])	# real time when simulation (i.e. link event) starts
 
     cnt = 0
+    start_time = time.time()					# real time when sending starts
 
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     print('sending UDP to ' + target_ip, flush=True)
-
-    start_time = time.time()
 
     while True:
         current_time = time.time()
@@ -27,8 +27,8 @@ if __name__ == '__main__':
         cnt += 1
         data_dict = {
             'cnt': cnt,
-            'sim_time': elapsed_time,
-            'real_time': current_time,
+            'sim-time': current_time - simulation_start_time,
+            'real-time': current_time,
             'redundant': b'\x00' * 941  # ensure that the UDP packet payload = 1024Bytes
         }
         # print('boot time:', time.time() - psutil.boot_time())

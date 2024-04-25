@@ -51,14 +51,15 @@ def get_ip_of_node_id(docker_client: DockerClient, node_id: tuple) -> str:
 """
 shared_result_list: list[dict]
 """
-def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared_result_list) -> None:
+def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared_result_list, simulation_start_time: float) -> None:
     logger.info("UDP receiver starting")
     receiver_node_name = satellite_id_tuple_to_str(RECEIVER_NODE_ID)
     expected_recv_cnt = int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))
     ret = docker_client.exec_cmd(receiver_node_name, 
                                  f"python3 /udp-applications/udp_receiver.py "
                                  f"{receiver_ip} {receiver_port} {SIMULATION_DURATION} "
-                                 f"{SIMULATION_DURATION + 10} {expected_recv_cnt}")
+                                 f"{SIMULATION_DURATION + 10} {expected_recv_cnt}"
+                                 f"{simulation_start_time}")
     if ret[0] != 0:
         logger.error(ret[1].decode().strip())
     else:
@@ -70,12 +71,13 @@ def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared
             shared_result_list.append(json.loads(line.decode().strip())[-1])
 
 
-def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_interval: float) -> None:
+def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_interval: float, simulation_start_time: float) -> None:
     sender_node_name = satellite_id_tuple_to_str(sender_node_id)
     logger.info(f"UDP sender {sender_node_name} starting, dst:{receiver_ip}:{receiver_port}")
     ret = docker_client.exec_cmd(sender_node_name,
                                  f"python3 /udp-applications/udp_sender.py "
-                                 f"{receiver_ip} {receiver_port} {send_interval} {SIMULATION_DURATION}")
+                                 f"{receiver_ip} {receiver_port} {send_interval} {SIMULATION_DURATION}"
+                                 f"{simulation_start_time}")
     
 
 def start_kernel_log_timer():
@@ -88,16 +90,20 @@ def start_kernel_log_timer():
 """
 shared_result_list: list[dict]
 """
-def start_transmission_test(docker_client: DockerClient, send_interval: float, shared_result_list):
+def start_transmission_test(docker_client: DockerClient, send_interval: float, shared_result_list, simulation_start_time: float):
     global receiver_ip
 
     receiver_ip = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
     process_list: typing.List[Process] = []
     
-    process_receiver = Process(target=start_udp_receiver, args=(docker_client, send_interval, shared_result_list))
+    # start nettrace
+    process_nettrace = Process(target=start_nettrace, args=(receiver_ip, receiver_port))
+    process_nettrace.start()
+    
+    process_receiver = Process(target=start_udp_receiver, args=(docker_client, send_interval, shared_result_list, simulation_start_time))
     process_list.append(process_receiver)
     for sender_node_id in SENDER_NODE_ID_LIST:
-        process_sender = Process(target=start_udp_sender, args=(sender_node_id, docker_client, send_interval))
+        process_sender = Process(target=start_udp_sender, args=(sender_node_id, docker_client, send_interval, simulation_start_time))
         process_list.append(process_sender)
 
     for process in process_list:
@@ -111,6 +117,7 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
         process.join()
     should_record_kernel_log = False
     process_timer.kill()
+    process_nettrace.kill()
 
     expected_recv_cnt = int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))
     os.system("rmmod packet_drop_module")   # need to uninstall here to get drop cnt
@@ -172,5 +179,9 @@ def start_packet_capture(queue: Queue):
     queue.put(res_dict)
 
 
-def start_nettrace():
-    os.system("./nettrace --drop --proto udp --")
+def start_nettrace(dst_ip: str, receiver_port: int):
+    with open("nettrace.log", "w") as f:
+        print("", file=f, flush=True)
+    subprocess.run(f"./nettrace --drop --proto udp --date --daddr {dst_ip} --dport {receiver_port} >> nettrace.log", 
+                             shell=True)
+    

@@ -11,6 +11,7 @@ if __name__ == '__main__':
 	total_send_duration = float(sys.argv[3])
 	total_receive_duration = float(sys.argv[4])
 	expected_receive_cnt = int(sys.argv[5])
+	simulation_start_time = float(sys.argv[6])	# real time when simulation (i.e. link event) starts
 
 	receive_cnt = 0
 	avg_delay = 0
@@ -23,7 +24,7 @@ if __name__ == '__main__':
 
 	# print('receiving UDP on ' + local_ip, flush=True)
 
-	start_time = time.time()
+	start_time = time.time()				# real time when receving starts
 	last_time = start_time
 
 	while True:
@@ -37,7 +38,7 @@ if __name__ == '__main__':
 
 			# print(received_data, flush=True)  # NOTE THE FLUSH
 
-			avg_delay += (time.time() - received_data['real_time']) * 1000  # unit: ms
+			avg_delay += (time.time() - received_data['real-time']) * 1000  # unit: ms
 			receive_cnt += 1
 
 			if current_time - last_time >= 1.0:
@@ -45,7 +46,7 @@ if __name__ == '__main__':
 				now_drop_rate = (1 - receive_cnt / now_expected_receive_cnt) * 100
 				result_dict_list.append({
 					"real-time": time.time(),
-					"time": f"{current_time - start_time: .1f}", 
+					"sim-time": f"{current_time - simulation_start_time: .1f}", 
 					"now drop rate": f"{now_drop_rate: .1f}%"
 					# "now expected": f"{now_expected_receive_cnt}",
 					# "now received": f"{receive_cnt}"
