@@ -5,6 +5,7 @@ import time
 import typing
 import sys
 import socket
+import random
 from ctypes import c_bool
 from multiprocessing import Process, Manager, Queue
 from loguru import logger
@@ -138,9 +139,9 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     module_script_list.append(f"./sqsq-kernel-modules/install_satellite_id.sh")
 
-    receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
-    receiver_ip_int = ip_str_to_int(receiver_ip_str)
-    module_script_list.append(f"./sqsq-kernel-modules/install_packet_drop.sh {receiver_ip_int}")
+    # receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
+    # receiver_ip_int = ip_str_to_int(receiver_ip_str)
+    # module_script_list.append(f"./sqsq-kernel-modules/install_packet_drop.sh {receiver_ip_int}")
     
     for module_path in module_script_list:
         try:
@@ -206,16 +207,19 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # set satellite id in kernel
     # -------------------------------------------------------------------
-    logger.info('configuring satellite id in kernel net ns')
-    for id in satellite_map.keys():
-        satellite_name = satellite_id_tuple_to_str(id)
-        satellite_id = socket.htonl(ip_str_to_int(f"0.0.{id[0]}.{id[1]}"))
-        logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
-              f"/set-satellite-id/set_satellite_id {satellite_id}")
-        ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
-        logger.info(ret[1].decode().strip())
-        if ret[0] != 0:
-            logger.error(ret[1].decode().strip())
+    # logger.info('configuring satellite id in kernel net ns')
+    # for id in satellite_map.keys():
+    #     satellite_name = satellite_id_tuple_to_str(id)
+    #     satellite_id = socket.htonl(ip_str_to_int(f"0.0.{id[0]}.{id[1]}"))
+    #     logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
+    #           f"/set-satellite-id/set_satellite_id {satellite_id}")
+    #     ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
+    #     logger.info(ret[1].decode().strip())
+    #     while ret[0] != 0:
+    #         logger.error(ret[1].decode().strip())
+    #         time.sleep(random.random())
+    #         ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
+    #         logger.info(ret[1].decode().strip())
     # -------------------------------------------------------------------
     
     # set monitor
@@ -349,9 +353,9 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     link_failure_rate_list = [0.05]
-    lofi_n_list = [1]
-    # lofi_n_list = [-1, 2, 4]
-    test_nums = [1]
+    # lofi_n_list = [1, 2, 3, 4, 5, 6, -1]
+    lofi_n_list = [2]
+    test_nums = [10]
 
     if (len(lofi_n_list) != len(test_nums)):
         raise Exception('lofi_n_list and test_nums not correspond')

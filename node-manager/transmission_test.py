@@ -170,3 +170,7 @@ def start_packet_capture(queue: Queue):
     res_dict["control overhead"] = "%.6f" % (total_control_bytes / 1e6 / SIMULATION_DURATION)
 
     queue.put(res_dict)
+
+
+def start_nettrace():
+    os.system("./nettrace --drop --proto udp --")

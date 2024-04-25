@@ -83,6 +83,11 @@ struct ip_route_output_flow_data {
 	struct flowi4 *flp4;
 };
 
+struct ip_rcv_finish_core_data {
+	struct sk_buff *skb;
+	struct net_device *dev;
+};
+
 static int ip_route_input_slow_entry_handler(struct kretprobe_instance *ri, struct pt_regs *regs)
 {
 	struct ip_route_input_slow_data *data = (struct ip_route_input_slow_data *)ri->data;
@@ -174,6 +179,43 @@ static int ip_route_output_flow_ret_handler(struct kretprobe_instance *ri, struc
 	return 0;
 }
 
+static int ip_rcv_finish_core_entry_handler(struct kretprobe_instance *ri, struct pt_regs *regs)
+{
+	struct ip_rcv_finish_core_data *data = (struct ip_rcv_finish_core_data *)ri->data;
+	if (data != NULL && regs != NULL) {
+		data->skb = (struct sk_buff *)regs->dx;
+		data->dev = (struct net_device *)regs->cx;
+	}
+	return 0;
+}
+
+static int ip_rcv_finish_core_ret_handler(struct kretprobe_instance *ri, struct pt_regs *regs)
+{
+	struct ip_rcv_finish_core_data *data = (struct ip_rcv_finish_core_data *)ri->data;
+	if (data != NULL) {
+		struct net_device *dev = data->dev;
+		struct sk_buff *skb = data->skb;
+		if (regs != NULL && dev != NULL && skb != NULL) {
+			int ret = (int)regs->ax;
+			const struct iphdr *iph = ip_hdr(skb);
+			if (ret == NET_RX_DROP && iph != NULL) {
+				__be32 daddr = iph->daddr;
+				struct net *net = dev_net(dev);
+				// pr_info("%s    daddr:%pI4  dev:%p  ret:%d\n", __func__, &daddr, dev, ret);
+				if (net != NULL && net != &init_net && daddr == dst_ip) {
+					__be32 satellite_id = net->satellite_id;
+					if (satellite_id != 0x7f7f7f7f) {
+						pr_info("%s,%pI4,%llu,no entry\n", __func__, &satellite_id, get_epoch_time_ns());
+
+						atomic64_inc(&no_entry_cnt);
+					}
+				}
+			}
+		}	
+	}
+	return 0;
+}
+
 static struct kprobe kp_ip_forward = {
     .symbol_name = "ip_forward",
 	.pre_handler = ip_forward_pre_handler,
@@ -195,6 +237,17 @@ static struct kretprobe krp_ip_route_output_flow = {
 	.entry_handler = ip_route_output_flow_entry_handler,
 };
 
+static struct kretprobe krp_ip_rcv_finish_core = {
+	.kp.symbol_name = "ip_rcv_finish_core",
+	.maxactive = NR_CPUS,
+	.data_size = sizeof(struct ip_rcv_finish_core_data),
+	.handler = ip_rcv_finish_core_ret_handler,
+	.entry_handler = ip_rcv_finish_core_entry_handler,
+};
+
+static int planted_ip_forward = 0, planted_ip_route_input_slow = 0, 
+			planted_ip_route_output_flow = 0, planted_ip_rcv_finish_core = 0;
+
 static int packet_drop_module_init(void)
 {
     int ret;
@@ -205,6 +258,7 @@ static int packet_drop_module_init(void)
         return -1;
     }
     else {
+		planted_ip_forward = 1;
         pr_info("planted kprobe kp_ip_forward at %p\n", kp_ip_forward.addr);
     }
 
@@ -214,6 +268,7 @@ static int packet_drop_module_init(void)
         return -1;
     }
     else {
+		planted_ip_route_input_slow = 1;
         pr_info("planted kretprobe krp_ip_route_input_slow at %p\n", krp_ip_route_input_slow.kp.addr);
     }
 
@@ -223,7 +278,18 @@ static int packet_drop_module_init(void)
         return -1;
     }
     else {
+		planted_ip_route_output_flow = 1;
         pr_info("planted kretprobe krp_ip_route_output_flow at %p\n", krp_ip_route_output_flow.kp.addr);
+    }
+
+	ret = register_kretprobe(&krp_ip_rcv_finish_core);
+	if (ret < 0) {
+        pr_err("register_kretprobe krp_ip_rcv_finish_core failed, error code:%d\n", ret);
+        // return -1;
+    }
+    else {
+		planted_ip_rcv_finish_core = 1;
+        pr_info("planted kretprobe krp_ip_rcv_finish_core at %p\n", krp_ip_rcv_finish_core.kp.addr);
     }
 
     return 0;
@@ -232,15 +298,27 @@ static int packet_drop_module_init(void)
 static void packet_drop_module_exit(void)
 {
 	pr_info("ttl exceed packet cnt: %lld\n", atomic64_read(&ttl_drop_cnt));
-	unregister_kprobe(&kp_ip_forward);
-    pr_info("%s	unregisterd kp_ip_forward\n", __func__);
+	if (planted_ip_forward) {
+		unregister_kprobe(&kp_ip_forward);
+		pr_info("%s	unregisterd kp_ip_forward\n", __func__);	
+	}
+	
 
     pr_info("no entry packet cnt: %lld\n", atomic64_read(&no_entry_cnt));
-	unregister_kretprobe(&krp_ip_route_input_slow);
-	pr_info("%s	unregisterd krp_ip_route_input_slow\n", __func__);
+	if (planted_ip_route_input_slow) {
+		unregister_kretprobe(&krp_ip_route_input_slow);
+		pr_info("%s	unregisterd krp_ip_route_input_slow\n", __func__);	
+	}
+	
+	if (planted_ip_route_output_flow) {
+		unregister_kretprobe(&krp_ip_route_output_flow);
+		pr_info("%s	unregisterd krp_ip_route_output_flow\n", __func__);	
+	}
 
-	unregister_kretprobe(&krp_ip_route_output_flow);
-    pr_info("%s	unregisterd krp_ip_route_output_flow\n", __func__);
+	if (planted_ip_rcv_finish_core) {
+		unregister_kretprobe(&krp_ip_rcv_finish_core);
+		pr_info("%s	unregisterd krp_ip_rcv_finish_core\n", __func__);	
+	}
 }
 
 module_init(packet_drop_module_init);
