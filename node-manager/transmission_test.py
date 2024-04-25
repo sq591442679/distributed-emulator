@@ -58,7 +58,7 @@ def start_udp_receiver(docker_client: DockerClient, send_interval: float, shared
     ret = docker_client.exec_cmd(receiver_node_name, 
                                  f"python3 /udp-applications/udp_receiver.py "
                                  f"{receiver_ip} {receiver_port} {SIMULATION_DURATION} "
-                                 f"{SIMULATION_DURATION + 10} {expected_recv_cnt}"
+                                 f"{SIMULATION_DURATION + 10} {expected_recv_cnt} "
                                  f"{simulation_start_time}")
     if ret[0] != 0:
         logger.error(ret[1].decode().strip())
@@ -76,7 +76,7 @@ def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_in
     logger.info(f"UDP sender {sender_node_name} starting, dst:{receiver_ip}:{receiver_port}")
     ret = docker_client.exec_cmd(sender_node_name,
                                  f"python3 /udp-applications/udp_sender.py "
-                                 f"{receiver_ip} {receiver_port} {send_interval} {SIMULATION_DURATION}"
+                                 f"{receiver_ip} {receiver_port} {send_interval} {SIMULATION_DURATION} "
                                  f"{simulation_start_time}")
     
 
@@ -159,14 +159,13 @@ def packet_capture_callback(packet):
 returns data throughput and control overhead
 unit: MBps
 """
-def start_packet_capture(queue: Queue):
-    start_time = time.time()
+def start_packet_capture(queue: Queue, simulation_start_time: float):
     interfaces = [interface for interface in get_all_interfaces() if interface.startswith('veth')]
 
     logger.info(f'sniffing on {interfaces}')
 
     try:
-        while time.time() - start_time <= SIMULATION_DURATION:
+        while time.time() - simulation_start_time <= SIMULATION_DURATION:
             sniff(prn=packet_capture_callback, filter="udp dst port 12345 or ip proto 89", 
                 iface=interfaces, store=0, timeout=1)
     except KeyboardInterrupt:

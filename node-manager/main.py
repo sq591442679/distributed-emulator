@@ -356,7 +356,7 @@ if __name__ == "__main__":
     link_failure_rate_list = [0.05]
     # lofi_n_list = [1, 2, 3, 4, 5, 6, -1]
     lofi_n_list = [2]
-    test_nums = [10]
+    test_nums = [1]
 
     if (len(lofi_n_list) != len(test_nums)):
         raise Exception('lofi_n_list and test_nums not correspond')

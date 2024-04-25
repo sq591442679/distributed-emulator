@@ -337,7 +337,8 @@ class Network:
         process.start()
 
 
-def generate_link_failure(docker_client: DockerClient, link_failure_rate: float, receiver_node_id: tuple, seed: int = None):
+def generate_link_failure(docker_client: DockerClient, link_failure_rate: float, receiver_node_id: tuple, 
+                          simulation_start_time: float, seed: int = None):
     """
     added by sqsq
     for link failure generating
@@ -360,7 +361,7 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float,
         random.seed(None)
 
     poisson_lambda = link_failure_rate / (LINK_FAILURE_DURATION * (1 - link_failure_rate))
-    start_time = time.time()
+
 
     for network in network_dict.values():   # generate first down moment
         random_instance = random_instance_dict[network]
@@ -372,27 +373,26 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float,
             if satellite_id_tuple_to_str(receiver_node_id) in network.inner_eth_dict.keys():
                 continue    # do not close links on dst node
 
-            current_sim_time = time.time() - start_time
+            current_sim_time = time.time() - simulation_start_time
             # logger.debug(f"current_simtime: {current_sim_time}")
 
-            if current_sim_time <= SIMULATION_DURATION:
-                if network.is_down and current_sim_time <= network.down_moment + LINK_FAILURE_DURATION:
-                    # link is in down state
-                    continue
-                elif network.is_down and current_sim_time > network.down_moment + LINK_FAILURE_DURATION:
-                    # link should recover
-                    # process_open_link = Process(target=network.open_link, args=(start_time, random_instance, poisson_lambda))
-                    network.open_link(start_time, random_instance_dict[network], poisson_lambda)
-                    # process_open_link.start()
-                elif not network.is_down and current_sim_time > network.down_moment:
-                    # link should turned to down
-                    # process_close_link = Process(target=network.close_link, args=(start_time, ))
-                    network.close_link(start_time)
-                    # process_close_link.start()
-                else:
-                    continue
+            if network.is_down and current_sim_time <= network.down_moment + LINK_FAILURE_DURATION:
+                # link is in down state
+                continue
+            elif network.is_down and current_sim_time > network.down_moment + LINK_FAILURE_DURATION:
+                # link should recover
+                # process_open_link = Process(target=network.open_link, args=(start_time, random_instance, poisson_lambda))
+                network.open_link(simulation_start_time, random_instance_dict[network], poisson_lambda)
+                # process_open_link.start()
+            elif not network.is_down and current_sim_time > network.down_moment:
+                # link should turned to down
+                # process_close_link = Process(target=network.close_link, args=(start_time, ))
+                network.close_link(simulation_start_time)
+                # process_close_link.start()
+            else:
+                continue
 
-                current_sim_time = time.time() - start_time
+            current_sim_time = time.time() - simulation_start_time
 
 
 def update_network_delay(docker_client: DockerClient, position_data: dict, topo: dict):

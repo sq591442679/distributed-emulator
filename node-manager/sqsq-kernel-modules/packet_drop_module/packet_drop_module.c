@@ -282,15 +282,15 @@ static int packet_drop_module_init(void)
     //     pr_info("planted kretprobe krp_ip_route_output_flow at %p\n", krp_ip_route_output_flow.kp.addr);
     // }
 
-	// ret = register_kretprobe(&krp_ip_rcv_finish_core);
-	// if (ret < 0) {
-    //     pr_err("register_kretprobe krp_ip_rcv_finish_core failed, error code:%d\n", ret);
-    //     // return -1;
-    // }
-    // else {
-	// 	planted_ip_rcv_finish_core = 1;
-    //     pr_info("planted kretprobe krp_ip_rcv_finish_core at %p\n", krp_ip_rcv_finish_core.kp.addr);
-    // }
+	ret = register_kretprobe(&krp_ip_rcv_finish_core);
+	if (ret < 0) {
+        pr_err("register_kretprobe krp_ip_rcv_finish_core failed, error code:%d\n", ret);
+        // return -1;
+    }
+    else {
+		planted_ip_rcv_finish_core = 1;
+        pr_info("planted kretprobe krp_ip_rcv_finish_core at %p\n", krp_ip_rcv_finish_core.kp.addr);
+    }
 
     return 0;
 } 
