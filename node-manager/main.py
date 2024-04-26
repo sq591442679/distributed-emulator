@@ -207,19 +207,19 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # set satellite id in kernel
     # -------------------------------------------------------------------
-    # logger.info('configuring satellite id in kernel net ns')
-    # for id in satellite_map.keys():
-    #     satellite_name = satellite_id_tuple_to_str(id)
-    #     satellite_id = socket.htonl(ip_str_to_int(f"0.0.{id[0]}.{id[1]}"))
-    #     logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
-    #           f"/set-satellite-id/set_satellite_id {satellite_id}")
-    #     ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
-    #     logger.info(ret[1].decode().strip())
-    #     while ret[0] != 0:
-    #         logger.error(ret[1].decode().strip())
-    #         time.sleep(random.random())
-    #         ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
-    #         logger.info(ret[1].decode().strip())
+    logger.info('configuring satellite id in kernel net ns')
+    for id in satellite_map.keys():
+        satellite_name = satellite_id_tuple_to_str(id)
+        satellite_id = socket.htonl(ip_str_to_int(f"0.0.{id[0]}.{id[1]}"))
+        logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
+              f"/set-satellite-id/set_satellite_id {satellite_id}")
+        ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
+        logger.info(ret[1].decode().strip())
+        while ret[0] != 0:
+            logger.warning(ret[1].decode().strip())
+            time.sleep(random.random())
+            ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
+            logger.info(ret[1].decode().strip())
     # -------------------------------------------------------------------
     
     # set monitor
@@ -251,9 +251,9 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     if not dry_run:
         simulation_start_time = time.time()
         generate_link_failure_process = Process(target=generate_link_failure, 
-                                                args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, 42))
+                                                args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, 42))
         # generate_link_failure_process = Process(target=generate_link_failure, 
-        #                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, test))
+        #                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, test))
         generate_link_failure_process.start()	# start link failure generation
 
         time.sleep(10)							# start udp transmitting
@@ -264,7 +264,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         process_list.append(start_transmission_test_process)
 
         queue = Queue() # queue of dict
-        start_packet_capture_process = Process(target=start_packet_capture, args=(queue, ))
+        start_packet_capture_process = Process(target=start_packet_capture, args=(queue, simulation_start_time))
         process_list.append(start_packet_capture_process)
 
         logger.info("transmission starting...")
@@ -281,9 +281,12 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         ttl_rate = shared_result_list[1]['ttl_drop_ratio']
         no_entry_rate = shared_result_list[2]['no_entry_ratio']
 
-        queue_element = queue.get()
-        throughput = queue_element['throughput']
-        control_overhead = queue_element['control overhead']
+        throughput = 0
+        control_overhead = 0
+        if not queue.empty():
+            queue_element = queue.get()
+            throughput = queue_element['throughput']
+            control_overhead = queue_element['control overhead']
 
         with open('./result_tmp.csv', 'a') as f:
             print(f"{lofi_n},{enable_load_awareness},{lofi_delta},"
@@ -344,7 +347,7 @@ if __name__ == "__main__":
     
     os.system("./stop_and_kill_constellation.sh")
 
-    log_file_list = ["eth_dict.log", "link.log", "long_term_result.log", "kernel.log"]
+    log_file_list = ["eth_dict.log", "link.log", "long_term_result.log", "kernel.log", "nettrace.log"]
     for log_file in log_file_list:
         with open(log_file, "w") as f:
             print("", flush=True, file=f)

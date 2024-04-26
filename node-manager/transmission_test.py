@@ -82,7 +82,7 @@ def start_udp_sender(sender_node_id: tuple, docker_client: DockerClient, send_in
 
 def start_kernel_log_timer():
     global should_record_kernel_log
-    os.system("dmesg -c >> kernel.log")
+    os.system("./dmesg_format.sh >> kernel.log")
     if should_record_kernel_log:
         threading.Timer(1, start_kernel_log_timer).start()
 
@@ -129,7 +129,7 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
         output = subprocess.check_output(command, shell=True, text=True)
         drop_cnt = int(output.split(':')[-1].strip())
         drop_ratio = drop_cnt / expected_recv_cnt
-        shared_result_list.append({result_key: "%.1f%%" % (drop_ratio * 100)})
+        shared_result_list.append({result_key: "%.3f%%" % (drop_ratio * 100)})
 
     # logger.info(shared_result_list)
 
@@ -179,8 +179,6 @@ def start_packet_capture(queue: Queue, simulation_start_time: float):
 
 
 def start_nettrace(dst_ip: str, receiver_port: int):
-    with open("nettrace.log", "w") as f:
-        print("", file=f, flush=True)
     subprocess.run(f"./nettrace --drop --proto udp --date --daddr {dst_ip} --dport {receiver_port} >> nettrace.log", 
                              shell=True)
     

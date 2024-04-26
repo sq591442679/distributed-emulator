@@ -13,6 +13,7 @@ if __name__ == '__main__':
 	expected_receive_cnt = int(sys.argv[5])
 	simulation_start_time = float(sys.argv[6])	# real time when simulation (i.e. link event) starts
 
+	last_receive_cnt = 0
 	receive_cnt = 0
 	avg_delay = 0
 
@@ -43,14 +44,17 @@ if __name__ == '__main__':
 
 			if current_time - last_time >= 1.0:
 				now_expected_receive_cnt = expected_receive_cnt * (current_time - start_time) / total_send_duration
+				now_drop_cnt = now_expected_receive_cnt - receive_cnt
 				now_drop_rate = (1 - receive_cnt / now_expected_receive_cnt) * 100
 				result_dict_list.append({
-					"real-time": time.time(),
-					"sim-time": f"{current_time - simulation_start_time: .1f}", 
-					"now drop rate": f"{now_drop_rate: .1f}%"
+					"real-time": f"{time.time():.6f}",
+					"sim-time": f"{current_time - simulation_start_time:.3f}", 
+					"now drop rate": f"{now_drop_rate:.3f}%",
+					"now drop cnt": f"{now_drop_cnt:.3f}"
 					# "now expected": f"{now_expected_receive_cnt}",
 					# "now received": f"{receive_cnt}"
 				})
+				last_receive_cnt = receive_cnt
 				last_time = current_time
 				
 		except socket.timeout:
@@ -61,7 +65,7 @@ if __name__ == '__main__':
 	else:
 		avg_delay /= receive_cnt
 	drop_rate = (1 - receive_cnt / expected_receive_cnt) * 100
-	result_dict_list.append({"drop rate": f"{drop_rate: .1f}%", "delay": f"{avg_delay: .1f}"})
+	result_dict_list.append({"drop rate": f"{drop_rate: .3f}%", "delay": f"{avg_delay: .3f}"})
 	
 	print(json.dumps(result_dict_list, indent=2))
 
