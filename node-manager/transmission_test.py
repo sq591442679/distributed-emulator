@@ -97,8 +97,8 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
     process_list: typing.List[Process] = []
     
     # start nettrace
-    process_nettrace = Process(target=start_nettrace, args=(receiver_ip, receiver_port))
-    process_nettrace.start()
+    # process_nettrace = Process(target=start_nettrace, args=(receiver_ip, receiver_port))
+    # process_nettrace.start()
     
     process_receiver = Process(target=start_udp_receiver, args=(docker_client, send_interval, shared_result_list, simulation_start_time))
     process_list.append(process_receiver)
@@ -116,8 +116,8 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
     for process in process_list:
         process.join()
     should_record_kernel_log = False
-    process_timer.kill()
-    process_nettrace.kill()
+    process_timer.terminate()
+    # process_nettrace.kill()
 
     expected_recv_cnt = int(SIMULATION_DURATION / send_interval * len(SENDER_NODE_ID_LIST))
     os.system("rmmod packet_drop_module")   # need to uninstall here to get drop cnt

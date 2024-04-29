@@ -41,31 +41,26 @@ static void netlink_receive_satellite_id(struct sk_buff *skb)
 	}
 }
 
+struct netlink_kernel_cfg cfg = {
+	.groups = 1,
+	.input = netlink_receive_satellite_id,
+};
 
 static void init_netlink_sockets(void)
 {
 	struct net *net;
 	for_each_net(net) {
-		if (net != &init_net) {
-			struct netlink_kernel_cfg cfg;
-			struct sock* nl_sk;
+			
+		struct sock* nl_sk = netlink_kernel_create(net, NETLINK_SATELLITE_ID, &cfg);
 
-			memset(&cfg, 0, sizeof(struct netlink_kernel_cfg));
+		if (nl_sk == NULL) {
+			pr_err("%s netlink_kernel_create failed at net id:%u\n", __func__, net->ns.inum);
+		}
+		else {
+			pr_info("%s netlink_kernel_create succeed at net id:%u\n", __func__, net->ns.inum);
+		}
 
-			cfg.groups = 1;
-			cfg.input = netlink_receive_satellite_id;
-
-			nl_sk = netlink_kernel_create(net, NETLINK_SATELLITE_ID, &cfg);
-
-			if (nl_sk == NULL) {
-				pr_err("%s netlink_kernel_create failed\n", __func__);
-			}
-			else {
-				pr_info("%s netlink_kernel_create succeed\n", __func__);
-			}
-
-			net->satellite_id_sock = nl_sk;		
-		}	
+		net->satellite_id_sock = nl_sk;
 	}
 }
 
@@ -73,9 +68,9 @@ static void release_netlink_sockets(void)
 {
 	struct net *net;
 	for_each_net(net) {
-		if (net != &init_net) {
+		if (net->satellite_id_sock != NULL) {
 			netlink_kernel_release(net->satellite_id_sock);
-			net->satellite_id_sock = NULL;	
+			net->satellite_id_sock = NULL;		
 		}
 	}
 }

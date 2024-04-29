@@ -625,7 +625,7 @@ plt.xlabel('time (s)')
 plt.ylabel('packet drop cnt')
 plt.title('66 satellites, 5% failure, n=2, packet drop cnt over time')
 plt.xlim(10, 110)
-plt.ylim(0)
+plt.ylim(0, 800)
 
 # plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter())
 

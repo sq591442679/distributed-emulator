@@ -39,7 +39,7 @@ def logger_file_filter(record):
 
 
 def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int, 
-        link_failure_rate: float, send_interval: float, test: int, dry_run = False):
+        link_failure_rate: float, send_interval: float, test: int, random_seed: int, dry_run = False):
     reinit_global_var()
     # the share bool value
     stop_process_state = multiprocessing.Value(c_bool, False)
@@ -137,7 +137,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     if enable_load_awareness:
         module_script_list.append("./sqsq-kernel-modules/install_load_awareness.sh")
 
-    module_script_list.append(f"./sqsq-kernel-modules/install_satellite_id.sh")
+    # module_script_list.append(f"./sqsq-kernel-modules/install_satellite_id.sh")
 
     receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
     receiver_ip_int = ip_str_to_int(receiver_ip_str)
@@ -207,19 +207,19 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # set satellite id in kernel
     # -------------------------------------------------------------------
-    logger.info('configuring satellite id in kernel net ns')
-    for id in satellite_map.keys():
-        satellite_name = satellite_id_tuple_to_str(id)
-        satellite_id = socket.htonl(ip_str_to_int(f"0.0.{id[0]}.{id[1]}"))
-        logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
-              f"/set-satellite-id/set_satellite_id {satellite_id}")
-        ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
-        logger.info(ret[1].decode().strip())
-        while ret[0] != 0:
-            logger.warning(ret[1].decode().strip())
-            time.sleep(random.random())
-            ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
-            logger.info(ret[1].decode().strip())
+    # logger.info('configuring satellite id in kernel net ns')
+    # for id in satellite_map.keys():
+    #     satellite_name = satellite_id_tuple_to_str(id)
+    #     satellite_id = socket.htonl(ip_str_to_int(f"0.0.{id[0]}.{id[1]}"))
+    #     logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
+    #           f"/set-satellite-id/set_satellite_id {satellite_id}")
+    #     ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
+    #     logger.info(ret[1].decode().strip())
+    #     while ret[0] != 0:
+    #         logger.warning(ret[1].decode().strip())
+    #         time.sleep(random.random())
+    #         ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
+    #         logger.info(ret[1].decode().strip())
     # -------------------------------------------------------------------
     
     # set monitor
@@ -251,7 +251,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     if not dry_run:
         simulation_start_time = time.time()
         generate_link_failure_process = Process(target=generate_link_failure, 
-                                                args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, 42))
+                                                args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, random_seed))
         # generate_link_failure_process = Process(target=generate_link_failure, 
         #                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, test))
         generate_link_failure_process.start()	# start link failure generation
@@ -272,7 +272,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
             process.start()
         for process in process_list:
             process.join()
-        generate_link_failure_process.kill()
+        generate_link_failure_process.terminate()
 
         logger.info(shared_result_list)
         
@@ -290,7 +290,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
         with open('./result_tmp.csv', 'a') as f:
             print(f"{lofi_n},{enable_load_awareness},{lofi_delta},"
-                  f"{link_failure_rate},{test},"
+                  f"{link_failure_rate},{random_seed},{test},"
                   f"{drop_rate},{delay},{throughput},{control_overhead},"
                   f"{ttl_rate},{no_entry_rate}", file=f)
 
@@ -357,9 +357,12 @@ if __name__ == "__main__":
     enable_load_awareness = False
     lofi_delta = 0.05
     link_failure_rate_list = [0.05]
-    # lofi_n_list = [1, 2, 3, 4, 5, 6, -1]
-    lofi_n_list = [2]
-    test_nums = [1]
+    # lofi_n_list = [-1]
+    # test_nums = [1]
+    # random_seeds = [42]
+    lofi_n_list = [4, 5, 6, -1]
+    test_nums = [10, 10, 10, 10]
+    random_seeds = [42 + i for i in range(RANDOM_SEED_NUM)]
 
     if (len(lofi_n_list) != len(test_nums)):
         raise Exception('lofi_n_list and test_nums not correspond')
@@ -367,7 +370,7 @@ if __name__ == "__main__":
     if not os.path.exists('./result_tmp.csv') and not DRY_RUN:
         with open('./result_tmp.csv', 'w') as f:
             print('lofi_n,load_awareness,lofi_delta,'
-                  'link_failure_rate,test,'
+                  'link_failure_rate,random_seed,test,'
                   'drop_rate,delay,throughput,control_overhead,'
                   'ttl_rate,no_entry_rate', file=f)
         os.system("chmod 777 ./result_tmp.csv")
@@ -377,9 +380,10 @@ if __name__ == "__main__":
             if RECORD_LONG_TERM_RESULT:
                 with open('./long_term_result.log', 'a') as f:
                     print(f"failure: {link_failure_rate}, n: {lofi_n}", file=f, flush=True)
-            for test in range(1, test_nums[i] + 1):
-                run(enable_load_awareness, lofi_delta, lofi_n, 
-                    link_failure_rate, UDP_SEND_INTERVAL, test, DRY_RUN)
+            for random_seed in random_seeds:
+                for test in range(1, test_nums[i] + 1):
+                    run(enable_load_awareness, lofi_delta, lofi_n, 
+                        link_failure_rate, UDP_SEND_INTERVAL, test, random_seed, DRY_RUN)
 
     
 

@@ -59,12 +59,13 @@ static int ip_forward_pre_handler(struct kprobe *p, struct pt_regs *regs)
 			if (ip_hdr(skb)->ttl <= 1) {
 				struct net *net = dev_net(skb->dev);
 				if (net != NULL && net != &init_net) {
-					__be32 satellite_id = net->satellite_id;
-					if (satellite_id != 0x7f7f7f7f) {
-						pr_info("%s,%pI4,%llu,ttl\n", __func__, &satellite_id, get_epoch_time_ns());
+					atomic64_inc(&ttl_drop_cnt);
+					// __be32 satellite_id = net->satellite_id;
+					// if (satellite_id != 0x7f7f7f7f) {
+					// 	pr_info("%s,%pI4,%llu,ttl\n", __func__, &satellite_id, get_epoch_time_ns());
 
-						atomic64_inc(&ttl_drop_cnt);
-					}
+					// 	atomic64_inc(&ttl_drop_cnt);
+					// }
 				}
 			}		
 		}
