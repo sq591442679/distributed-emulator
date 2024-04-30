@@ -2,7 +2,8 @@
 added by sqsq
 used for LoFi test
 """
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Manager
+from multiprocessing.managers import ListProxy
 import typing
 import re
 from scapy.all import sniff, UDP, IP
@@ -90,16 +91,21 @@ def start_kernel_log_timer():
 """
 shared_result_list: list[dict]
 """
-def start_transmission_test(docker_client: DockerClient, send_interval: float, shared_result_list, simulation_start_time: float):
-    global receiver_ip
+def start_transmission_test(docker_client: DockerClient, send_interval: float, 
+                            shared_result_list: ListProxy, 
+                            simulation_start_time: float):
+    global receiver_ip, should_record_kernel_log
 
     receiver_ip = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
     process_list: typing.List[Process] = []
+    manager = Manager()
+    packet_capture_list = manager.list()
     
     # start nettrace
     # process_nettrace = Process(target=start_nettrace, args=(receiver_ip, receiver_port))
     # process_nettrace.start()
-    
+    process_capture = Process(target=start_packet_capture, args=(packet_capture_list, simulation_start_time))
+    process_list.append(process_capture)
     process_receiver = Process(target=start_udp_receiver, args=(docker_client, send_interval, shared_result_list, simulation_start_time))
     process_list.append(process_receiver)
     for sender_node_id in SENDER_NODE_ID_LIST:
@@ -131,6 +137,8 @@ def start_transmission_test(docker_client: DockerClient, send_interval: float, s
         drop_ratio = drop_cnt / expected_recv_cnt
         shared_result_list.append({result_key: "%.3f%%" % (drop_ratio * 100)})
 
+    shared_result_list.append(packet_capture_list[0])
+
     # logger.info(shared_result_list)
 
     # logger.success("UDP send and receive completed")
@@ -159,7 +167,7 @@ def packet_capture_callback(packet):
 returns data throughput and control overhead
 unit: MBps
 """
-def start_packet_capture(queue: Queue, simulation_start_time: float):
+def start_packet_capture(shared_result_list: ListProxy, simulation_start_time: float):
     interfaces = [interface for interface in get_all_interfaces() if interface.startswith('veth')]
 
     logger.info(f'sniffing on {interfaces}')
@@ -175,7 +183,7 @@ def start_packet_capture(queue: Queue, simulation_start_time: float):
     res_dict["throughput"] = "%.6f" % (total_data_bytes / 1e6 / SIMULATION_DURATION)
     res_dict["control overhead"] = "%.6f" % (total_control_bytes / 1e6 / SIMULATION_DURATION)
 
-    queue.put(res_dict)
+    shared_result_list.append(res_dict)
 
 
 def start_nettrace(dst_ip: str, receiver_port: int):

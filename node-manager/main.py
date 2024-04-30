@@ -1,4 +1,5 @@
 import multiprocessing
+import multiprocessing.managers
 import subprocess
 import os.path
 import time
@@ -37,6 +38,135 @@ def logger_file_filter(record):
         return True
     return False
 
+
+def install_kernel_module(command: str) -> None:
+    try:
+        output = subprocess.check_output(command, 
+                                        shell=True, 
+                                        stderr=subprocess.STDOUT, 
+                                        universal_newlines=True)
+    except subprocess.CalledProcessError as e:
+        logger.error(e.output)
+        raise Exception('')
+    logger.success(output)
+
+
+def uninstall_kernel_modules() -> None:
+    os.system("./sqsq-kernel-modules/uninstall_modules.sh")
+
+
+def start_frr(docker_client: DockerClient) -> None:
+    process_list: typing.List[Process] = []
+    logger.info('copying frr.conf to containers')
+    for id in satellite_map.keys():
+        container_name = satellite_id_tuple_to_str(id)
+        process_copy = Process(target=docker_client.copy_to_container, 
+                               args=(container_name, 
+                                     f'../configuration/frr/{container_name}.conf', 
+                                     f'/etc/frr/frr.conf'))
+        process_list.append(process_copy)
+    for process_copy in process_list:
+        process_copy.start()
+    for process_copy in process_list:
+        process_copy.join()
+
+    process_list.clear()
+    logger.info('starting frr in containers')
+    for id in satellite_map.keys():
+        process_start_frr = Process(target=docker_client.exec_cmd, 
+                                    args=(satellite_id_tuple_to_str(id), 
+                                          './usr/lib/frr/frrinit.sh start'))
+        process_list.append(process_start_frr)
+    for process_start_frr in process_list:
+        process_start_frr.start()
+    for process_start_frr in process_list:
+        process_start_frr.join()
+    logger.info('waiting for frr init')
+    time.sleep(WARMUP_PERIOD)
+
+
+def start_load_awareness(docker_client: DockerClient, lofi_delta: float):
+    process_list: typing.List[Process] = []    
+    cmd = f"/load_wawreness/load_awareness {lofi_delta} {QUEUE_CAPACITY} {NETWORK_BANDWIDTH*1000000} {1024 * 8} " \
+            + f"{NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY}"
+    if enable_load_awareness:
+        for id in satellite_map.keys():
+            process_start_load_wawreness = Process(target=docker_client.exec_cmd, 
+                                                   args=(satellite_id_tuple_to_str(id), cmd, False, True))
+            process_list.append(process_start_load_wawreness)
+        for process_start_load_wawreness in process_list:
+            process_start_load_wawreness.start()
+        for process_start_load_wawreness in process_list:
+            process_start_load_wawreness.join()
+
+
+def set_satellite_id_in_kernel(docker_client: DockerClient):
+    logger.info('configuring satellite id in kernel net ns')
+    for id in satellite_map.keys():
+        satellite_name = satellite_id_tuple_to_str(id)
+        satellite_id = socket.htonl(ip_str_to_int(f"0.0.{id[0]}.{id[1]}"))
+        logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
+              f"/set-satellite-id/set_satellite_id {satellite_id}")
+        ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
+        logger.info(ret[1].decode().strip())
+        while ret[0] != 0:
+            logger.warning(ret[1].decode().strip())
+            time.sleep(random.random())
+            ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
+            logger.info(ret[1].decode().strip())
+
+
+def start_simulation(docker_client: DockerClient, link_failure_rate: float, send_interval: float, test: int, random_seed: int):
+    process_list = []
+    simulation_start_time = time.time()
+    generate_link_failure_process = Process(target=generate_link_failure, 
+                                            args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, random_seed))
+    # generate_link_failure_process = Process(target=generate_link_failure, 
+    #                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, test))
+    generate_link_failure_process.start()	# start link failure generation
+
+    time.sleep(10)							# start udp transmitting
+    manager = Manager()
+    shared_result_list: multiprocessing.managers.ListProxy[typing.Dict[str, str]] = manager.list() # shared_result_list: list[dict]
+    start_transmission_test_process = Process(target=start_transmission_test, 
+                                                args=(docker_client, send_interval, shared_result_list, simulation_start_time))
+    process_list.append(start_transmission_test_process)
+
+    logger.info("transmission starting...")
+    for process in process_list:
+        process.start()
+    for process in process_list:
+        process.join()
+    generate_link_failure_process.terminate()
+
+    logger.info(shared_result_list)
+    
+    drop_rate = shared_result_list[0]['drop rate'].strip()
+    delay = shared_result_list[0]['delay'].strip()
+    ttl_rate = shared_result_list[1]['ttl_drop_ratio']
+    no_entry_rate = shared_result_list[2]['no_entry_ratio']
+    throughput = shared_result_list[3]['throughput']
+    control_overhead = shared_result_list[3]['control overhead']
+
+    with open('./result_tmp.csv', 'a') as f:
+        print(f"{lofi_n},{enable_load_awareness},{lofi_delta},"
+                f"{link_failure_rate},{random_seed},{test},"
+                f"{drop_rate},{delay},{throughput},{control_overhead},"
+                f"{ttl_rate},{no_entry_rate}", file=f)
+
+    # copy network events from container to host
+    process_list.clear()
+    for id in satellite_map.keys():
+        container_name = satellite_id_tuple_to_str(id)
+        process_copy = Process(target=docker_client.copy_from_container, 
+                                args=(container_name, 
+                                        f'/var/log/network_events.log', 
+                                        f'../container-events/{container_name}_network_events.log'))
+        process_list.append(process_copy)
+    for process_copy in process_list:
+        process_copy.start()
+    for process_copy in process_list:
+        process_copy.join()
 
 def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int, 
         link_failure_rate: float, send_interval: float, test: int, random_seed: int, dry_run = False):
@@ -89,6 +219,12 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # start send monitor data
     connect_monitor()
+    
+    # ---------------------------------
+    # install kernel modules, added by sqsq
+    uninstall_kernel_modules()
+    install_kernel_module(f"./sqsq-kernel-modules/install_satellite_id.sh")
+    # ---------------------------------
 
     # generate satellite infos
     # ----------------------------------------------------------------
@@ -116,7 +252,9 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     for node_id in sorted(list(satellite_map.keys())):
         satellite_node = satellite_map[node_id]
         node_id_str = satellite_id_tuple_to_str(node_id)
-        position_datas[node_id_str][LATITUDE_KEY], position_datas[node_id_str][LONGITUDE_KEY], position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
+        position_datas[node_id_str][LATITUDE_KEY], \
+        position_datas[node_id_str][LONGITUDE_KEY], \
+        position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
         # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
     update_network_delay(docker_client, position_datas, connect_order_map)
     # -------------------------------------------------------------------
@@ -126,9 +264,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     logger.info(f'constellation init time: {init_end_time - init_start_time: .3f}s')
     # -------------------------------------------------------------------
 
-    # ---------------------------------
-    # install kernel modules, added by sqsq
-    os.system("./sqsq-kernel-modules/uninstall_modules.sh")
+    # -------------------------------
+    # install kernel modules part 2
     module_script_list = []
 
     if lofi_n != -1:
@@ -137,89 +274,30 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     if enable_load_awareness:
         module_script_list.append("./sqsq-kernel-modules/install_load_awareness.sh")
 
-    # module_script_list.append(f"./sqsq-kernel-modules/install_satellite_id.sh")
-
     receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
     receiver_ip_int = ip_str_to_int(receiver_ip_str)
     module_script_list.append(f"./sqsq-kernel-modules/install_packet_drop.sh {receiver_ip_int}")
     
     for module_path in module_script_list:
-        try:
-            output = subprocess.check_output(module_path, 
-                                            shell=True, 
-                                            stderr=subprocess.STDOUT, 
-                                            universal_newlines=True)
-        except subprocess.CalledProcessError as e:
-            logger.error(e.output)
-            raise Exception('')
-        logger.success(output)    
+        install_kernel_module(module_path)   
     module_script_list.clear()
     # ---------------------------------
 
     # -------------------------------------------------------------------
     # start frr    added by sqsq
-    process_list: typing.List[Process] = []
-    logger.info('copying frr.conf to containers')
-    for id in satellite_map.keys():
-        container_name = satellite_id_tuple_to_str(id)
-        process_copy = Process(target=docker_client.copy_to_container, 
-                               args=(container_name, 
-                                     f'../configuration/frr/{container_name}.conf', 
-                                     f'/etc/frr/frr.conf'))
-        process_list.append(process_copy)
-    for process_copy in process_list:
-        process_copy.start()
-    for process_copy in process_list:
-        process_copy.join()
-
-    process_list.clear()
-    logger.info('starting frr in containers')
-    for id in satellite_map.keys():
-        process_start_frr = Process(target=docker_client.exec_cmd, 
-                                    args=(satellite_id_tuple_to_str(id), 
-                                          './usr/lib/frr/frrinit.sh start'))
-        process_list.append(process_start_frr)
-    for process_start_frr in process_list:
-        process_start_frr.start()
-    for process_start_frr in process_list:
-        process_start_frr.join()
-    logger.info('waiting for frr init')
-    time.sleep(WARMUP_PERIOD)
+    start_frr(docker_client)
     # -------------------------------------------------------------------
         
     # -------------------------------------------------------------------
     # start load awareness, added by sqsq
-    process_list.clear()    
-    cmd = f"/load_wawreness/load_awareness {lofi_delta} {QUEUE_CAPACITY} {NETWORK_BANDWIDTH*1000000} {1024 * 8} " \
-            + f"{NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY}"
-    if enable_load_awareness:
-        for id in satellite_map.keys():
-            process_start_load_wawreness = Process(target=docker_client.exec_cmd, 
-                                                   args=(satellite_id_tuple_to_str(id), cmd, False, True))
-            process_list.append(process_start_load_wawreness)
-        for process_start_load_wawreness in process_list:
-            process_start_load_wawreness.start()
-        for process_start_load_wawreness in process_list:
-            process_start_load_wawreness.join()
+    start_load_awareness(docker_client, lofi_delta)
     # -------------------------------------------------------------------
     
     os.system("dmesg -c > /dev/null")
 
     # set satellite id in kernel
     # -------------------------------------------------------------------
-    # logger.info('configuring satellite id in kernel net ns')
-    # for id in satellite_map.keys():
-    #     satellite_name = satellite_id_tuple_to_str(id)
-    #     satellite_id = socket.htonl(ip_str_to_int(f"0.0.{id[0]}.{id[1]}"))
-    #     logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
-    #           f"/set-satellite-id/set_satellite_id {satellite_id}")
-    #     ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
-    #     logger.info(ret[1].decode().strip())
-    #     while ret[0] != 0:
-    #         logger.warning(ret[1].decode().strip())
-    #         time.sleep(random.random())
-    #         ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
-    #         logger.info(ret[1].decode().strip())
+    set_satellite_id_in_kernel(docker_client)
     # -------------------------------------------------------------------
     
     # set monitor
@@ -245,87 +323,25 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # start link failure generation and UDP send & recv
     # added by sqsq
     # ----------------------------------------------------------
-    process_list.clear()
     logger.info('test starting...')
 
     if not dry_run:
-        simulation_start_time = time.time()
-        generate_link_failure_process = Process(target=generate_link_failure, 
-                                                args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, random_seed))
-        # generate_link_failure_process = Process(target=generate_link_failure, 
-        #                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, test))
-        generate_link_failure_process.start()	# start link failure generation
-
-        time.sleep(10)							# start udp transmitting
-        manager = Manager()
-        shared_result_list = manager.list() # shared_result_list: list[dict]
-        start_transmission_test_process = Process(target=start_transmission_test, 
-                                                  args=(docker_client, send_interval, shared_result_list, simulation_start_time))
-        process_list.append(start_transmission_test_process)
-
-        queue = Queue() # queue of dict
-        start_packet_capture_process = Process(target=start_packet_capture, args=(queue, simulation_start_time))
-        process_list.append(start_packet_capture_process)
-
-        logger.info("transmission starting...")
-        for process in process_list:
-            process.start()
-        for process in process_list:
-            process.join()
-        generate_link_failure_process.terminate()
-
-        logger.info(shared_result_list)
-        
-        drop_rate = shared_result_list[0]['drop rate'].strip()
-        delay = shared_result_list[0]['delay'].strip()
-        ttl_rate = shared_result_list[1]['ttl_drop_ratio']
-        no_entry_rate = shared_result_list[2]['no_entry_ratio']
-
-        throughput = 0
-        control_overhead = 0
-        if not queue.empty():
-            queue_element = queue.get()
-            throughput = queue_element['throughput']
-            control_overhead = queue_element['control overhead']
-
-        with open('./result_tmp.csv', 'a') as f:
-            print(f"{lofi_n},{enable_load_awareness},{lofi_delta},"
-                  f"{link_failure_rate},{random_seed},{test},"
-                  f"{drop_rate},{delay},{throughput},{control_overhead},"
-                  f"{ttl_rate},{no_entry_rate}", file=f)
-
-        # copy etwork events from container to host
-        process_list = []
-        for id in satellite_map.keys():
-            container_name = satellite_id_tuple_to_str(id)
-            process_copy = Process(target=docker_client.copy_from_container, 
-                                   args=(container_name, 
-                                         f'/var/log/network_events.log', 
-                                         f'../container-events/{container_name}_network_events.log'))
-            process_list.append(process_copy)
-        for process_copy in process_list:
-            process_copy.start()
-        for process_copy in process_list:
-            process_copy.join()
-
-        set_monitor_process.kill()
-        # update_position_process.kill()
-        delete_constellation(docker_client)
-
-        logger.success('finished 1 test')
-
-        # while True:
-        #     pass
-
-        os.system("clear")
+        start_simulation(docker_client, link_failure_rate, send_interval, test, random_seed)
     else:
         while True:
             pass
     # ----------------------------------------------------------
         
     # ----------------------------------------------------------
-    # uninstall kernel modules
-    os.system("./sqsq-kernel-modules/uninstall_modules.sh")
+    # clear after one run
+    set_monitor_process.kill()
+    # update_position_process.kill()
+    delete_constellation(docker_client)
+
+    logger.success('finished 1 test')
+
+    os.system("clear")
+    uninstall_kernel_modules()
     # ----------------------------------------------------------
 
 
