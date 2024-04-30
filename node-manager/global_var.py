@@ -1,12 +1,13 @@
 # all satellites
 import threading
 from collections import OrderedDict
+from typing import List, Tuple, Dict, Any
 
 satellites = []
 network_dict = {}   # network key (str) -> class Network
 satellite_map = {}  # tuple of satellite id -> class SatelliteNode
 connect_order_map = OrderedDict()
-interface_map = {}  # tuple of satellite id -> interface
+interface_map: Dict[Tuple[int, int], Dict[str, Any]] = {}  # tuple of satellite id -> interface
 ground_stations = []
 
 def reinit_global_var():

@@ -87,10 +87,10 @@ def print_and_store_interface_map(interface_map_tmp):
     #     logger.success(f"node id: {node_id} interfaces: {interface_map_tmp[node_id]['interface']}")
     for node_id in interface_map_tmp.keys():
         storage = f"../configuration/interface_table" \
-                  f"/node{node_id}_interface_table.conf"
+                  f"/{satellite_id_tuple_to_str(node_id)}_interface_table.conf"
         with open(storage, "w") as f:
             for interface in interface_map_tmp[node_id]["interface"]:
-                f.write(f"{interface[0]}:{interface[1]}\n")
+                f.write(f"{interface[0]},{interface[1]},0.0.{interface[2][0]}.{interface[2][1]}\n")
 
 
 def modify_interface_map(conn_index, network_node_id, interface_map_tmp):
@@ -111,34 +111,34 @@ def modify_interface_map(conn_index, network_node_id, interface_map_tmp):
         # print(f"start node id:{conn_index} end node id:{network_node_id} intra-orbit-link", flush=True)
         # operation for start node
         if start_node_id not in interface_map_tmp.keys():
-            interface_map_tmp[start_node_id] = {"current_index": 2, "interface": [("eth1", "intra-orbit-link")]}
+            interface_map_tmp[start_node_id] = {"current_index": 2, "interface": [("eth1", "intra-orbit-link", end_node_id)]}
         else:
             interface_map_tmp[start_node_id]["interface"]. \
-                append((f"eth{interface_map_tmp[start_node_id]['current_index']}", "intra-orbit-link"))
+                append((f"eth{interface_map_tmp[start_node_id]['current_index']}", "intra-orbit-link", end_node_id))
             interface_map_tmp[start_node_id]["current_index"] += 1
         # operation for end node
         if end_node_id not in interface_map_tmp.keys():
-            interface_map_tmp[end_node_id] = {"current_index": 2, "interface": [("eth1", "intra-orbit-link")]}
+            interface_map_tmp[end_node_id] = {"current_index": 2, "interface": [("eth1", "intra-orbit-link", start_node_id)]}
         else:
             interface_map_tmp[end_node_id]["interface"].append(
-                (f"eth{interface_map_tmp[end_node_id]['current_index']}", "intra-orbit-link"))
+                (f"eth{interface_map_tmp[end_node_id]['current_index']}", "intra-orbit-link", start_node_id))
             interface_map_tmp[end_node_id]["current_index"] += 1
     # 如果两个点不在同一个轨道上
     else:
         # print(f"start node id:{start_node_id} end node id:{network_node_id} inter-orbit-link", flush=True)
         # operation for start node
         if start_node_id not in interface_map_tmp.keys():
-            interface_map_tmp[start_node_id] = {"current_index": 2, "interface": [("eth1", "inter-orbit-link")]}
+            interface_map_tmp[start_node_id] = {"current_index": 2, "interface": [("eth1", "inter-orbit-link", end_node_id)]}
         else:
             interface_map_tmp[start_node_id]["interface"]. \
-                append((f"eth{interface_map_tmp[start_node_id]['current_index']}", "inter-orbit-link"))
+                append((f"eth{interface_map_tmp[start_node_id]['current_index']}", "inter-orbit-link", end_node_id))
             interface_map_tmp[start_node_id]["current_index"] += 1
         # operation for end node
         if end_node_id not in interface_map_tmp.keys():
-            interface_map_tmp[end_node_id] = {"current_index": 2, "interface": [("eth1", "inter-orbit-link")]}
+            interface_map_tmp[end_node_id] = {"current_index": 2, "interface": [("eth1", "inter-orbit-link", start_node_id)]}
         else:
             interface_map_tmp[end_node_id]["interface"].append(
-                (f"eth{interface_map_tmp[end_node_id]['current_index']}", "inter-orbit-link"))
+                (f"eth{interface_map_tmp[end_node_id]['current_index']}", "inter-orbit-link", start_node_id))
             interface_map_tmp[end_node_id]["current_index"] += 1
 
 
