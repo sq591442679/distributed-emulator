@@ -178,7 +178,6 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     file_path = os.path.abspath('.') + '/config.ini'
     config = Config(file_path)
     host_ip = config.DockerHostIP
-    image_name = config.DockerImageName
     ground_image_name = config.GroundImageName
     udp_port = config.UDPPort
     monitor_image_name = config.MonitorImageName
@@ -188,10 +187,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # ---------------------------------
     # check for ospf
-    if image_name == "ospf:latest":
-        lofi_n = -1
-        enable_load_awareness = False
-    elif lofi_n == -1:
+    if lofi_n == -1:
         image_name = "ospf:latest"
         enable_load_awareness = False
     elif lofi_n == -2:
@@ -224,6 +220,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # install kernel modules, added by sqsq
     uninstall_kernel_modules()
     install_kernel_module(f"./sqsq-kernel-modules/install_satellite_id.sh")
+    if enable_load_awareness:
+        install_kernel_module("./sqsq-kernel-modules/install_load_awareness.sh")
     # ---------------------------------
 
     # generate satellite infos
@@ -266,21 +264,12 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # -------------------------------
     # install kernel modules part 2
-    module_script_list = []
-
     if lofi_n != -1:
-        module_script_list.append("./sqsq-kernel-modules/install_multipath.sh")
-
-    if enable_load_awareness:
-        module_script_list.append("./sqsq-kernel-modules/install_load_awareness.sh")
+        install_kernel_module("./sqsq-kernel-modules/install_multipath.sh")
 
     receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
     receiver_ip_int = ip_str_to_int(receiver_ip_str)
-    module_script_list.append(f"./sqsq-kernel-modules/install_packet_drop.sh {receiver_ip_int}")
-    
-    for module_path in module_script_list:
-        install_kernel_module(module_path)   
-    module_script_list.clear()
+    install_kernel_module(f"./sqsq-kernel-modules/install_packet_drop.sh {receiver_ip_int}")
     # ---------------------------------
 
     # -------------------------------------------------------------------

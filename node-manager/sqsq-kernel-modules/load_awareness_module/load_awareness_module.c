@@ -15,6 +15,7 @@
 #include <linux/netlink.h>
 #include <linux/netdevice.h>
 #include <linux/types.h>
+#include <linux/skbuff.h>
 
 #include <net/net_namespace.h>
 #include <net/netlink.h>
@@ -27,10 +28,6 @@
 static int load_awareness_pid;
 
 const char interface_names[4][5] = {"eth1", "eth2", "eth3", "eth4"};
-
-static struct kprobe kp_ip_output = {
-    .symbol_name = "ip_output",
-};
 
 static int __kprobes handler_pre_ip_output(struct kprobe *p, struct pt_regs *regs)
 {
@@ -136,59 +133,68 @@ static void netlink_recv_delta(struct sk_buff *skb)
 	}
 }
 
-static void init_netlink_sockets(void)
+static struct netlink_kernel_cfg cfg = {
+	.groups = 1,
+	.input = netlink_recv_delta,
+};
+
+static int __net_init netlink_ns_init(struct net *net)
 {
-	struct net *net;
-	for_each_net(net) {
-		if (net != &init_net) {
-			struct netlink_kernel_cfg cfg;
-			struct sock* nl_sk;
+	struct sock* nl_sk = netlink_kernel_create(net, NETLINK_RECV_PACKET, &cfg);
 
-			memset(&cfg, 0, sizeof(struct netlink_kernel_cfg));
+	if (nl_sk == NULL) {
+		pr_err("%s netlink_kernel_create failed at net id:%u\n", __func__, net->ns.inum);
+		return -ENOMEM;
+	}
+	else {
+		memset(net->last_time_qlen, 0, sizeof(net->last_time_qlen));
+		net->qlen_amplitude_threshold = 0x3f3f3f3f;
+		pr_info("%s netlink_kernel_create succeed at net id:%u\n", __func__, net->ns.inum);
+	}
 
-			cfg.groups = 1;
-			cfg.input = netlink_recv_delta;
+	net->recv_packet_nl_sock = nl_sk;
 
-			nl_sk = netlink_kernel_create(net, NETLINK_RECV_PACKET, &cfg);
+	return 0;
+}
 
-			if (nl_sk == NULL) {
-				pr_err("%s netlink_kernel_create failed\n", __func__);
-			}
-			else {
-				pr_info("%s netlink_kernel_create succeed\n", __func__);
-			}
-
-			net->recv_packet_nl_sock = nl_sk;		
-		}	
+static void __net_exit netlink_ns_exit(struct net *net)
+{
+	struct sock *sk = net->recv_packet_nl_sock;
+	if (sk != NULL) {
+		netlink_kernel_release(net->recv_packet_nl_sock);
+		net->recv_packet_nl_sock = NULL;
+		net->qlen_amplitude_threshold = 0x3f3f3f3f;
 	}
 }
 
-static void release_netlink_sockets(void)
-{
-	struct net *net;
-	for_each_net(net) {
-		if (net != &init_net) {
-			netlink_kernel_release(net->recv_packet_nl_sock);
-			net->recv_packet_nl_sock = NULL;	
-		}
-	}
-}
+static struct pernet_operations netlink_net_ops = {
+	.init = netlink_ns_init,
+	.exit = netlink_ns_exit,
+};
 
+static struct kprobe kp_ip_output = {
+	.symbol_name = "ip_output",
+	.pre_handler = handler_pre_ip_output,
+};
 
 static int __init load_awareness_module_init(void)
 {
     int ret;
-
-    kp_ip_output.pre_handler = handler_pre_ip_output;
+	
     ret = register_kprobe(&kp_ip_output);
 	if (ret < 0) {
-        pr_err("register_kprobe ip_output failed\n");
+        pr_err("%s    register_kprobe ip_output failed\n", __func__);
+		return ret;
     }
     else {
-        pr_info("planted kprobe at %p\n", kp_ip_output.addr);
+        pr_info("%s    planted kprobe at %p\n", __func__, kp_ip_output.addr);
     }
 
-	init_netlink_sockets();
+	ret = register_pernet_subsys(&netlink_net_ops);
+	if (ret != 0) {
+		pr_err("%s    Failed to register pernet operations\n", __func__);
+		return ret;
+	}
 
     return 0;
 } 
@@ -197,7 +203,7 @@ static void __exit load_awareness_module_exit(void)
 {
 	unregister_kprobe(&kp_ip_output);
 
-	release_netlink_sockets();
+	unregister_pernet_subsys(&netlink_net_ops);
 
     pr_info("%s	unregisterd kprobe\n", __func__);
 }
