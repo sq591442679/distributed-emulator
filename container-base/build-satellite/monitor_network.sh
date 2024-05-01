@@ -6,12 +6,12 @@ LAST_HASH=""
 log_interface() {
     local event=$1
     local interface=$2
-    local timestamp=$(date +"%Y-%m-%d %H:%M:%S.%3N")
+    local timestamp=$(date +"%Y-%m-%d %H:%M:%S.%N")
     echo "$timestamp - $event: $interface" >> $LOG_FILE
 }
 
 log_routing_table() {
-    local timestamp=$(date +"%Y-%m-%d %H:%M:%S.%3N")
+    local timestamp=$(date +"%Y-%m-%d %H:%M:%S.%N")
     echo "$timestamp - routing table changed" >> $LOG_FILE
 }
 

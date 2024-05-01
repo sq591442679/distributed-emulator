@@ -193,6 +193,9 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     elif lofi_n == -2:
         image_name = "elb:latest"
         enable_load_awareness = False
+    elif lofi_n == -3:
+        image_name = "node_table:latest"
+        enable_load_awareness = False
     # ---------------------------------
 
     # create position updater
@@ -264,7 +267,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # -------------------------------
     # install kernel modules part 2
-    if lofi_n != -1:
+    if lofi_n >= 0 or lofi_n == -2:
         install_kernel_module("./sqsq-kernel-modules/install_multipath.sh")
 
     receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
@@ -316,6 +319,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     if not dry_run:
         start_simulation(docker_client, link_failure_rate, send_interval, test, random_seed)
+        while True:
+            pass
     else:
         while True:
             pass
@@ -359,14 +364,15 @@ if __name__ == "__main__":
 
     # lofi_n = -1 means using ospf
     # lofi_n = -2 means using elb
+    # lofi_n = -3 means using node table
     enable_load_awareness = False
     lofi_delta = 0.05
     link_failure_rate_list = [0.05]
-    # lofi_n_list = [-1]
-    # test_nums = [1]
-    # random_seeds = [42]
-    lofi_n_list = [4, 5, 6, -1]
-    test_nums = [10, 10, 10, 10]
+    lofi_n_list = [-3]
+    test_nums = [1]
+    random_seeds = [42]
+    # lofi_n_list = [4, 5, 6, -1]
+    # test_nums = [10, 10, 10, 10]
     random_seeds = [42 + i for i in range(RANDOM_SEED_NUM)]
 
     if (len(lofi_n_list) != len(test_nums)):
