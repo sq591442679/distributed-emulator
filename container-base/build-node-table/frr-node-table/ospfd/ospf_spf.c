@@ -1546,9 +1546,17 @@ static void ospf_spf_dump(struct vertex *v, int i)
 		if (IS_DEBUG_OSPF_EVENT)
 			zlog_debug("SPF Result: %d [R] %pI4", i,
 				   &v->lsa->id);
+
 		/** @sqsq */
-		zlog_debug("SPF Result: %d [R] %pI4", i,
-				&v->lsa->id);
+		zlog_debug("SPF Result: depth:%d [R] id:%pI4 cost:%d", i,
+				&v->lsa->id, v->distance);
+		for (ALL_LIST_ELEMENTS_RO(v->parents, nnode, parent)) {
+			zlog_debug(" nexthop %p %pI4 %d",
+				   (void *)parent->nexthop,
+				   &parent->nexthop->router,
+				   parent->nexthop->lsa_pos);
+		}
+
 	} else {
 		struct network_lsa *lsa = (struct network_lsa *)v->lsa;
 		if (IS_DEBUG_OSPF_EVENT)
@@ -1597,6 +1605,41 @@ void ospf_spf_print(struct vty *vty, struct vertex *v, int i)
 
 	for (ALL_LIST_ELEMENTS_RO(v->children, cnode, v))
 		ospf_spf_print(vty, v, i);
+}
+
+/** @sqsq */
+static void sqsq_ospf_spf_process_stubs(struct ospf_area *area, struct vertex *v,
+				   struct route_table *rt, int parent_is_root)
+{
+	struct listnode *cnode, *cnnode;
+	struct vertex *child;
+
+	if (v->type == OSPF_VERTEX_ROUTER) {
+		uint8_t *p;
+		uint8_t *lim;
+		struct router_lsa_link *l;
+		struct router_lsa *router_lsa;
+
+		router_lsa = (struct router_lsa *)v->lsa;
+
+		p = ((uint8_t *)v->lsa) + OSPF_LSA_HEADER_SIZE + 4;
+		lim = ((uint8_t *)v->lsa) + ntohs(v->lsa->length);
+
+		while (p < lim) {
+			l = (struct router_lsa_link *)p;
+
+			p += (OSPF_ROUTER_LSA_LINK_SIZE
+			      + (l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE));
+
+			/* Don't process TI-LFA protected resources */
+			if (l->m[0].type == LSA_LINK_TYPE_STUB
+			    && !ospf_spf_is_protected_resource(area, l, v->lsa)) {
+				ospf_intra_add_stub(rt, l, v, area,
+						    parent_is_root, lsa_pos);	
+			}
+				
+		}
+	}	
 }
 
 /* Second stage of SPF calculation. */
@@ -1803,6 +1846,7 @@ void ospf_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	sprintf(time_str + strlen(time_str), ".%ld", ts.tv_nsec);
 	zlog_debug("%s    %s, finished spf first stage calculate", __func__, time_str);
 	ospf_spf_dump(area->spf, 0);
+	ospf_route_table_dump(new_table);
 
 
 	if (IS_DEBUG_OSPF_EVENT) {

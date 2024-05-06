@@ -1,5 +1,6 @@
 import time
 import docker
+import subprocess
 from multiprocessing import Process, Lock
 from multiprocessing.connection import Pipe
 from loguru import logger
@@ -26,7 +27,7 @@ def generate_submission_list_for_network_object_creation(missions, submission_si
 
 def network_object_creation_submission(docker_client, submission, send_pipe):
     for net_id, container_name1, container_name2 in submission:
-        network_key = get_network_key(docker_client, container_name1, container_name2)
+        network_key = get_network_key(container_name1, container_name2)
         network_dict[network_key] = Network(docker_client,
                                         net_id,
                                         container_name1,
@@ -68,7 +69,7 @@ def get_laser_delay_ms(position1: dict, position2: dict) -> float:
     return sqrt(dist_square) / LIGHT_SPEED * 1000  # UNIT: ms
 
 
-def get_network_key(docker_client: DockerClient, container_name1: str, container_name2: str) -> str:
+def get_network_key(container_name1: str, container_name2: str) -> str:
     """
     modified by sqsq
     network_key is no longer based on container_id, but container_name
@@ -173,7 +174,7 @@ class Network:
         self.br_id = bridge_id
         self.container_name1 = container_name1
         self.container_name2 = container_name2
-        self.network_key = get_network_key(docker_client, container_name1, container_name2)
+        self.network_key = get_network_key(container_name1, container_name2)
         self.br_interface_name = get_bridge_interface_name(bridge_id)
         self.veth_interface_list = get_vethes_of_bridge(self.br_interface_name)
         self.delay = delay              # unit: ms
@@ -185,9 +186,8 @@ class Network:
             raise ValueError("wrong veth number of bridge: %d" % len(self.veth_interface_list))
         
         # added by sqsq
-        self.veth_dict, self.inner_eth_dict = get_inner_eth_dict([container_name1, container_name2], 
-                                                                 self.veth_interface_list, 
-                                                                 self.docker_client)
+        self.veth_dict = {}
+        self.inner_eth_dict = {}
                                         # container name -> veth name / eth name
 
         # added by sqsq
@@ -210,6 +210,10 @@ class Network:
     tc qdisc show dev eth0
     '''
     def init_info(self):
+        self.veth_dict, self.inner_eth_dict = get_inner_eth_dict([self.container_name1, self.container_name2], 
+                                                                 self.veth_interface_list, 
+                                                                 self.docker_client)
+
         for container_name, inner_eth_name in self.inner_eth_dict.items():
             satellite_id = satellite_str_to_id_tuple(container_name)
             container_pid = satellite_map[satellite_id].container_pid
@@ -249,12 +253,11 @@ class Network:
             # command = ['sh', '-c', f'tc qdisc replace dev {inner_eth_name} root netem delay {round(self.delay)}ms rate {self.bandwidth}Mbit limit {self.queue_capacity}']
             # logger.info(f"{container_name}.{inner_eth_name}: {command}")
             # ret = self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
+        self.update_link_cost(self.docker_client, round(self.delay * 10))
 
-    def update_delay_param(self, set_time: float):
+    def update_delay_param(self, docker_client: DockerClient, set_time: float):
         self.delay = set_time
         if not self.is_down:
-            link_cost = round(self.delay)
-            self.update_link_cost(link_cost)
             self.update_info()
 
     def update_bandwidth_param(self, band_width: int):
@@ -267,11 +270,18 @@ class Network:
         if not self.is_down:
             self.update_info()
 
-    def update_link_cost(self, cost: int):
+    """
+    change link cost in frr
+    need frr to be started first
+    """
+    def update_link_cost(self, docker_client: DockerClient, cost: int):
         for container_name, eth_name in self.inner_eth_dict.items():
             command = ['sh', '-c', 
-                       f'"/load_awareness/change_ospf_cost.sh {eth_name} {cost}"']
-            ret = self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
+                       f"/change_ospf_cost.sh {eth_name} {cost}"]
+            # logger.info(f'{container_name}: {command}')
+            ret = docker_client.exec_cmd(container_name, command)
+            if ret[0] != 0:
+                logger.error(ret[1].decode().strip())
 
     
     def print_link_event(self, current_sim_time: float, type: str):
@@ -305,15 +315,12 @@ class Network:
             satellite_id = satellite_str_to_id_tuple(container_name)
             container_pid = satellite_map[satellite_id].container_pid
             netns_path = f'/proc/{container_pid}/ns/net'
+            current_sim_time = time.time() - start_time
+            self.print_link_event(current_sim_time, "down")
             with NetNS(netns_path) as ns:
                 # operate eth in corresponding net namespace
                 idx = ns.link_lookup(ifname=eth_name)[0]
                 ns.link('set', index=idx, state='down')
-
-        current_sim_time = time.time() - start_time
-        # self.print_link_event(current_sim_time, "down")
-        process = Process(target=self.print_link_event, args=(current_sim_time, "down"))
-        process.start()
 
 
     def open_link(self, start_time: float, random_instance: random.Random, poisson_lambda: float):
@@ -326,15 +333,12 @@ class Network:
             satellite_id = satellite_str_to_id_tuple(container_name)
             container_pid = satellite_map[satellite_id].container_pid
             netns_path = f'/proc/{container_pid}/ns/net'
+            current_sim_time = time.time() - start_time
+            self.print_link_event(current_sim_time, "up")
             with NetNS(netns_path) as ns:
                 # operate eth in corresponding net namespace
                 idx = ns.link_lookup(ifname=eth_name)[0]
                 ns.link('set', index=idx, state='up')
-
-        current_sim_time = time.time() - start_time
-        # self.print_link_event(current_sim_time, "up")
-        process = Process(target=self.print_link_event, args=(current_sim_time, "up"))
-        process.start()
 
 
 def generate_link_failure(docker_client: DockerClient, link_failure_rate: float, receiver_node_id: tuple, 
@@ -404,8 +408,8 @@ def update_network_delay(docker_client: DockerClient, position_data: dict, topo:
             delay = get_laser_delay_ms(position_data[start_node_id_str],position_data[target_node_id_str])
             start_container_name = satellite_map[start_node_id].container_name
             target_container_name = satellite_map[target_node_id].container_name
-            net_object = network_dict[get_network_key(docker_client, start_container_name,target_container_name)]
-            net_object.update_delay_param(delay)
+            net_object: Network = network_dict[get_network_key(start_container_name, target_container_name)]
+            net_object.update_delay_param(docker_client, delay)
 
 
 if __name__ == '__main__':

@@ -21,10 +21,11 @@ from tle_generator import generate_tle
 from delete_containers_and_networks import delete_containers_with_multiple_processes, \
     delete_networks_with_multiple_processes
 from network_controller import generate_link_failure, update_network_delay
-from global_var import connect_order_map, satellite_map, reinit_global_var
+from global_var import connect_order_map, satellite_map, reinit_global_var, network_dict
 from ground_station import create_station_from_json
 from tools import *
 from transmission_test import start_transmission_test, start_packet_capture, get_ip_of_node_id
+from network_controller import Network
 
 
 def delete_constellation(docker_client: DockerClient):
@@ -82,7 +83,6 @@ def start_frr(docker_client: DockerClient) -> None:
     for process_start_frr in process_list:
         process_start_frr.join()
     logger.info('waiting for frr init')
-    time.sleep(WARMUP_PERIOD)
 
 
 def start_load_awareness(docker_client: DockerClient, lofi_delta: float):
@@ -105,15 +105,15 @@ def set_satellite_id_in_kernel(docker_client: DockerClient):
     for id in satellite_map.keys():
         satellite_name = satellite_id_tuple_to_str(id)
         satellite_id = socket.htonl(ip_str_to_int(f"0.0.{id[0]}.{id[1]}"))
-        logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
-              f"/set-satellite-id/set_satellite_id {satellite_id}")
+        # logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
+        #       f"/set-satellite-id/set_satellite_id {satellite_id}")
         ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
-        logger.info(ret[1].decode().strip())
+        # logger.info(ret[1].decode().strip())
         while ret[0] != 0:
             logger.warning(ret[1].decode().strip())
             time.sleep(random.random())
             ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
-            logger.info(ret[1].decode().strip())
+            # logger.info(ret[1].decode().strip())
 
 
 def start_simulation(docker_client: DockerClient, link_failure_rate: float, send_interval: float, test: int, random_seed: int):
@@ -158,19 +158,28 @@ def start_simulation(docker_client: DockerClient, link_failure_rate: float, send
     process_list.clear()
     for id in satellite_map.keys():
         container_name = satellite_id_tuple_to_str(id)
-        process_copy = Process(target=docker_client.copy_from_container, 
+        process_copy_network_event = Process(target=docker_client.copy_from_container, 
                                 args=(container_name, 
                                         f'/var/log/network_events.log', 
                                         f'../container-events/{container_name}_network_events.log'))
-        process_list.append(process_copy)
+        process_list.append(process_copy_network_event)
+        process_copy_frr_log =  Process(target=docker_client.copy_from_container, 
+                                        args=(container_name,
+                                              '/var/log/frr/sqsq_ospfd.log',
+                                              f'../container-events/{container_name}_frr.log'))
+        process_list.append(process_copy_frr_log)
+
     for process_copy in process_list:
         process_copy.start()
     for process_copy in process_list:
         process_copy.join()
+    os.system("sudo chmod -R 777 ../container-events/")
+
 
 def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int, 
         link_failure_rate: float, send_interval: float, test: int, random_seed: int, dry_run = False):
     reinit_global_var()
+    os.system("clear")
     # the share bool value
     stop_process_state = multiprocessing.Value(c_bool, False)
     # read config.ini file
@@ -247,19 +256,6 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # -------------------------------------------------------------------
 
-    # added by sqsq
-    # set the initial position
-    # -------------------------------------------------------------------
-    for node_id in sorted(list(satellite_map.keys())):
-        satellite_node = satellite_map[node_id]
-        node_id_str = satellite_id_tuple_to_str(node_id)
-        position_datas[node_id_str][LATITUDE_KEY], \
-        position_datas[node_id_str][LONGITUDE_KEY], \
-        position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
-        # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
-    update_network_delay(docker_client, position_datas, connect_order_map)
-    # -------------------------------------------------------------------
-
     # -------------------------------------------------------------------
     init_end_time = time.time()
     logger.info(f'constellation init time: {init_end_time - init_start_time: .3f}s')
@@ -278,6 +274,18 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # -------------------------------------------------------------------
     # start frr    added by sqsq
     start_frr(docker_client)
+    # set the initial position
+    # -------------------------------------------------------------------
+    for node_id in sorted(list(satellite_map.keys())):
+        satellite_node = satellite_map[node_id]
+        node_id_str = satellite_id_tuple_to_str(node_id)
+        position_datas[node_id_str][LATITUDE_KEY], \
+        position_datas[node_id_str][LONGITUDE_KEY], \
+        position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
+        # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
+    update_network_delay(docker_client, position_datas, connect_order_map)
+    time.sleep(WARMUP_PERIOD)
+    # -------------------------------------------------------------------
     # -------------------------------------------------------------------
         
     # -------------------------------------------------------------------
@@ -319,8 +327,6 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     if not dry_run:
         start_simulation(docker_client, link_failure_rate, send_interval, test, random_seed)
-        while True:
-            pass
     else:
         while True:
             pass
@@ -332,10 +338,10 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # update_position_process.kill()
     delete_constellation(docker_client)
 
-    logger.success('finished 1 test')
-
-    os.system("clear")
     uninstall_kernel_modules()
+
+    run_end_time = time.time()
+    logger.success(f'finished 1 test in {run_end_time - init_start_time:.6f}s')
     # ----------------------------------------------------------
 
 
@@ -373,7 +379,7 @@ if __name__ == "__main__":
     random_seeds = [42]
     # lofi_n_list = [4, 5, 6, -1]
     # test_nums = [10, 10, 10, 10]
-    random_seeds = [42 + i for i in range(RANDOM_SEED_NUM)]
+    # random_seeds = [42 + i for i in range(RANDOM_SEED_NUM)]
 
     if (len(lofi_n_list) != len(test_nums)):
         raise Exception('lofi_n_list and test_nums not correspond')

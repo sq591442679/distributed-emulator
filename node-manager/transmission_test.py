@@ -170,7 +170,7 @@ unit: MBps
 def start_packet_capture(shared_result_list: ListProxy, simulation_start_time: float):
     interfaces = [interface for interface in get_all_interfaces() if interface.startswith('veth')]
 
-    logger.info(f'sniffing on {interfaces}')
+    # logger.info(f'sniffing on {interfaces}')
 
     try:
         while time.time() - simulation_start_time <= SIMULATION_DURATION:

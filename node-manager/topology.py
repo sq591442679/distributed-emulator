@@ -121,7 +121,7 @@ def write_into_frr_conf(host_name, network_list, prefix_list, lofi_n: int):
     node_id = satellite_str_to_id_tuple(host_name)
     with open(f"../configuration/frr/"
               f"{host_name}.conf", "w") as f:
-        if lofi_n == -1:    # we use ospf
+        if lofi_n == -1 or lofi_n == -3:    # we use ospf
             lofi_n_command = ""
             warmup_command = ""
         else:               # we use lofi
