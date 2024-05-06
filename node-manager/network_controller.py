@@ -253,10 +253,10 @@ class Network:
             # command = ['sh', '-c', f'tc qdisc replace dev {inner_eth_name} root netem delay {round(self.delay)}ms rate {self.bandwidth}Mbit limit {self.queue_capacity}']
             # logger.info(f"{container_name}.{inner_eth_name}: {command}")
             # ret = self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
-        self.update_link_cost(self.docker_client, round(self.delay * 10))
 
     def update_delay_param(self, docker_client: DockerClient, set_time: float):
         self.delay = set_time
+        self.update_link_cost(self.docker_client, round(self.delay * 10))
         if not self.is_down:
             self.update_info()
 
