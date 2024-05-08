@@ -3,7 +3,7 @@ import threading
 from collections import OrderedDict
 from typing import List, Tuple, Dict, Any
 
-satellites = []
+satellites = []     # list of satellite node
 network_dict = {}   # network key (str) -> class Network
 satellite_map = {}  # tuple of satellite id -> class SatelliteNode
 connect_order_map = OrderedDict()

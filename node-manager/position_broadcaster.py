@@ -64,9 +64,8 @@ def position_broadcaster(docker_client, stop_process_state, satellite_num, posit
             now_time = datetime.now()
             now_sim_time = now_time - start_time + TIME_BASE
 
-            # logger.info(f"now_sim_time:{now_sim_time}")
-            with open("sim_time.log", "a") as f:
-                print(f"sim time: {now_sim_time}", file=f, flush=True)
+            # with open("sim_time.log", "a") as f:
+            #     print(f"sim time: {now_sim_time}", file=f, flush=True)
 
             p = mp.Process(target=worker, args=(now_sim_time,
                                                 submission_list[i][0],
@@ -82,7 +81,8 @@ def position_broadcaster(docker_client, stop_process_state, satellite_num, posit
             # if current_count < satellite_num:
             #     continue
             # else:
-                for i, node_id in enumerate(list(satellite_map.keys())):
+                for i, satellite_node in enumerate(satellites):
+                    node_id = satellite_node.node_id
                     index_base = 3 * i
                     node_id_str = satellite_id_tuple_to_str(node_id)
                     position_datas[node_id_str][LATITUDE_KEY] = res[index_base]
@@ -103,12 +103,11 @@ def position_broadcaster(docker_client, stop_process_state, satellite_num, posit
                 rcv_pipe.close()
                 break
         
-        logger_data = {
-            (0, 0): [now_sim_time.strftime("%Y-%m-%d %H:%M:%S.%f"), position_datas[satellite_id_tuple_to_str((0, 0))]],
-            (1, 0): [now_sim_time.strftime("%Y-%m-%d %H:%M:%S.%f"), position_datas[satellite_id_tuple_to_str((1, 0))]],
-            (2, 0): [now_sim_time.strftime("%Y-%m-%d %H:%M:%S.%f"), position_datas[satellite_id_tuple_to_str((2, 0))]],
-        }
-        logger.info(logger_data)
+        with open("satellite_position.log", "a") as f:
+            logger_data = {
+                (j, 0): [now_sim_time.strftime("%Y-%m-%d %H:%M:%S.%f"), position_datas[satellite_id_tuple_to_str((j, 0))]] for j in range(ORBIT_NUM)
+            }
+            print(logger_data, file=f, flush=True)
 
         time.sleep(sending_interval)
     logger.success("position broadcaster process finished")

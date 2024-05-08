@@ -39,8 +39,8 @@ def use_inclined_orbit() -> bool:
 
 def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, delta, period) -> Tuple[dict, dict]:
     """
-    :param latitude: mean anomaly
-    :param longitude: right ascension of ascending node (RAAN)
+    :param latitude: mean anomaly, in degree
+    :param longitude: right ascension of ascending node (RAAN), in degree
     """
     satellite_infos = {}
     index_2d = []
@@ -52,7 +52,10 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
     year2, day = get_year_day(TIME_BASE)  # modified by sqsq
 
     for i in range(orbit_num):
-        start_latitude = latitude + delta * i * pow(-1, i)
+        if i % 2 == 0:
+            start_latitude = latitude
+        else:
+            start_latitude = latitude + delta
         if use_inclined_orbit():
             start_longitude = longitude + 360 * i / orbit_num
         else:
@@ -111,5 +114,5 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
 
 if __name__ == "__main__":
     satellite_infos, connections = generate_tle(ORBIT_NUM, SAT_PER_ORBIT, 0, 0, 0.01, 0.08)
-    for info in satellite_infos[0, 0]:
+    for info in [satellite_infos[(0, 0)], satellite_infos[(1, 0)]]:
         print(info)
