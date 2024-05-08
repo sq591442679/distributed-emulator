@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Tuple
-from const_var import TIME_BASE
+from const_var import TIME_BASE, INCLINE_DEGREE, ORBIT_NUM, SAT_PER_ORBIT
 
 def get_year_day(now_time: datetime) -> Tuple[int, float]:
     year = now_time.year
@@ -33,24 +33,35 @@ def area2line(y: int, x: int, x_limit: int, y_limit: int) -> int:
     return y_true * x_limit + x_true
 
 
+def use_inclined_orbit() -> bool:
+    return INCLINE_DEGREE <= 88
+
+
 def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, delta, period) -> Tuple[dict, dict]:
+    """
+    :param latitude: mean anomaly
+    :param longitude: right ascension of ascending node (RAAN)
+    """
     satellite_infos = {}
     index_2d = []
     topo = {}
     freq = 1 / period  # if the period is 1, the freq is 1Hz, if the period is 0.5, the freq is 2Hz
     line_1 = "1 00000U 23666A   %02d%012.8f  .00000000  00000-0 00000000 0 0000"
-    line_2 = "2 00000  90.0000 %08.4f 0000011   0.0000 %8.4f %11.8f00000"
+    line_2 = "2 00000  %02.4f %08.4f 0000011   0.0000 %8.4f %11.8f00000"
     # year2, day = get_year_day(datetime.now())
     year2, day = get_year_day(TIME_BASE)  # modified by sqsq
 
     for i in range(orbit_num):
-        start_latitude = latitude + delta * i
-        start_longitude = longitude + 180 * i / orbit_num
+        start_latitude = latitude + delta * i * pow(-1, i)
+        if use_inclined_orbit():
+            start_longitude = longitude + 360 * i / orbit_num
+        else:
+            start_longitude = longitude + 180 * i / orbit_num
         index_1d = []
         for j in range(orbit_satellite_num):
             this_latitude = start_latitude + 360 * j / orbit_satellite_num
             this_line_1 = line_1 % (year2, day)
-            this_line_2 = line_2 % (start_longitude, this_latitude, freq)
+            this_line_2 = line_2 % (INCLINE_DEGREE, start_longitude, this_latitude, freq)
             # refactored id by sqsq
             # index_1d.append(len(satellites))
             index_1d.append((i, j))
@@ -81,9 +92,16 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
             array = [index_2d[y][(x + 1) % orbit_satellite_num]]
         else:
             array = []
-        # if not the last orbit, connect to the next orbit
-        if y < orbit_num - 1:
-            array.append(index_2d[y + 1][x])
+        if not use_inclined_orbit():
+            # if not the last orbit, connect to the next orbit
+            # only for polar orbit constellation
+            if y < orbit_num - 1:
+                array.append(index_2d[y + 1][x])
+        else:
+            orbit_id = y + 1
+            if orbit_id >= orbit_num:
+                orbit_id %= orbit_num
+            array.append(index_2d[orbit_id][x])
         # record the inter-orbit connection
         # refactored id by sqsq
         # topo[str(i)] = array
@@ -92,5 +110,6 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
 
 
 if __name__ == "__main__":
-    satellites, topo = generate_tle(8, 30, 0, 0, 0, 0.1)
-    print(satellites)
+    satellite_infos, connections = generate_tle(ORBIT_NUM, SAT_PER_ORBIT, 0, 0, 0.01, 0.08)
+    for info in satellite_infos[0, 0]:
+        print(info)

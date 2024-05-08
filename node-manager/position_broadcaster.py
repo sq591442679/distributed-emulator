@@ -26,7 +26,7 @@ def generate_submission_list_for_position_broadcaster(satellite_num, cpu_count):
     else:
         # each satellite is handled by one cpu
         submission_list = [(i, i) for i in range(satellite_num)]
-    logger.info(submission_list)
+    # logger.info(submission_list)
     return submission_list
 
 
@@ -102,6 +102,14 @@ def position_broadcaster(docker_client, stop_process_state, satellite_num, posit
                 send_pipe.close()
                 rcv_pipe.close()
                 break
+        
+        logger_data = {
+            (0, 0): [now_sim_time.strftime("%Y-%m-%d %H:%M:%S.%f"), position_datas[satellite_id_tuple_to_str((0, 0))]],
+            (1, 0): [now_sim_time.strftime("%Y-%m-%d %H:%M:%S.%f"), position_datas[satellite_id_tuple_to_str((1, 0))]],
+            (2, 0): [now_sim_time.strftime("%Y-%m-%d %H:%M:%S.%f"), position_datas[satellite_id_tuple_to_str((2, 0))]],
+        }
+        logger.info(logger_data)
+
         time.sleep(sending_interval)
     logger.success("position broadcaster process finished")
 

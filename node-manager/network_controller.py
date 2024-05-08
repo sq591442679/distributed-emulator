@@ -279,9 +279,9 @@ class Network:
             command = ['sh', '-c', 
                        f"/change_ospf_cost.sh {eth_name} {cost}"]
             # logger.info(f'{container_name}: {command}')
-            ret = docker_client.exec_cmd(container_name, command)
-            if ret[0] != 0:
-                logger.error(ret[1].decode().strip())
+            ret = docker_client.exec_cmd(container_name, command, detach=True)
+            # if ret[0] != 0:
+            #     logger.error(ret[1].decode().strip())
 
     
     def print_link_event(self, current_sim_time: float, type: str):

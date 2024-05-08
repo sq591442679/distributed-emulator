@@ -274,17 +274,16 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # -------------------------------------------------------------------
     # start frr    added by sqsq
     start_frr(docker_client)
-    # set the initial position
-    # -------------------------------------------------------------------
-    for node_id in sorted(list(satellite_map.keys())):
-        satellite_node = satellite_map[node_id]
-        node_id_str = satellite_id_tuple_to_str(node_id)
-        position_datas[node_id_str][LATITUDE_KEY], \
-        position_datas[node_id_str][LONGITUDE_KEY], \
-        position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
-        # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
-    update_network_delay(docker_client, position_datas, connect_order_map)
-    time.sleep(WARMUP_PERIOD)
+    # # set the initial position
+    # for node_id in sorted(list(satellite_map.keys())):
+    #     satellite_node = satellite_map[node_id]
+    #     node_id_str = satellite_id_tuple_to_str(node_id)
+    #     position_datas[node_id_str][LATITUDE_KEY], \
+    #     position_datas[node_id_str][LONGITUDE_KEY], \
+    #     position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
+    #     # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
+    # update_network_delay(docker_client, position_datas, connect_order_map)
+    # time.sleep(WARMUP_PERIOD)
     # -------------------------------------------------------------------
     # -------------------------------------------------------------------
         
@@ -297,7 +296,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # set satellite id in kernel
     # -------------------------------------------------------------------
-    set_satellite_id_in_kernel(docker_client)
+    # set_satellite_id_in_kernel(docker_client)
     # -------------------------------------------------------------------
     
     # set monitor
@@ -310,14 +309,14 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # start position broadcaster and update network delay
     # comment by sqsq
     # ----------------------------------------------------------
-    # update_position_process = Process(target=position_broadcaster, args=(docker_client, 
-    #                                                                      stop_process_state,
-    #                                                                      satellite_num,
-    #                                                                      position_datas,
-    #                                                                      updater,
-    #                                                                      BROADCAST_SEND_INTERVAL,
-    #                                                                      connect_order_map))
-    # update_position_process.start()
+    update_position_process = Process(target=position_broadcaster, args=(docker_client, 
+                                                                         stop_process_state,
+                                                                         satellite_num,
+                                                                         position_datas,
+                                                                         updater,
+                                                                         BROADCAST_SEND_INTERVAL,
+                                                                         connect_order_map))
+    update_position_process.start()
     # ----------------------------------------------------------
 
     # start link failure generation and UDP send & recv
@@ -335,7 +334,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # ----------------------------------------------------------
     # clear after one run
     set_monitor_process.kill()
-    # update_position_process.kill()
+    update_position_process.kill()
     delete_constellation(docker_client)
 
     uninstall_kernel_modules()

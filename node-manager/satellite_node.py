@@ -1,4 +1,5 @@
 import ephem
+from ephem import degree
 from datetime import datetime
 from global_var import satellites
 from loguru import logger
@@ -47,11 +48,11 @@ class SatelliteNode:
         """
         Get the next position of the satellite
         :param time_now: the time now
-        :return: the next position of the satellite
+        :return: the next position of the satellite (in degree and meter)
         """
         ephem_time = ephem.Date(time_now)
         self.satellite.compute(ephem_time)
-        return self.satellite.sublat, self.satellite.sublong, self.satellite.elevation
+        return self.satellite.sublat / degree, self.satellite.sublong / degree, self.satellite.elevation
 
 
 if __name__ == "__main__":
