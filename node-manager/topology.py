@@ -121,12 +121,24 @@ def write_into_frr_conf(host_name, network_list, prefix_list, lofi_n: int):
     node_id = satellite_str_to_id_tuple(host_name)
     with open(f"../configuration/frr/"
               f"{host_name}.conf", "w") as f:
-        if lofi_n == -1 or lofi_n == -3:    # we use ospf
+        if lofi_n == -1:    # we use ospf
             lofi_n_command = ""
             warmup_command = ""
+            orbit_num_command = f""
+            sat_per_orbit_command = f""
+            use_inclined_orbit_command = f""
+        elif lofi_n == -3:  # we use node table
+            lofi_n_command = ""
+            warmup_command = ""
+            orbit_num_command = f"ospf orbit_num {ORBIT_NUM}"
+            sat_per_orbit_command = f"ospf sat_per_orbit {SAT_PER_ORBIT}"
+            use_inclined_orbit_command = f"ospf use_inclined_orbit {int(use_inclined_orbit())}"
         else:               # we use lofi
             lofi_n_command = f"ospf lofi {lofi_n}"
             warmup_command = f"ospf warmup_period {WARMUP_PERIOD}"
+            orbit_num_command = f""
+            sat_per_orbit_command = f""
+            use_inclined_orbit_command = f""
             
         # note the value of retransmit interval. according to rfc2328:
         # The setting of this value should be conservative or needless retransmissions will result. S
@@ -139,6 +151,9 @@ log record-priority
 router ospf
     {lofi_n_command}
     {warmup_command}
+    {orbit_num_command}
+    {sat_per_orbit_command}
+    {use_inclined_orbit_command}
     ospf router-id 0.0.{node_id[0]}.{node_id[1]}
     # redistribute connected
 

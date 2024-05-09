@@ -76,6 +76,12 @@ unsigned short ospf_instance;
 
 extern struct zclient *zclient;
 
+/**
+ * @sqsq
+ */
+uint32_t orbit_num = 10;
+uint32_t sat_per_orbit = 20;
+bool use_inclined_orbit = false;
 
 static void ospf_remove_vls_through_area(struct ospf *, struct ospf_area *);
 static void ospf_network_free(struct ospf *, struct ospf_network *);
@@ -2322,4 +2328,28 @@ const char *ospf_get_name(const struct ospf *ospf)
 		return ospf->name;
 	else
 		return VRF_DEFAULT_NAME;
+}
+
+/**
+ * @author sqsq
+ * @brief
+ * get the orbit id of a satellite id, 
+ * note that router_id is in network order
+ */
+uint8_t sqsq_get_orbit_id(struct in_addr router_id)
+{
+	in_addr_t satellite_id = ntohl(router_id.s_addr);
+	return (uint8_t)(satellite_id >> 8 & 255);
+}
+
+/**
+ * @author sqsq
+ * @brief
+ * get the inner-orbit id of a satellite id, 
+ * note that router_id is in network order
+ */
+uint8_t sqsq_get_inner_orbit_id(struct in_addr router_id)
+{
+	in_addr_t satellite_id = ntohl(router_id.s_addr);
+	return (uint8_t)(satellite_id & 255);
 }

@@ -1608,39 +1608,39 @@ void ospf_spf_print(struct vty *vty, struct vertex *v, int i)
 }
 
 /** @sqsq */
-static void sqsq_ospf_spf_process_stubs(struct ospf_area *area, struct vertex *v,
-				   struct route_table *rt, int parent_is_root)
-{
-	struct listnode *cnode, *cnnode;
-	struct vertex *child;
+// static void sqsq_ospf_spf_process_stubs(struct ospf_area *area, struct vertex *v,
+// 				   struct route_table *rt, int parent_is_root)
+// {
+// 	struct listnode *cnode, *cnnode;
+// 	struct vertex *child;
 
-	if (v->type == OSPF_VERTEX_ROUTER) {
-		uint8_t *p;
-		uint8_t *lim;
-		struct router_lsa_link *l;
-		struct router_lsa *router_lsa;
+// 	if (v->type == OSPF_VERTEX_ROUTER) {
+// 		uint8_t *p;
+// 		uint8_t *lim;
+// 		struct router_lsa_link *l;
+// 		struct router_lsa *router_lsa;
 
-		router_lsa = (struct router_lsa *)v->lsa;
+// 		router_lsa = (struct router_lsa *)v->lsa;
 
-		p = ((uint8_t *)v->lsa) + OSPF_LSA_HEADER_SIZE + 4;
-		lim = ((uint8_t *)v->lsa) + ntohs(v->lsa->length);
+// 		p = ((uint8_t *)v->lsa) + OSPF_LSA_HEADER_SIZE + 4;
+// 		lim = ((uint8_t *)v->lsa) + ntohs(v->lsa->length);
 
-		while (p < lim) {
-			l = (struct router_lsa_link *)p;
+// 		while (p < lim) {
+// 			l = (struct router_lsa_link *)p;
 
-			p += (OSPF_ROUTER_LSA_LINK_SIZE
-			      + (l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE));
+// 			p += (OSPF_ROUTER_LSA_LINK_SIZE
+// 			      + (l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE));
 
-			/* Don't process TI-LFA protected resources */
-			if (l->m[0].type == LSA_LINK_TYPE_STUB
-			    && !ospf_spf_is_protected_resource(area, l, v->lsa)) {
-				ospf_intra_add_stub(rt, l, v, area,
-						    parent_is_root, lsa_pos);	
-			}
+// 			/* Don't process TI-LFA protected resources */
+// 			if (l->m[0].type == LSA_LINK_TYPE_STUB
+// 			    && !ospf_spf_is_protected_resource(area, l, v->lsa)) {
+// 				ospf_intra_add_stub(rt, l, v, area,
+// 						    parent_is_root, lsa_pos);	
+// 			}
 				
-		}
-	}	
-}
+// 		}
+// 	}	
+// }
 
 /* Second stage of SPF calculation. */
 static void ospf_spf_process_stubs(struct ospf_area *area, struct vertex *v,

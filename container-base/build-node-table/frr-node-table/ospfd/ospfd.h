@@ -47,6 +47,13 @@
 /* Default configuration file name for ospfd. */
 #define OSPF_DEFAULT_CONFIG   "ospfd.conf"
 
+/**
+ * @sqsq
+ */
+extern uint32_t orbit_num;
+extern uint32_t sat_per_orbit;
+extern bool use_inclined_orbit;
+
 #define OSPF_NSSA_TRANS_STABLE_DEFAULT		40
 
 #define OSPF_ALLSPFROUTERS              0xe0000005      /* 224.0.0.5 */
@@ -764,5 +771,11 @@ extern int p_spaces_compare_func(const struct p_space *a,
 				 const struct p_space *b);
 extern int q_spaces_compare_func(const struct q_space *a,
 				 const struct q_space *b);
+
+/**
+ * @sqsq
+ */
+extern uint8_t sqsq_get_orbit_id(struct in_addr router_id);
+extern uint8_t sqsq_get_inner_orbit_id(struct in_addr router_id);
 
 #endif /* _ZEBRA_OSPFD_H */

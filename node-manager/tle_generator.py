@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Tuple
 from const_var import TIME_BASE, INCLINE_DEGREE, ORBIT_NUM, SAT_PER_ORBIT
+from tools import use_inclined_orbit
 
 def get_year_day(now_time: datetime) -> Tuple[int, float]:
     year = now_time.year
@@ -31,10 +32,6 @@ def area2line(y: int, x: int, x_limit: int, y_limit: int) -> int:
     y_true = (y + y_limit) % y_limit
     x_true = (x + x_limit) % x_limit
     return y_true * x_limit + x_true
-
-
-def use_inclined_orbit() -> bool:
-    return INCLINE_DEGREE <= 88
 
 
 def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, delta, period) -> Tuple[dict, dict]:

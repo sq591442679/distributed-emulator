@@ -226,6 +226,88 @@ DEFUN_NOSH (router_ospf,
 	return ret;
 }
 
+/**
+ * @sqsq
+ */
+DEFUN (
+	ospf_orbit_num,
+	ospf_orbit_num_cmd,
+	"ospf orbit_num (0-65535)",
+	"OSPF specific commands\n"
+	"number of orbit in the constellation\n"
+	"in integer format"
+)
+{
+	int idx = 0;
+	uint32_t n = 0;
+
+	// get arguments
+	char *n_str = NULL;
+
+	argv_find(argv, argc, "(0-65535)", &idx);
+	n_str = argv[idx]->arg;
+	n = strtol(n_str, NULL, 10);
+
+	orbit_num = n;
+
+	return CMD_SUCCESS;
+}
+
+
+/**
+ * @sqsq
+ */
+DEFUN (
+	ospf_sat_per_orbit,
+	ospf_sat_per_orbit_cmd,
+	"ospf sat_per_orbit (0-65535)",
+	"OSPF specific commands\n"
+	"number of satellites in one orbit\n"
+	"in integer format"
+)
+{
+	int idx = 0;
+	uint32_t n = 0;
+
+	// get arguments
+	char *n_str = NULL;
+
+	argv_find(argv, argc, "(0-65535)", &idx);
+	n_str = argv[idx]->arg;
+	n = strtol(n_str, NULL, 10);
+
+	sat_per_orbit = n;
+
+	return CMD_SUCCESS;
+}
+
+/**
+ * @sqsq
+ */
+DEFUN (
+	ospf_use_inclined_orbit,
+	ospf_use_inclined_orbit_cmd,
+	"ospf use_inclined_orbit (0-1)",
+	"OSPF specific commands\n"
+	"whether use inclined orbit\n"
+	"1 for inclined orbit, 0 for polar orbit"
+)
+{
+	int idx = 0;
+	uint32_t n = 0;
+
+	// get arguments
+	char *n_str = NULL;
+
+	argv_find(argv, argc, "(0-1)", &idx);
+	n_str = argv[idx]->arg;
+	n = strtol(n_str, NULL, 10);
+
+	use_inclined_orbit = (bool)n;
+
+	return CMD_SUCCESS;
+}
+
 DEFUN (no_router_ospf,
        no_router_ospf_cmd,
        "no router ospf [{(1-65535)|vrf NAME}]",
@@ -3380,6 +3462,14 @@ static int show_ip_ospf_common(struct vty *vty, struct ospf *ospf,
 		}
 	} else
 		vty_out(vty, "\n");
+
+	/**
+	 * @sqsq
+	 */
+	vty_out(vty, "orbit id:%u, inner orbit id:%u, use inclined orbit:%d\n", 
+			sqsq_get_orbit_id(ospf->backbone->router_lsa_self->data->id),
+			sqsq_get_inner_orbit_id(ospf->backbone->router_lsa_self->data->id),
+			use_inclined_orbit);
 
 	return CMD_SUCCESS;
 }
@@ -10838,6 +10928,50 @@ static void show_ip_ospf_route_router(struct vty *vty, struct ospf *ospf,
 		vty_out(vty, "\n");
 }
 
+/**
+ * @sqsq
+ */
+DEFUN (show_ip_ospf_orbit_num,
+		show_ip_ospf_orbit_num_cmd,
+		"show ip ospf orbit_num",
+		SHOW_STR IP_STR
+		"OSPF information\n"
+		"Show number of orbit\n")
+{
+	vty_out(vty, "%u\n", orbit_num);
+	return CMD_SUCCESS;
+}
+
+/**
+ * @sqsq
+ */
+DEFUN (show_ip_ospf_sat_per_orbit,
+		show_ip_ospf_sat_per_orbit_cmd,
+		"show ip ospf sat_per_orbit",
+		SHOW_STR IP_STR
+		"OSPF information\n"
+		"Show number of satellite in one orbit\n")
+{
+	vty_out(vty, "%u\n", sat_per_orbit);
+	return CMD_SUCCESS;
+}
+
+/**
+ * @sqsq
+ */
+DEFUN (show_ip_ospf_orbit_id,
+		show_ip_ospf_orbit_id_cmd,
+		"show ip ospf orbit_id",
+		SHOW_STR IP_STR
+		"OSPF information\n"
+		"Show orbit_id of current satellite (router)\n")
+{
+	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
+	
+	vty_out(vty, "%u\n", sqsq_get_orbit_id(ospf->backbone->router_lsa_self->data->id));
+	return CMD_SUCCESS;
+}
+
 static void show_ip_ospf_route_external(struct vty *vty, struct ospf *ospf,
 					struct route_table *rt,
 					json_object *json)
@@ -12726,6 +12860,13 @@ void ospf_vty_show_init(void)
 
 	/* "show ip ospf summary-address" command */
 	install_element(VIEW_NODE, &show_ip_ospf_external_aggregator_cmd);
+
+	/**
+	 * @sqsq
+	 */
+	install_element(VIEW_NODE, &show_ip_ospf_orbit_num_cmd);
+	install_element(VIEW_NODE, &show_ip_ospf_sat_per_orbit_cmd);
+	install_element(VIEW_NODE, &show_ip_ospf_orbit_id_cmd);
 }
 
 /* Initialization of OSPF interface. */
@@ -12986,6 +13127,13 @@ void ospf_vty_init(void)
 	install_element(OSPF_NODE, &ospf_router_id_cmd);
 	install_element(OSPF_NODE, &ospf_router_id_old_cmd);
 	install_element(OSPF_NODE, &no_ospf_router_id_cmd);
+
+	/**
+	 * @sqsq
+	 */
+	install_element(OSPF_NODE, &ospf_orbit_num_cmd);
+	install_element(OSPF_NODE, &ospf_sat_per_orbit_cmd);
+	install_element(OSPF_NODE, &ospf_use_inclined_orbit_cmd);
 
 	/* "passive-interface" commands. */
 	install_element(OSPF_NODE, &ospf_passive_interface_default_cmd);

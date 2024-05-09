@@ -1,4 +1,4 @@
-from const_var import ORBIT_NUM, SAT_PER_ORBIT
+from const_var import ORBIT_NUM, SAT_PER_ORBIT, INCLINE_DEGREE
 import os
 
 def ip_to_subnet(ip: str, prefix_len: int) -> str:
@@ -48,6 +48,10 @@ def satellite_id_tuple_to_str(id: tuple) -> str:
 
 def satellite_str_to_id_tuple(str: str) -> tuple:
     return (int(str.split('_')[1]), int(str.split('_')[2]))
+
+
+def use_inclined_orbit() -> bool:
+    return INCLINE_DEGREE <= 88
 
 
 if __name__ == "__main__":
