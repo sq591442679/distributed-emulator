@@ -149,6 +149,7 @@ log file /var/log/frr/sqsq_ospfd.log
 log record-priority
 
 router ospf
+    timers lsa min-arrival 0
     {lofi_n_command}
     {warmup_command}
     {orbit_num_command}

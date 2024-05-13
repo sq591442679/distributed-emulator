@@ -775,7 +775,13 @@ extern int q_spaces_compare_func(const struct q_space *a,
 /**
  * @sqsq
  */
-extern uint8_t sqsq_get_orbit_id(struct in_addr router_id);
-extern uint8_t sqsq_get_inner_orbit_id(struct in_addr router_id);
+extern in_addr_t set_ip_addr(uint8_t a, uint8_t b, uint8_t c, uint8_t d);
+extern uint8_t get_byte_of_ip(struct in_addr ip_struct, int pos);
+extern uint8_t get_orbit_id(struct in_addr router_id);
+extern uint8_t get_inner_orbit_id(struct in_addr router_id);
+extern int rescale(int x, int X);
+extern struct in_addr get_neighbor_intf_ip(struct ospf_lsa *current_lsa, 
+											struct router_lsa_link *l, 
+											struct ospf_lsa *neighbor_lsa);
 
 #endif /* _ZEBRA_OSPFD_H */

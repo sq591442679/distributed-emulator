@@ -203,7 +203,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         image_name = "elb:latest"
         enable_load_awareness = False
     elif lofi_n == -3:
-        image_name = "node_table:latest"
+        image_name = "node_rule:latest"
         enable_load_awareness = False
     # ---------------------------------
 

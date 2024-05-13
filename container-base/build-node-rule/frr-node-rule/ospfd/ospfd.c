@@ -2332,14 +2332,43 @@ const char *ospf_get_name(const struct ospf *ospf)
 
 /**
  * @author sqsq
+ * @brief build an ip addr
+ * @note return an ip addr in network order
+ * @example set_ip_addr(192, 168, 31, 25) returns 192.168.31.25 in network order
+ */
+in_addr_t set_ip_addr(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
+{
+	return ((in_addr_t)d << 24) | ((in_addr_t)c << 16) | ((in_addr_t)b << 8) | ((in_addr_t)a);
+}
+
+/**
+ * @author sqsq
+ * @brief
+ * get the corresponding part of an ip address in dotted decimal notation
+ * @note ip_struct is in network order, pos can be 1, 2, 3, 4
+ * @example 
+ * for 255.253.1.10 (network order, host order is 10.1.253.255),  
+ * get_byte_of_ip(3) is 253
+ */
+uint8_t get_byte_of_ip(struct in_addr ip_struct, int pos)
+{
+	in_addr_t ip = ntohl(ip_struct.s_addr);
+	while (pos > 1) {
+		pos--;
+		ip >>= 8;
+	}
+	return (uint8_t)(ip & 255);
+}
+
+/**
+ * @author sqsq
  * @brief
  * get the orbit id of a satellite id, 
  * note that router_id is in network order
  */
-uint8_t sqsq_get_orbit_id(struct in_addr router_id)
+uint8_t get_orbit_id(struct in_addr router_id)
 {
-	in_addr_t satellite_id = ntohl(router_id.s_addr);
-	return (uint8_t)(satellite_id >> 8 & 255);
+	return get_byte_of_ip(router_id, 2);
 }
 
 /**
@@ -2348,8 +2377,56 @@ uint8_t sqsq_get_orbit_id(struct in_addr router_id)
  * get the inner-orbit id of a satellite id, 
  * note that router_id is in network order
  */
-uint8_t sqsq_get_inner_orbit_id(struct in_addr router_id)
+uint8_t get_inner_orbit_id(struct in_addr router_id)
 {
-	in_addr_t satellite_id = ntohl(router_id.s_addr);
-	return (uint8_t)(satellite_id & 255);
+	return get_byte_of_ip(router_id, 1);
+}
+
+/**
+ * @author sqsq
+ * @brief ensure x is in range of [0, X]
+ * @example rescale(6, 5) returns 1
+ */
+int rescale(int x, int X)
+{
+	if (x < 0) {
+		return x % X + X;
+	}
+	else {
+		return x % X;
+	}
+}
+
+/**
+ * @author sqsq
+ * @brief 
+ * for link l of current_lsa, find the corresponding nexthop ip address of netghbor_lsa
+ */
+struct in_addr get_neighbor_intf_ip(struct ospf_lsa *current_lsa, struct router_lsa_link *l, struct ospf_lsa *neighbor_lsa)
+{
+	/**
+	 * for a router lsa point-to-point link,
+	 * its link id is neighbor router id,
+	 * and link data is ip interface address of the associated router interface
+	 */
+	struct in_addr ret = {.s_addr = INADDR_ANY};
+	struct lsa_header *neighbor_lsa_header = neighbor_lsa->data;
+	uint8_t *p = (uint8_t *)neighbor_lsa_header + OSPF_LSA_HEADER_SIZE + 4; // point to the beginning of the first link
+	uint8_t *lim = (uint8_t *)neighbor_lsa_header + ntohs(neighbor_lsa_header->length);
+	int max_match_length = 0;
+	
+	while (p < lim) // iterate through all links of neighbor_lsa_header
+	{
+		struct router_lsa_link *nei_l = (struct router_lsa_link *)p;
+		int link_type = nei_l->m[0].type;
+		p += (OSPF_ROUTER_LSA_LINK_SIZE + nei_l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE);
+
+		if (link_type == LSA_LINK_TYPE_POINTOPOINT) {
+			if (nei_l->link_id.s_addr == current_lsa->data->id.s_addr) {
+				ret = nei_l->link_data;
+			}
+		}
+	}
+
+	return ret;
 }

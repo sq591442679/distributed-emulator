@@ -72,6 +72,20 @@ typedef enum {
 	SPF_FLAG_GR_FINISH,
 } ospf_spf_reason_t;
 
+/**
+ * @author sqsq
+ * @brief 
+ * There can be multiple directions from satellite A to satellite B. 
+ * @example
+ * satellite (0, 4) to (1, 5) is both ORBIT_ID_INC_DIRECTION and INNER_ORBIT_ID_INC_DIRECTION
+ */
+typedef enum {
+	ORBIT_ID_INC_DIRECTION = 1,
+	ORBIT_ID_DEC_DIRECTION = (1 << 1),
+	INNER_ORBIT_ID_INC_DIRECTION = (1 << 2),
+	INNER_ORBIT_ID_DEC_DIRECTION = (1 << 3),
+} ospf_spf_direction;
+
 extern void ospf_spf_calculate_schedule(struct ospf *, ospf_spf_reason_t);
 extern void ospf_spf_calculate(struct ospf_area *area,
 			       struct ospf_lsa *root_lsa,
@@ -104,4 +118,7 @@ extern int vertex_parent_cmp(void *aa, void *bb);
 extern void ospf_spf_print(struct vty *vty, struct vertex *v, int i);
 extern void ospf_restart_spf(struct ospf *ospf);
 /* void ospf_spf_calculate_timer_add (); */
+
+/** @sqsq */
+extern int count_in_path_list(struct list* list, struct in_addr ip);
 #endif /* _QUAGGA_OSPF_SPF_H */

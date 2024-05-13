@@ -3466,10 +3466,11 @@ static int show_ip_ospf_common(struct vty *vty, struct ospf *ospf,
 	/**
 	 * @sqsq
 	 */
-	vty_out(vty, "orbit id:%u, inner orbit id:%u, use inclined orbit:%d\n", 
-			sqsq_get_orbit_id(ospf->backbone->router_lsa_self->data->id),
-			sqsq_get_inner_orbit_id(ospf->backbone->router_lsa_self->data->id),
-			use_inclined_orbit);
+	vty_out(vty, "orbit id:%u, inner orbit id:%u, use inclined orbit:%d, router id:%pI4\n", 
+			get_orbit_id(ospf->backbone->router_lsa_self->data->id),
+			get_inner_orbit_id(ospf->backbone->router_lsa_self->data->id),
+			use_inclined_orbit,
+			&(ospf->router_id.s_addr));
 
 	return CMD_SUCCESS;
 }
@@ -10956,22 +10957,6 @@ DEFUN (show_ip_ospf_sat_per_orbit,
 	return CMD_SUCCESS;
 }
 
-/**
- * @sqsq
- */
-DEFUN (show_ip_ospf_orbit_id,
-		show_ip_ospf_orbit_id_cmd,
-		"show ip ospf orbit_id",
-		SHOW_STR IP_STR
-		"OSPF information\n"
-		"Show orbit_id of current satellite (router)\n")
-{
-	VTY_DECLVAR_INSTANCE_CONTEXT(ospf, ospf);
-	
-	vty_out(vty, "%u\n", sqsq_get_orbit_id(ospf->backbone->router_lsa_self->data->id));
-	return CMD_SUCCESS;
-}
-
 static void show_ip_ospf_route_external(struct vty *vty, struct ospf *ospf,
 					struct route_table *rt,
 					json_object *json)
@@ -12866,7 +12851,6 @@ void ospf_vty_show_init(void)
 	 */
 	install_element(VIEW_NODE, &show_ip_ospf_orbit_num_cmd);
 	install_element(VIEW_NODE, &show_ip_ospf_sat_per_orbit_cmd);
-	install_element(VIEW_NODE, &show_ip_ospf_orbit_id_cmd);
 }
 
 /* Initialization of OSPF interface. */

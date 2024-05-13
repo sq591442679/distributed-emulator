@@ -11,8 +11,8 @@ RUN groupadd -r -g 92 frr \
         --gecos "FRR suite" --shell /sbin/nologin frr \ 
     && usermod -a -G frrvty frr
 
-# install frr-lofi 
-COPY frr-node-table /frr
+# install frr 
+COPY frr-node-rule /frr
 RUN chmod -R 777 /frr \
     && cd /frr \
     && ./bootstrap.sh \
