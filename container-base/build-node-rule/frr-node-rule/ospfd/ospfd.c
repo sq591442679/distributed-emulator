@@ -81,7 +81,7 @@ extern struct zclient *zclient;
  */
 uint32_t orbit_num = 10;
 uint32_t sat_per_orbit = 20;
-bool use_inclined_orbit = false;
+bool use_walker_delta = false;
 
 static void ospf_remove_vls_through_area(struct ospf *, struct ospf_area *);
 static void ospf_network_free(struct ospf *, struct ospf_network *);
@@ -2413,7 +2413,6 @@ struct in_addr get_neighbor_intf_ip(struct ospf_lsa *current_lsa, struct router_
 	struct lsa_header *neighbor_lsa_header = neighbor_lsa->data;
 	uint8_t *p = (uint8_t *)neighbor_lsa_header + OSPF_LSA_HEADER_SIZE + 4; // point to the beginning of the first link
 	uint8_t *lim = (uint8_t *)neighbor_lsa_header + ntohs(neighbor_lsa_header->length);
-	int max_match_length = 0;
 	
 	while (p < lim) // iterate through all links of neighbor_lsa_header
 	{

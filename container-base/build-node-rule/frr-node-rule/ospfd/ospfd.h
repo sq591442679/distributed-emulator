@@ -52,7 +52,7 @@
  */
 extern uint32_t orbit_num;
 extern uint32_t sat_per_orbit;
-extern bool use_inclined_orbit;
+extern bool use_walker_delta;
 
 #define OSPF_NSSA_TRANS_STABLE_DEFAULT		40
 

@@ -287,9 +287,9 @@ DEFUN (
 DEFUN (
 	ospf_use_inclined_orbit,
 	ospf_use_inclined_orbit_cmd,
-	"ospf use_inclined_orbit (0-1)",
+	"ospf use_walker_delta (0-1)",
 	"OSPF specific commands\n"
-	"whether use inclined orbit\n"
+	"whether use walker delta\n"
 	"1 for inclined orbit, 0 for polar orbit"
 )
 {
@@ -303,7 +303,7 @@ DEFUN (
 	n_str = argv[idx]->arg;
 	n = strtol(n_str, NULL, 10);
 
-	use_inclined_orbit = (bool)n;
+	use_walker_delta = (bool)n;
 
 	return CMD_SUCCESS;
 }
@@ -3469,7 +3469,7 @@ static int show_ip_ospf_common(struct vty *vty, struct ospf *ospf,
 	vty_out(vty, "orbit id:%u, inner orbit id:%u, use inclined orbit:%d, router id:%pI4\n", 
 			get_orbit_id(ospf->backbone->router_lsa_self->data->id),
 			get_inner_orbit_id(ospf->backbone->router_lsa_self->data->id),
-			use_inclined_orbit,
+			use_walker_delta,
 			&(ospf->router_id.s_addr));
 
 	return CMD_SUCCESS;

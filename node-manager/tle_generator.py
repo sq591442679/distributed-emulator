@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Tuple
 from const_var import TIME_BASE, INCLINE_DEGREE, ORBIT_NUM, SAT_PER_ORBIT
-from tools import use_inclined_orbit
+from tools import use_walker_delta
 
 def get_year_day(now_time: datetime) -> Tuple[int, float]:
     year = now_time.year
@@ -53,7 +53,7 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
             start_latitude = latitude
         else:
             start_latitude = latitude + delta
-        if use_inclined_orbit():
+        if use_walker_delta():
             start_longitude = longitude + 360 * i / orbit_num
         else:
             start_longitude = longitude + 180 * i / orbit_num
@@ -92,7 +92,7 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
             array = [index_2d[y][(x + 1) % orbit_satellite_num]]
         else:
             array = []
-        if not use_inclined_orbit():
+        if not use_walker_delta():
             # if not the last orbit, connect to the next orbit
             # only for polar orbit constellation
             if y < orbit_num - 1:

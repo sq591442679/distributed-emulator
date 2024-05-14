@@ -121,4 +121,9 @@ extern void ospf_restart_spf(struct ospf *ospf);
 
 /** @sqsq */
 extern int count_in_path_list(struct list* list, struct in_addr ip);
+extern void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
+			struct route_table *new_table,
+			struct route_table *all_rtrs,
+			struct route_table *new_rtrs, bool is_dry_run,
+			bool is_root_node);
 #endif /* _QUAGGA_OSPF_SPF_H */

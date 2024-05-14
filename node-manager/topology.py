@@ -132,7 +132,7 @@ def write_into_frr_conf(host_name, network_list, prefix_list, lofi_n: int):
             warmup_command = ""
             orbit_num_command = f"ospf orbit_num {ORBIT_NUM}"
             sat_per_orbit_command = f"ospf sat_per_orbit {SAT_PER_ORBIT}"
-            use_inclined_orbit_command = f"ospf use_inclined_orbit {int(use_inclined_orbit())}"
+            use_inclined_orbit_command = f"ospf use_walker_delta {int(use_walker_delta())}"
         else:               # we use lofi
             lofi_n_command = f"ospf lofi {lofi_n}"
             warmup_command = f"ospf warmup_period {WARMUP_PERIOD}"
