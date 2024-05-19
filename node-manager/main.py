@@ -120,9 +120,7 @@ def start_simulation(docker_client: DockerClient, link_failure_rate: float, send
     process_list = []
     simulation_start_time = time.time()
     generate_link_failure_process = Process(target=generate_link_failure, 
-                                            args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, random_seed))
-    # generate_link_failure_process = Process(target=generate_link_failure, 
-    #                                         args=(docker_client, link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, test))
+                                            args=(link_failure_rate, RECEIVER_NODE_ID, simulation_start_time, random_seed))
     generate_link_failure_process.start()	# start link failure generation
 
     time.sleep(10)							# start udp transmitting
@@ -205,6 +203,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     elif lofi_n == -3:
         image_name = "node_rule:latest"
         enable_load_awareness = False
+    elif lofi_n >= 0:
+        image_name = "lofi:latest"
     # ---------------------------------
 
     # create position updater
@@ -263,7 +263,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # -------------------------------
     # install kernel modules part 2
-    if lofi_n >= 0 or lofi_n == -2:
+    if lofi_n >= 0 or lofi_n == -2 or lofi_n == -3:
         install_kernel_module("./sqsq-kernel-modules/install_multipath.sh")
 
     receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
@@ -283,7 +283,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
             position_datas[node_id_str][LONGITUDE_KEY], \
             position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
             # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
-        update_network_delay(docker_client, position_datas, connect_order_map)
+        update_network_delay(position_datas, connect_order_map)
     time.sleep(WARMUP_PERIOD)
     # -------------------------------------------------------------------
     # -------------------------------------------------------------------
@@ -375,10 +375,10 @@ if __name__ == "__main__":
     # lofi_n = -3 means using node table
     enable_load_awareness = False
     lofi_delta = 0.05
-    link_failure_rate_list = [0.05]
+    link_failure_rate_list = [0]
     lofi_n_list = [-3]
     test_nums = [1]
-    random_seeds = [42]
+    random_seeds = [451]
     # lofi_n_list = [4, 5, 6, -1]
     # test_nums = [10, 10, 10, 10]
     # random_seeds = [42 + i for i in range(RANDOM_SEED_NUM)]

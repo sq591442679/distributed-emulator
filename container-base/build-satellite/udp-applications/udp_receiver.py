@@ -65,7 +65,7 @@ if __name__ == '__main__':
 	else:
 		avg_delay /= receive_cnt
 	drop_rate = (1 - receive_cnt / expected_receive_cnt) * 100
-	result_dict_list.append({"drop rate": f"{drop_rate: .3f}%", "delay": f"{avg_delay: .3f}"})
+	result_dict_list.append({"drop rate": f"{drop_rate:.3f}%", "delay": f"{avg_delay:.3f}"})
 	
 	print(json.dumps(result_dict_list, indent=2))
 

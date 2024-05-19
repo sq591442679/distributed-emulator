@@ -11,7 +11,6 @@ HOST_PREFIX_LEN = 16
 
 # BROAD_CAST_SEND_INTERVAL
 BROADCAST_SEND_INTERVAL = 3
-USE_STATIC_POSITION = True
 
 WD = os.getcwd()
 # VOLUME1
@@ -31,8 +30,10 @@ QUEUE_CAPACITY = 10000    # unit: pkt
 # CONSTELLATION PARAMETERS
 ORBIT_NUM = 6
 SAT_PER_ORBIT = 11
-USE_WALKER_DELTA = True		# if True, then no seam
-INCLINE_DEGREE: float = 60
+USE_WALKER_DELTA = False		# if True, then no seam
+INCLINE_DEGREE: float = 89	
+# note that in particular, when USE_WALKER_DELTA is False, INCLINE_DEGREE is usually near 90
+USE_STATIC_POSITION = True
 
 # SUBMISSION SIZE
 SUBMISSION_SIZE_FOR_NETWORK_OBJECT_CREATION = 5
@@ -42,12 +43,12 @@ SUBMISSION_SIZE_FOR_DELETE_CONTAINER = 3
 SUBMISSION_SIZE_FOR_DELETE_NETWORK = 4
 SUBMISSION_SIZE_FOR_UPDATE_NETWORK_DELAY = 1
 
-# LINK FAILURE  added by sqsq
+# LINK FAILURE
 # NOTE: about the SIMULATION_DURATION, it should consider OSPF_LSA_MAXAGE and arp aging time
 LINK_FAILURE_DURATION = 5       # unit: s
-SIMULATION_DURATION = 10      # unit: s, better do not exceed OSPF_LSA_MAXAGE (3600)
+SIMULATION_DURATION = 100      # unit: s, better do not exceed OSPF_LSA_MAXAGE (3600)
 
-# TRANSMISSION PAIR added by sqsq
+# TRANSMISSION PAIR
 SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(0, 1)]
 RECEIVER_NODE_ID = (5, 5)
 # SENDER_NODE_ID_LIST: List[Tuple[int, int]] = []
@@ -56,9 +57,8 @@ RECEIVER_NODE_ID = (5, 5)
 # used for tle generation and position update
 TIME_BASE = datetime(2024, 1, 1)
 
-TEST_NUM = 1
 UDP_SEND_INTERVAL = 0.01
-DRY_RUN = True
+DRY_RUN = False
 WARMUP_PERIOD = 30      # unit: s
 RANDOM_SEED_NUM = 5     # number of tests with different random seeds
 

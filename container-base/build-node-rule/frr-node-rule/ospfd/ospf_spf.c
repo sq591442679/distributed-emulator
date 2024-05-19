@@ -1723,7 +1723,10 @@ void ospf_spf_cleanup(struct vertex *spf, struct list *vertex_list)
  * Has constraints for constellation topology. 
  * I.e., the seam (if exists) must between orbit 0 and orbit M, 
  * and neighborging satellites' router id must have only 1 digital difference. 
- * For example, (2, 3) must connects to (3, 3) and (1, 3), not (3, 4) or any else
+ * For example, (2, 3) must connects to (3, 3) and (1, 3), not (3, 4) or any else.
+ * @note 
+ * Only returns theoretical directions, 
+ * do not consider wthether corresponding output interface exists.
  */
 uint32_t get_direction(struct in_addr from_satellite_id, struct in_addr to_satellite_id)
 {
@@ -1844,16 +1847,41 @@ void set_output_interface_and_nexthop(struct ospf_area *area, struct ospf_lsa *r
 			int direction_pos;
 			for (direction_pos = 0; direction_pos < 4; ++direction_pos) {
 				uint32_t direction = directions[direction_pos];
-				if ((direction | integrated_direction) != 0) {
+				if ((direction & integrated_direction) != 0) {
 					output_interfaces[direction] = oi;
 					output_nexthops[direction] = get_neighbor_intf_ip(root_lsa, l, neighbor_lsa);
-					zlog_debug("%s    current id:%pI4  direction:%u  ifindex:%d  nexthop:%pI4\n", 
+					zlog_debug("%s    current id:%pI4  direction:%u  ifindex:%d  nexthop:%pI4", 
 																				__func__, 
 																				&current_router_id.s_addr,
 																				direction, 
 																				oi->ifp->ifindex, 
 																				&output_nexthops[direction].s_addr);	
 				}
+			}
+		}
+	}
+}
+
+/**
+ * @author sqsq
+ * @brief set output path of param or, based on integrated_direction
+ */
+void set_path(struct ospf_route *or, uint32_t integrated_direction, struct ospf_interface **output_interfaces, struct in_addr *output_nexthops, struct in_addr current_router_id)
+{
+	uint32_t directions[4] = {ORBIT_ID_INC_DIRECTION, 
+							ORBIT_ID_DEC_DIRECTION, 
+							INNER_ORBIT_ID_INC_DIRECTION, 
+							INNER_ORBIT_ID_DEC_DIRECTION};
+	int direction_pos = 0;
+	for (direction_pos = 0; direction_pos < 4; ++direction_pos) {
+		uint32_t direction = directions[direction_pos];
+		if ((direction & integrated_direction) != 0 && output_interfaces[direction] != NULL) {
+			if (count_in_path_list(or->paths, output_nexthops[direction]) == 0) {
+				struct ospf_path *path = ospf_path_new();
+				path->nexthop = output_nexthops[direction];
+				path->adv_router = current_router_id;
+				path->ifindex = output_interfaces[direction]->ifp->ifindex;
+				listnode_add(or->paths, path);
 			}
 		}
 	}
@@ -1886,16 +1914,18 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 			struct ospf_lsa *dest_lsa = ospf_lsa_lookup(area->ospf, area, OSPF_ROUTER_LSA, 
 														dest_router_id, dest_router_id);
 			uint32_t integrated_direction = get_direction(current_router_id, dest_router_id);
-			uint32_t directions[4] = {ORBIT_ID_INC_DIRECTION, 
-										ORBIT_ID_DEC_DIRECTION, 
-										INNER_ORBIT_ID_INC_DIRECTION, 
-										INNER_ORBIT_ID_DEC_DIRECTION};
 			struct lsa_header *dest_lsa_header;
 			uint8_t *p, *lim;
 
 			if (dest_lsa == NULL || dest_router_id.s_addr == current_router_id.s_addr) {	// dest satellite exists
 				continue;
 			}
+
+			// zlog_debug("%s    current id: %pI4  dest id:%pI4  direction: %u\n", 
+			// 		__func__,
+			// 		&current_router_id,
+			// 		&dest_router_id,
+			// 		integrated_direction);
 
 			dest_lsa_header = dest_lsa->data;
 			p = (uint8_t *)dest_lsa_header + OSPF_LSA_HEADER_SIZE + 4;
@@ -1909,7 +1939,7 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 				struct router_lsa_link *l = (struct router_lsa_link *)p;
 				int link_type = l->m[0].type;
 				p += (OSPF_ROUTER_LSA_LINK_SIZE + l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE);
-				if (link_type == LSA_LINK_TYPE_STUB) {
+				if (link_type == LSA_LINK_TYPE_STUB) { 
 					struct prefix_ipv4 p;
 					struct route_node *rn;
 
@@ -1918,29 +1948,17 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 					p.prefixlen = ip_masklen(l->link_data);
 					apply_mask_ipv4(&p);
 
+					zlog_debug("%s    dest id:%pI4, dest prefix:%pI4", __func__, &dest_lsa_header->id, &p.prefix);
+
 					rn = route_node_get(new_table, (struct prefix *)&p);
-					if (rn->info != NULL) {	// there is already a nexthop, using ECMP
-						struct ospf_route *cur_or;
-						int direction_pos;
+					if (rn->info != NULL) {	// there is already a routing entry, using ECMP
+						struct ospf_route *cur_or = rn->info;
 						
 						// route_unlock_node(rn);
-						cur_or = rn->info;
 
-						for (direction_pos = 0; direction_pos < 4; ++direction_pos) {
-							uint32_t direction = directions[direction_pos];
-							if ((direction | integrated_direction) != 0) {
-								if (count_in_path_list(cur_or->paths, output_nexthops[direction]) == 0) {
-									struct ospf_path *path = ospf_path_new();
-									path->nexthop = output_nexthops[direction];
-									path->adv_router = current_router_id;
-									path->ifindex = output_interfaces[direction]->ifp->ifindex;
-									listnode_add(cur_or->paths, path);
-								}
-							}
-						}
+						set_path(cur_or, integrated_direction, output_interfaces, output_nexthops, current_router_id);
 					}
 					else {	// there is no nexthop, then allocate one
-						int direction_pos;
 						struct ospf_route *or = ospf_route_new();
 						or->id = dest_router_id;
 						or->u.std.area_id = area->area_id;
@@ -1948,21 +1966,10 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 						or->path_type = OSPF_PATH_INTRA_AREA;
 						or->cost = 100;
 						or->type = OSPF_DESTINATION_NETWORK;
-						or->u.std.origin = (struct lsa_header *)dest_lsa_header;	
+						or->u.std.origin = dest_lsa_header;	
 						rn->info = or;			
 
-						for (direction_pos = 0; direction_pos < 4; ++direction_pos) {
-							uint32_t direction = directions[direction_pos];
-							if ((direction | integrated_direction) != 0) {
-								if (count_in_path_list(or->paths, output_nexthops[direction]) == 0) {
-									struct ospf_path *path = ospf_path_new();
-									path->nexthop = output_nexthops[direction];
-									path->adv_router = current_router_id;
-									path->ifindex = output_interfaces[direction]->ifp->ifindex;
-									listnode_add(or->paths, path);
-								}
-							}
-						}		
+						set_path(or, integrated_direction, output_interfaces, output_nexthops, current_router_id);	
 					}
 				}
 			}

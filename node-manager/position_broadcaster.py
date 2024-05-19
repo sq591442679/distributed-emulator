@@ -88,7 +88,7 @@ def position_broadcaster(docker_client, stop_process_state, satellite_num, posit
                     position_datas[node_id_str][LATITUDE_KEY] = res[index_base]
                     position_datas[node_id_str][LONGITUDE_KEY] = res[index_base + 1]
                     position_datas[node_id_str][HEIGHT_KEY] = res[index_base + 2]
-                update_network_delay(docker_client, position_datas, topo)
+                update_network_delay(position_datas, topo)
                 ground_connections = ground_select(satellites, position_datas, ground_stations)
                 broadcast_data = {
                     "position_datas": position_datas,

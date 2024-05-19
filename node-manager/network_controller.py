@@ -254,9 +254,11 @@ class Network:
             # logger.info(f"{container_name}.{inner_eth_name}: {command}")
             # ret = self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
 
-    def update_delay_param(self, docker_client: DockerClient, set_time: float):
+    def update_delay_param(self, set_time: float):
+        old_delay = self.delay
         self.delay = set_time
-        self.update_link_cost(self.docker_client, round(self.delay * 10))
+        if abs(self.delay - old_delay) >= 1:
+            self.update_link_cost(round(self.delay * 10))
         if not self.is_down:
             self.update_info()
 
@@ -274,12 +276,12 @@ class Network:
     change link cost in frr
     need frr to be started first
     """
-    def update_link_cost(self, docker_client: DockerClient, cost: int):
+    def update_link_cost(self, cost: int):
         for container_name, eth_name in self.inner_eth_dict.items():
             command = ['sh', '-c', 
                        f"/change_ospf_cost.sh {eth_name} {cost}"]
             # logger.info(f'{container_name}: {command}')
-            ret = docker_client.exec_cmd(container_name, command, detach=True)
+            ret = self.docker_client.exec_cmd(container_name, command, detach=True)
             # if ret[0] != 0:
             #     logger.error(ret[1].decode().strip())
 
@@ -302,7 +304,9 @@ class Network:
 
     # added by sqsq
     # set the next link down moment
-    def set_down_moment(self, current_sim_time:float,  random_instance: random.Random, poisson_lambda: float):
+    def set_down_moment(self, current_sim_time:float, 
+                        random_instance: random.Random, 
+                        poisson_lambda: float):
         sim_time_interval = random_instance.expovariate(poisson_lambda)
         self.down_moment = current_sim_time + sim_time_interval 
 
@@ -312,6 +316,11 @@ class Network:
         self.is_down = True
 
         for container_name, eth_name in self.inner_eth_dict.items():
+            # self.docker_client.exec_cmd(container_name, 
+            #                             f"ifconfig {eth_name} down",
+            #                             detach=True)
+            # current_sim_time = time.time() - start_time
+            # self.print_link_event(current_sim_time, "down")
             satellite_id = satellite_str_to_id_tuple(container_name)
             container_pid = satellite_map[satellite_id].container_pid
             netns_path = f'/proc/{container_pid}/ns/net'
@@ -330,6 +339,11 @@ class Network:
         self.set_down_moment(current_sim_time, random_instance, poisson_lambda)
 
         for container_name, eth_name in self.inner_eth_dict.items():
+            # self.docker_client.exec_cmd(container_name, 
+            #                             f"ifconfig {eth_name} up",
+            #                             detach=True)
+            # current_sim_time = time.time() - start_time
+            # self.print_link_event(current_sim_time, "up")
             satellite_id = satellite_str_to_id_tuple(container_name)
             container_pid = satellite_map[satellite_id].container_pid
             netns_path = f'/proc/{container_pid}/ns/net'
@@ -341,7 +355,7 @@ class Network:
                 ns.link('set', index=idx, state='up')
 
 
-def generate_link_failure(docker_client: DockerClient, link_failure_rate: float, receiver_node_id: tuple, 
+def generate_link_failure(link_failure_rate: float, receiver_node_id: tuple, 
                           simulation_start_time: float, seed: int = None):
     """
     added by sqsq
@@ -399,7 +413,7 @@ def generate_link_failure(docker_client: DockerClient, link_failure_rate: float,
             current_sim_time = time.time() - simulation_start_time
 
 
-def update_network_delay(docker_client: DockerClient, position_data: dict, topo: dict):
+def update_network_delay(position_data: dict, topo: dict):
     for start_node_id in topo.keys():
         conn_array = topo[start_node_id]
         for target_node_id in conn_array:
@@ -409,7 +423,7 @@ def update_network_delay(docker_client: DockerClient, position_data: dict, topo:
             start_container_name = satellite_map[start_node_id].container_name
             target_container_name = satellite_map[target_node_id].container_name
             net_object: Network = network_dict[get_network_key(start_container_name, target_container_name)]
-            net_object.update_delay_param(docker_client, delay)
+            net_object.update_delay_param(delay)
 
 
 if __name__ == '__main__':
