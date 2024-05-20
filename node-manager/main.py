@@ -375,7 +375,7 @@ if __name__ == "__main__":
     # lofi_n = -3 means using node table
     enable_load_awareness = False
     lofi_delta = 0.05
-    link_failure_rate_list = [0]
+    link_failure_rate_list = [0.05]
     lofi_n_list = [-3]
     test_nums = [1]
     random_seeds = [451]

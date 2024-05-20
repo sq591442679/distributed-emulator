@@ -378,6 +378,9 @@ def generate_link_failure(link_failure_rate: float, receiver_node_id: tuple,
     if seed is not None:
         random.seed(None)
 
+    if abs(link_failure_rate) < 1e-8:   # handle when link_failure_rate is 0
+        return
+
     poisson_lambda = link_failure_rate / (LINK_FAILURE_DURATION * (1 - link_failure_rate))
 
 
