@@ -2133,8 +2133,6 @@ void ospf_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &time_info);
 	sprintf(time_str + strlen(time_str), ".%ld", ts.tv_nsec);
 	zlog_debug("%s    %s, finished spf first stage calculate", __func__, time_str);
-	ospf_spf_dump(area->spf, 0);
-	ospf_route_table_dump(new_table);
 
 
 	if (IS_DEBUG_OSPF_EVENT) {

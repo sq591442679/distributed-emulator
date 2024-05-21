@@ -11,11 +11,9 @@ RUN groupadd -r -g 92 frr \
         --gecos "FRR suite" --shell /sbin/nologin frr \ 
     && usermod -a -G frrvty frr
 
-# install frr-lofi 
-COPY frr-frr-8.5.2.tar.gz /
-RUN tar -xvf frr-frr-8.5.2.tar.gz \
-    && mv /frr-frr-8.5.2 /frr \ 
-    && chmod -R 777 /frr \
+# install frr
+COPY frr-frr-8.5.2 /frr
+RUN chmod -R 777 /frr \
     && cd /frr \
     && ./bootstrap.sh \
     && ./configure \
