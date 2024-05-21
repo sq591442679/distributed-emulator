@@ -1910,38 +1910,6 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	struct in_addr output_nexthops[10] = {};
 	// output ip address of corresponding output_interface
 
-	// struct bfs_item *item1 = malloc(sizeof(struct bfs_item)), *top;
-	// struct dict_item *item2 = malloc(sizeof(struct dict_item)), *find_item;
-	// struct dict_item searchfor1 = {.addr = {.s_addr = inet_addr("10.2.2.3")}};
-	// struct dict_item searchfor2 = {.addr = {.s_addr = inet_addr("10.1.2.3")}};
-	// item1->addr.s_addr = inet_addr("192.168.1.1");
-	// item1->cost = 100;
-	// bfs_queue_init(&queue_head);
-	// bfs_queue_add_tail(&queue_head, item1);
-	// top = bfs_queue_pop(&queue_head);
-	// zlog_debug("%s    addr:%pI4, cost:%u", __func__, &top->addr, top->cost);
-	// free(top);
-	// bfs_queue_fini(&queue_head);
-
-	// item2->addr.s_addr = inet_addr("10.1.2.3");
-	// item2->cost = 1024;
-	// dst_dict_add(&dict_head, item2);
-	// find_item = dst_dict_find(&dict_head, &searchfor1);
-	// if (find_item == NULL) {
-	// 	zlog_debug("%s    find null", __func__);
-	// }
-	// else {
-	// 	zlog_debug("%s    find addr %pI4", __func__, &find_item->addr);
-	// }
-	// find_item = dst_dict_find(&dict_head, &searchfor2);
-	// if (find_item == NULL) {
-	// 	zlog_debug("%s    find null", __func__);
-	// }
-	// else {
-	// 	zlog_debug("%s    find addr %pI4", __func__, &find_item->addr);
-	// }
-
-
 	set_output_interface_and_nexthop(area, root_lsa, output_interfaces, output_nexthops);
 
 	for (dest_orbit_id = 0; dest_orbit_id < orbit_num; ++dest_orbit_id) {
