@@ -59,6 +59,33 @@ struct vertex_parent {
 	int backlink; /* index back to parent for router-lsa's */
 };
 
+/**
+ * @author sqsq
+ */
+PREDECL_LIST(bfs_queue);
+struct bfs_item {
+	struct in_addr addr;
+	uint32_t cost;
+	struct bfs_queue_item queue_item;
+};
+struct bfs_queue_head queue_head;
+DECLARE_LIST(bfs_queue, struct bfs_item, queue_item);
+
+/**
+ * @author sqsq
+ */
+PREDECL_HASH(dst_dict);	// Z = dst_dict
+struct dict_item {
+	struct in_addr addr;
+	uint32_t cost;
+	struct dst_dict_item hash_item;
+};
+struct dst_dict_head dict_head;
+extern int hash_dict_compare_func(const struct dict_item *a, const struct dict_item *b);
+extern uint32_t hash_dict_hash_func(const struct dict_item *a);
+DECLARE_HASH(dst_dict, struct dict_item, hash_item, hash_dict_compare_func, hash_dict_hash_func);
+
+
 /* What triggered the SPF ? */
 typedef enum {
 	SPF_FLAG_ROUTER_LSA_INSTALL = 1,
@@ -126,4 +153,7 @@ extern void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *roo
 			struct route_table *all_rtrs,
 			struct route_table *new_rtrs, bool is_dry_run,
 			bool is_root_node);
+extern uint32_t get_direction(struct in_addr from_satellite_id, struct in_addr to_satellite_id);
+extern void set_output_interface_and_nexthop(struct ospf_area *area, struct ospf_lsa *root_lsa, 
+				struct ospf_interface **output_interfaces, struct in_addr *output_nexthops);
 #endif /* _QUAGGA_OSPF_SPF_H */

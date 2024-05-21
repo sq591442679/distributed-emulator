@@ -58,8 +58,72 @@ RECEIVER_NODE_ID = (5, 5)
 TIME_BASE = datetime(2024, 1, 1)
 
 UDP_SEND_INTERVAL = 0.01
-DRY_RUN = False
+DRY_RUN = True
 WARMUP_PERIOD = 30      # unit: s
 RANDOM_SEED_NUM = 5     # number of tests with different random seeds
 
 RECORD_LONG_TERM_RESULT = True
+
+LOFI_DELTA = 1.0
+LINK_FAILURE_RATE_LIST = [0.05]
+PROTOCOL_LIST = ["node_rule_id"]
+TEST_NUMS = [1]
+RANDOM_SEEDS = [451]
+PROTOCOL_RELATED_ARGS = {
+	"ospf": {
+		"image_name": "ospf:latest",
+		"modules_before_constellation_creation": [
+			"./sqsq-kernel-modules/install_satellite_id.sh",
+		],
+		"modules_after_constellation_creation": [
+
+		],
+		"frr_configurations": [
+
+		],
+	},
+	"node_rule_id": {
+		"image_name": "node_rule_id:latest",
+		"modules_before_constellation_creation": [
+			"./sqsq-kernel-modules/install_satellite_id.sh",
+		],
+		"modules_after_constellation_creation": [
+			"./sqsq-kernel-modules/install_multipath.sh",
+		],
+		"frr_configurations": [
+			f"ospf orbit_num {ORBIT_NUM}",
+			f"ospf sat_per_orbit {SAT_PER_ORBIT}",
+			f"ospf use_walker_delta {int(USE_WALKER_DELTA)}",
+		]
+	},
+	"node_rule_bfs": {
+		"image_name": "node_rule_bfs:latest",
+		"modules_before_constellation_creation": [
+			"./sqsq-kernel-modules/install_satellite_id.sh",
+		],
+		"modules_after_constellation_creation": [
+			"./sqsq-kernel-modules/install_multipath.sh",
+		],
+		"frr_configurations": [
+			f"ospf orbit_num {ORBIT_NUM}",
+			f"ospf sat_per_orbit {SAT_PER_ORBIT}",
+			f"ospf use_walker_delta {int(USE_WALKER_DELTA)}",
+		]
+	},
+}
+for protocol_name in range(10):
+	PROTOCOL_RELATED_ARGS[f"lofi({protocol_name}-{LOFI_DELTA})"] = {
+		"image_name": "lofi:latest",
+		"modules_before_constellation_creation": [
+			"./sqsq-kernel-modules/install_satellite_id.sh",
+			"./sqsq-kernel-modules/install_load_awareness.sh",
+		],
+		"modules_after_constellation_creation": [
+			"./sqsq-kernel-modules/install_multipath.sh",
+		],
+		"frr_configurations": [
+			f"ospf lofi {protocol_name}"
+			f"ospf warmup_period {WARMUP_PERIOD}"
+		],
+		"lofi_delta": LOFI_DELTA,
+	}

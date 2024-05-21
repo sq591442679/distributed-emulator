@@ -1850,12 +1850,12 @@ void set_output_interface_and_nexthop(struct ospf_area *area, struct ospf_lsa *r
 				if ((direction & integrated_direction) != 0) {
 					output_interfaces[direction] = oi;
 					output_nexthops[direction] = get_neighbor_intf_ip(root_lsa, l, neighbor_lsa);
-					zlog_debug("%s    current id:%pI4  direction:%u  ifindex:%d  nexthop:%pI4", 
-																				__func__, 
-																				&current_router_id.s_addr,
-																				direction, 
-																				oi->ifp->ifindex, 
-																				&output_nexthops[direction].s_addr);	
+					// zlog_debug("%s    current id:%pI4  direction:%u  ifindex:%d  nexthop:%pI4", 
+					// 															__func__, 
+					// 															&current_router_id.s_addr,
+					// 															direction, 
+					// 															oi->ifp->ifindex, 
+					// 															&output_nexthops[direction].s_addr);	
 				}
 			}
 		}
@@ -1866,7 +1866,10 @@ void set_output_interface_and_nexthop(struct ospf_area *area, struct ospf_lsa *r
  * @author sqsq
  * @brief set output path of param or, based on integrated_direction
  */
-void set_path(struct ospf_route *or, uint32_t integrated_direction, struct ospf_interface **output_interfaces, struct in_addr *output_nexthops, struct in_addr current_router_id)
+static void set_path(struct ospf_route *or, uint32_t integrated_direction, 
+				struct ospf_interface **output_interfaces, 
+				struct in_addr *output_nexthops, 
+				struct in_addr current_router_id)
 {
 	uint32_t directions[4] = {ORBIT_ID_INC_DIRECTION, 
 							ORBIT_ID_DEC_DIRECTION, 
@@ -1906,6 +1909,39 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	// output_interfaces[ORBIT_ID_INC_DIRECTION] is the output interface ont the corresponding direction
 	struct in_addr output_nexthops[10] = {};
 	// output ip address of corresponding output_interface
+
+	// struct bfs_item *item1 = malloc(sizeof(struct bfs_item)), *top;
+	// struct dict_item *item2 = malloc(sizeof(struct dict_item)), *find_item;
+	// struct dict_item searchfor1 = {.addr = {.s_addr = inet_addr("10.2.2.3")}};
+	// struct dict_item searchfor2 = {.addr = {.s_addr = inet_addr("10.1.2.3")}};
+	// item1->addr.s_addr = inet_addr("192.168.1.1");
+	// item1->cost = 100;
+	// bfs_queue_init(&queue_head);
+	// bfs_queue_add_tail(&queue_head, item1);
+	// top = bfs_queue_pop(&queue_head);
+	// zlog_debug("%s    addr:%pI4, cost:%u", __func__, &top->addr, top->cost);
+	// free(top);
+	// bfs_queue_fini(&queue_head);
+
+	// item2->addr.s_addr = inet_addr("10.1.2.3");
+	// item2->cost = 1024;
+	// dst_dict_add(&dict_head, item2);
+	// find_item = dst_dict_find(&dict_head, &searchfor1);
+	// if (find_item == NULL) {
+	// 	zlog_debug("%s    find null", __func__);
+	// }
+	// else {
+	// 	zlog_debug("%s    find addr %pI4", __func__, &find_item->addr);
+	// }
+	// find_item = dst_dict_find(&dict_head, &searchfor2);
+	// if (find_item == NULL) {
+	// 	zlog_debug("%s    find null", __func__);
+	// }
+	// else {
+	// 	zlog_debug("%s    find addr %pI4", __func__, &find_item->addr);
+	// }
+
+
 	set_output_interface_and_nexthop(area, root_lsa, output_interfaces, output_nexthops);
 
 	for (dest_orbit_id = 0; dest_orbit_id < orbit_num; ++dest_orbit_id) {
@@ -1950,7 +1986,7 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 					// p.prefixlen = ip_masklen(l->link_data);
 					apply_mask_ipv4(&p);
 
-					zlog_debug("%s    dest id:%pI4, dest prefix:%pI4", __func__, &dest_lsa_header->id, &p.prefix);
+					// zlog_debug("%s    dest id:%pI4, dest prefix:%pI4", __func__, &dest_lsa_header->id, &p.prefix);
 
 					rn = route_node_get(new_table, (struct prefix *)&p);
 					if (rn->info != NULL) {	// there is already a routing entry, using ECMP
@@ -1977,6 +2013,30 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 			}
 		}
 	}
+}
+
+/**
+ * @author sqsq
+ */
+int hash_dict_compare_func(const struct dict_item *a, const struct dict_item *b)
+{
+	if (a->addr.s_addr == b->addr.s_addr) {
+		return 0;
+	}
+	else if (a->addr.s_addr < b->addr.s_addr) {
+		return -1;
+	}
+	else {
+		return 1;
+	}
+}
+
+/**
+ * @author sqsq
+ */
+uint32_t hash_dict_hash_func(const struct dict_item *a)
+{
+	return a->addr.s_addr;
 }
 
 /* Calculating the shortest-path tree for an area, see RFC2328 16.1. */

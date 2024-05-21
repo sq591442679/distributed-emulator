@@ -87,17 +87,16 @@ def start_frr(docker_client: DockerClient) -> None:
 
 def start_load_awareness(docker_client: DockerClient, lofi_delta: float):
     process_list: typing.List[Process] = []    
-    cmd = f"/load_wawreness/load_awareness {lofi_delta} {QUEUE_CAPACITY} {NETWORK_BANDWIDTH*1000000} {1024 * 8} " \
+    cmd = f"/load_awareness/load_awareness {lofi_delta} {QUEUE_CAPACITY} {NETWORK_BANDWIDTH*1000000} {1024 * 8} " \
             + f"{NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY} {NETWORK_DELAY}"
-    if enable_load_awareness:
-        for id in satellite_map.keys():
-            process_start_load_wawreness = Process(target=docker_client.exec_cmd, 
-                                                   args=(satellite_id_tuple_to_str(id), cmd, False, True))
-            process_list.append(process_start_load_wawreness)
-        for process_start_load_wawreness in process_list:
-            process_start_load_wawreness.start()
-        for process_start_load_wawreness in process_list:
-            process_start_load_wawreness.join()
+    for id in satellite_map.keys():
+        process_start_load_wawreness = Process(target=docker_client.exec_cmd, 
+                                                args=(satellite_id_tuple_to_str(id), cmd, False, True))
+        process_list.append(process_start_load_wawreness)
+    for process_start_load_wawreness in process_list:
+        process_start_load_wawreness.start()
+    for process_start_load_wawreness in process_list:
+        process_start_load_wawreness.join()
 
 
 def set_satellite_id_in_kernel(docker_client: DockerClient):
@@ -147,7 +146,7 @@ def start_simulation(docker_client: DockerClient, link_failure_rate: float, send
     control_overhead = shared_result_list[3]['control overhead']
 
     with open('./result_tmp.csv', 'a') as f:
-        print(f"{lofi_n},{enable_load_awareness},{lofi_delta},"
+        print(f"{protocol_name},"
                 f"{link_failure_rate},{random_seed},{test},"
                 f"{drop_rate},{delay},{throughput},{control_overhead},"
                 f"{ttl_rate},{no_entry_rate}", file=f)
@@ -174,8 +173,12 @@ def start_simulation(docker_client: DockerClient, link_failure_rate: float, send
     os.system("sudo chmod -R 777 ../container-events/")
 
 
-def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int, 
-        link_failure_rate: float, send_interval: float, test: int, random_seed: int, dry_run = False):
+def run(protocol_name: int, 
+        link_failure_rate: float, 
+        send_interval: float, 
+        test: int, 
+        random_seed: int, 
+        dry_run = False):
     reinit_global_var()
     os.system("clear")
     # the share bool value
@@ -193,18 +196,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     init_start_time = time.time()
 
     # ---------------------------------
-    # check for ospf
-    if lofi_n == -1:
-        image_name = "ospf:latest"
-        enable_load_awareness = False
-    elif lofi_n == -2:
-        image_name = "elb:latest"
-        enable_load_awareness = False
-    elif lofi_n == -3:
-        image_name = "node_rule:latest"
-        enable_load_awareness = False
-    elif lofi_n >= 0:
-        image_name = "lofi:latest"
+    # set image name
+    image_name = PROTOCOL_RELATED_ARGS[protocol_name]["image_name"]
     # ---------------------------------
 
     # create position updater
@@ -231,9 +224,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # ---------------------------------
     # install kernel modules, added by sqsq
     uninstall_kernel_modules()
-    install_kernel_module(f"./sqsq-kernel-modules/install_satellite_id.sh")
-    if enable_load_awareness:
-        install_kernel_module("./sqsq-kernel-modules/install_load_awareness.sh")
+    for kernel_module in PROTOCOL_RELATED_ARGS[protocol_name]["modules_before_constellation_creation"]:
+        install_kernel_module(kernel_module)
     # ---------------------------------
 
     # generate satellite infos
@@ -249,7 +241,7 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
     # generate constellation
     # ----------------------------------------------------------------------------------------------------
     position_datas, monitor_payloads = constellation_creator(docker_client, satellite_infos, connections, host_ip,
-                                                             udp_port, successful_init, lofi_n=lofi_n)
+                                                             udp_port, successful_init, protocol_name)
     # ----------------------------------------------------------------------------------------------------
     # ground_stations = create_station_from_json(docker_client, config.GroundConfigPath)
     ground_stations = {}
@@ -263,8 +255,8 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
 
     # -------------------------------
     # install kernel modules part 2
-    if lofi_n >= 0 or lofi_n == -2 or lofi_n == -3:
-        install_kernel_module("./sqsq-kernel-modules/install_multipath.sh")
+    for kernel_module in PROTOCOL_RELATED_ARGS[protocol_name]["modules_after_constellation_creation"]:
+        install_kernel_module(kernel_module)
 
     receiver_ip_str = get_ip_of_node_id(docker_client, RECEIVER_NODE_ID)
     receiver_ip_int = ip_str_to_int(receiver_ip_str)
@@ -290,7 +282,9 @@ def run(enable_load_awareness: bool, lofi_delta: float, lofi_n: int,
         
     # -------------------------------------------------------------------
     # start load awareness, added by sqsq
-    start_load_awareness(docker_client, lofi_delta)
+    if "lofi" in protocol_name:
+        start_load_awareness(docker_client, 
+                             PROTOCOL_RELATED_ARGS[protocol_name]["lofi_delta"])
     # -------------------------------------------------------------------
     
     os.system("dmesg -c > /dev/null")
@@ -365,44 +359,49 @@ if __name__ == "__main__":
     
     os.system("./stop_and_kill_constellation.sh")
 
-    log_file_list = ["eth_dict.log", "link.log", "long_term_result.log", "kernel.log", "nettrace.log", "satellite_position.log", "sim_time.log"]
+    log_file_list = ["eth_dict.log", 
+                     "link.log", 
+                     "long_term_result.log", 
+                     "kernel.log", 
+                     "nettrace.log", 
+                     "satellite_position.log", 
+                     "sim_time.log"]
     for log_file in log_file_list:
         with open(log_file, "w") as f:
             print("", flush=True, file=f)
 
-    # lofi_n = -1 means using ospf
-    # lofi_n = -2 means using elb
-    # lofi_n = -3 means using node table
-    enable_load_awareness = False
-    lofi_delta = 0.05
-    link_failure_rate_list = [0.05]
-    lofi_n_list = [-3]
-    test_nums = [1]
-    random_seeds = [451]
+    protocol_name_list = PROTOCOL_LIST
+    link_failure_rate_list = LINK_FAILURE_RATE_LIST
+    test_nums = TEST_NUMS
+    random_seeds = RANDOM_SEEDS
     # lofi_n_list = [4, 5, 6, -1]
     # test_nums = [10, 10, 10, 10]
     # random_seeds = [42 + i for i in range(RANDOM_SEED_NUM)]
 
-    if (len(lofi_n_list) != len(test_nums)):
-        raise Exception('lofi_n_list and test_nums not correspond')
+    if (len(protocol_name_list) != len(test_nums)):
+        raise Exception('protocol_name_list and test_nums not correspond')
 
     if not os.path.exists('./result_tmp.csv') and not DRY_RUN:
         with open('./result_tmp.csv', 'w') as f:
-            print('lofi_n,load_awareness,lofi_delta,'
+            print('protocol_name,'
                   'link_failure_rate,random_seed,test,'
                   'drop_rate,delay,throughput,control_overhead,'
                   'ttl_rate,no_entry_rate', file=f)
         os.system("chmod 777 ./result_tmp.csv")
 
     for link_failure_rate in link_failure_rate_list:
-        for i, lofi_n in enumerate(lofi_n_list):
+        for i, protocol_name in enumerate(protocol_name_list):
             if RECORD_LONG_TERM_RESULT:
                 with open('./long_term_result.log', 'a') as f:
-                    print(f"failure: {link_failure_rate}, n: {lofi_n}", file=f, flush=True)
+                    print(f"failure: {link_failure_rate}, n: {protocol_name}", file=f, flush=True)
             for random_seed in random_seeds:
                 for test in range(1, test_nums[i] + 1):
-                    run(enable_load_awareness, lofi_delta, lofi_n, 
-                        link_failure_rate, UDP_SEND_INTERVAL, test, random_seed, DRY_RUN)
+                    run(protocol_name, 
+                        link_failure_rate, 
+                        UDP_SEND_INTERVAL, 
+                        test, 
+                        random_seed, 
+                        DRY_RUN)
 
     
 

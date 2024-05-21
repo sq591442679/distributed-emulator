@@ -150,7 +150,8 @@ def multiprocess_generate_containers(submission_size_tmp,
                                      satellite_infos: dict,
                                      link_connections: dict,
                                      position_datas,
-                                     satellites_tmp):
+                                     satellites_tmp,
+                                     protocol_name: str):
     submission_size = submission_size_tmp  # the size of the submission
     finished_submission_count = 0  # the count of the finished submission
     rcv_pipe, send_pipe = Pipe()  # the pipe for receiving the container_name
@@ -359,7 +360,7 @@ def constellation_creator(docker_client,
                           host_ip,
                           udp_listening_port,
                           successful_init,
-                          lofi_n: int):
+                          protocol_name: str):
     """
     create constellation function
     :param docker_client:  docker client
@@ -390,7 +391,8 @@ def constellation_creator(docker_client,
                                      satellite_infos,
                                      link_connections,
                                      position_datas,
-                                     satellites)
+                                     satellites,
+                                     protocol_name)
     # ---------------------------------------------------------------------
 
     # generate containers with multiple process
@@ -422,7 +424,7 @@ def constellation_creator(docker_client,
         # get the subnet of each interface
         sub_nets = [ip_to_subnet(interfaces[i], prefix_len[i]) for i in range(len(prefix_len))]
         # write the interface into the frr file
-        write_into_frr_conf(satellite_id_tuple_to_str(node_id), sub_nets, prefix_len, lofi_n)
+        write_into_frr_conf(satellite_id_tuple_to_str(node_id), sub_nets, prefix_len, protocol_name)
         # traverse all the subnets
         for sub_index in range(len(sub_nets)):
             # sub is the subnet

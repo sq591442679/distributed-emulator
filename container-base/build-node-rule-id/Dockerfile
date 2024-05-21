@@ -12,7 +12,7 @@ RUN groupadd -r -g 92 frr \
     && usermod -a -G frrvty frr
 
 # install frr 
-COPY frr-node-rule /frr
+COPY frr-node-rule-id /frr
 RUN chmod -R 777 /frr \
     && cd /frr \
     && ./bootstrap.sh \
