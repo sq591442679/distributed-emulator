@@ -2,6 +2,8 @@
  * mainly utilizes ftrace to modify the execution flow, 
  * i.e., only execute our sqsq_fib_select_multipath and no longer execute original fib_select_multipath in kernel
  * refers to R3tr074's brokepkg in https://github.com/R3tr074/brokepkg
+ * @note
+ * need to add parameter fl4 in kernel function fib_select_multipath
  */
 
 #include "my_ftrace.h"

@@ -276,7 +276,7 @@ def run(protocol_name: int,
             position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
             # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
         update_network_delay(position_datas, connect_order_map)
-    time.sleep(WARMUP_PERIOD)
+    # time.sleep(WARMUP_PERIOD)
     # -------------------------------------------------------------------
     # -------------------------------------------------------------------
         

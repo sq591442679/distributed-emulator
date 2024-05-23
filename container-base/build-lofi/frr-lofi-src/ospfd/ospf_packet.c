@@ -3952,7 +3952,7 @@ void ospf_ls_upd_send_lsa(struct ospf_neighbor *nbr, struct ospf_lsa *lsa,
 	struct list *update;
 
 	/** sqsq */
-	zlog_debug("%s: send lsa:[%s]", __func__, dump_lsa_key(lsa));
+	// zlog_debug("%s: send lsa:[%s]", __func__, dump_lsa_key(lsa));
 
 	update = list_new();
 

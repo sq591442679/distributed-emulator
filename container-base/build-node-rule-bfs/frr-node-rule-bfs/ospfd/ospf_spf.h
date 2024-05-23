@@ -66,10 +66,7 @@ PREDECL_LIST(bfs_queue);				// Z1 = bfs_queue
 PREDECL_HASH(dst_dict);					// Z2 = dst_dict
 struct shortest_path_item {
 	struct ospf_lsa *lsa;				// lsa of dst router
-	uint32_t cost;						// cost on this search path
 	uint32_t hop_cnt;					// hop cnt from calculating router to dst router
-	struct in_addr nexthop;				// nexthop ip address on the search path form root to dst
-	ifindex_t ifindex;					// and in dst_dict_head, nexthop and ifindex is useless
 	struct bfs_queue_item queue_item;
 	struct dst_dict_item hash_item;
 };
@@ -77,7 +74,7 @@ DECLARE_LIST(bfs_queue, struct shortest_path_item, queue_item);
 extern int shortest_path_item_compare_func(const struct shortest_path_item *a, const struct shortest_path_item *b);
 extern uint32_t shortest_path_item_hash_func(const struct shortest_path_item *a);
 extern struct shortest_path_item *shortest_path_item_new(void);
-extern struct shortest_path_item *shortest_path_item_init(struct ospf_lsa *lsa, uint32_t cost, uint32_t hop_cnt);
+extern struct shortest_path_item *shortest_path_item_init(struct ospf_lsa *lsa, uint32_t hop_cnt);
 extern void shortest_path_item_free(struct shortest_path_item *item);
 extern struct shortest_path_item *shortest_path_item_dup(struct shortest_path_item *item);
 DECLARE_HASH(dst_dict, struct shortest_path_item, hash_item, shortest_path_item_compare_func, shortest_path_item_hash_func);

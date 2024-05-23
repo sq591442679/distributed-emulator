@@ -59,13 +59,14 @@ TIME_BASE = datetime(2024, 1, 1)
 
 UDP_SEND_INTERVAL = 0.01
 DRY_RUN = True
-WARMUP_PERIOD = 30      # unit: s
+WARMUP_PERIOD = 3000000      # unit: s
 RANDOM_SEED_NUM = 5     # number of tests with different random seeds
 
 RECORD_LONG_TERM_RESULT = True
 
 LOFI_DELTA = 1.0
 LINK_FAILURE_RATE_LIST = [0.05]
+# PROTOCOL_LIST = [f"lofi(3-{LOFI_DELTA:.3f})"]
 PROTOCOL_LIST = ["node_rule_bfs"]
 TEST_NUMS = [1]
 RANDOM_SEEDS = [451]
@@ -112,7 +113,7 @@ PROTOCOL_RELATED_ARGS = {
 	},
 }
 for lofi_n in range(10):
-	PROTOCOL_RELATED_ARGS[f"lofi({lofi_n}-{LOFI_DELTA})"] = {
+	PROTOCOL_RELATED_ARGS[f"lofi({lofi_n}-{LOFI_DELTA:.3f})"] = {
 		"image_name": "lofi:latest",
 		"modules_before_constellation_creation": [
 			"./sqsq-kernel-modules/install_satellite_id.sh",
