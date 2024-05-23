@@ -228,6 +228,36 @@ DEFUN_NOSH (router_ospf,
 
 /**
  * @sqsq
+ * set lofi warmup period
+ */
+DEFUN (
+	ospf_warmup,
+	ospf_warmup_cmd,
+	"ospf warmup_period (0-65535)",
+	"OSPF specific commands\n"
+	"warmup period for the OSPF process before really using lofi\n"
+	"unit: s\n"
+)
+{
+	int idx = 0;
+	uint32_t n = 0;
+
+	// get arguments
+	char *n_str = NULL;
+
+	argv_find(argv, argc, "(0-65535)", &idx);
+	n_str = argv[idx]->arg;
+	n = strtol(n_str, NULL, 10);
+
+	warmup_period = n;
+
+	// zlog_debug("%s lofi_n:%d", __func__, lofi_n);
+
+	return CMD_SUCCESS;
+}
+
+/**
+ * @sqsq
  */
 DEFUN (
 	ospf_orbit_num,
@@ -13118,6 +13148,7 @@ void ospf_vty_init(void)
 	install_element(OSPF_NODE, &ospf_orbit_num_cmd);
 	install_element(OSPF_NODE, &ospf_sat_per_orbit_cmd);
 	install_element(OSPF_NODE, &ospf_use_inclined_orbit_cmd);
+	install_element(OSPF_NODE, &ospf_warmup_cmd);
 
 	/* "passive-interface" commands. */
 	install_element(OSPF_NODE, &ospf_passive_interface_default_cmd);

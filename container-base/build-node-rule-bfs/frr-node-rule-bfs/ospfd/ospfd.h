@@ -53,6 +53,7 @@
 extern uint32_t orbit_num;
 extern uint32_t sat_per_orbit;
 extern bool use_walker_delta;
+extern uint32_t warmup_period;
 
 #define OSPF_NSSA_TRANS_STABLE_DEFAULT		40
 
@@ -154,6 +155,12 @@ struct ospf_gr_info {
 
 /* OSPF instance structure. */
 struct ospf {
+	/**
+	 * @author sqsq
+	 * added member
+	 */
+	__time_t start_time;
+
 	/* OSPF's running state based on the '[no] router ospf [<instance>]'
 	 * config. */
 	uint8_t oi_running;

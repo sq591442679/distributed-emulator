@@ -82,6 +82,7 @@ extern struct zclient *zclient;
 uint32_t orbit_num = 10;
 uint32_t sat_per_orbit = 20;
 bool use_walker_delta = false;
+uint32_t warmup_period = UINT32_MAX;
 
 static void ospf_remove_vls_through_area(struct ospf *, struct ospf_area *);
 static void ospf_network_free(struct ospf *, struct ospf_network *);
@@ -340,6 +341,11 @@ struct ospf *ospf_new_alloc(unsigned short instance, const char *name)
 	struct vrf *vrf = NULL;
 
 	struct ospf *new = XCALLOC(MTYPE_OSPF_TOP, sizeof(struct ospf));
+
+	/**
+	 * @author sqsq
+	 */
+	new->start_time = monotime(NULL);
 
 	new->instance = instance;
 	new->router_id.s_addr = htonl(0);

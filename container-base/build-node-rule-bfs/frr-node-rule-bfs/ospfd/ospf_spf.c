@@ -1930,10 +1930,15 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	long long elapse_time_ns;
 	clock_gettime(CLOCK_MONOTONIC, &start);
 
+	if (monotime(NULL) - area->ospf->start_time < warmup_period) {
+		zlog_debug("%s    waiting for warmup", __func__);
+		return;
+	}
+
 	bfs_queue_init(&queue_head);
 	dst_dict_init(&dict_head);
 	bfs_queue_add_tail(&queue_head, root_item);
-	dst_dict_add(&dict_head, shortest_path_item_dup(root_item));
+	dst_dict_add(&dict_head, root_item);
 
 	while (bfs_queue_count(&queue_head) != 0) {
 		/**
@@ -1955,10 +1960,10 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 
 			bfs_queue_pop(&queue_head);
 
-			zlog_debug("%s    first->id:%pI4, first->hop_cnt:%u", 
-							__func__, 
-							&first->lsa->data->id, 
-							first->hop_cnt);
+			// zlog_debug("%s    first->id:%pI4, first->hop_cnt:%u", 
+			// 				__func__, 
+			// 				&first->lsa->data->id, 
+			// 				first->hop_cnt);
 
 			/**
 			 * iterate through all neighbors,
@@ -1986,9 +1991,9 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 					/**
 					 * build neighbor item
 					 */
-					zlog_debug("%s    first_id:%pI4, neighbor_id:%pI4", __func__, 
-																		&first->lsa->data->id, 
-																		&neighbor_router_id);
+					// zlog_debug("%s    first_id:%pI4, neighbor_id:%pI4", __func__, 
+					// 													&first->lsa->data->id, 
+					// 													&neighbor_router_id);
 					neighbor_item = shortest_path_item_init(neighbor_lsa, current_hop + 1);
 					
 					/**
@@ -1996,14 +2001,13 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 					 */
 					find = dst_dict_find(&dict_head, neighbor_item);
 					if (find == NULL) {
-						zlog_debug("%s    first searched %pI4", __func__, &neighbor_item->lsa->data->id);
-						dst_dict_add(&dict_head, shortest_path_item_dup(neighbor_item));
+						// zlog_debug("%s    first searched %pI4", __func__, &neighbor_item->lsa->data->id);
+						dst_dict_add(&dict_head, neighbor_item);
 						bfs_queue_add_tail(&queue_head, neighbor_item);
 						modify_routing_table(area, tmp_table, first, neighbor_item, root_item, l);
 					}
 					else if (find->hop_cnt == neighbor_item->hop_cnt) {
-						zlog_debug("%s    eqaul-hop searched %pI4", __func__, &neighbor_item->lsa->data->id);
-						// bfs_queue_add_tail(&queue_head, neighbor_item);
+						// zlog_debug("%s    eqaul-hop searched %pI4", __func__, &neighbor_item->lsa->data->id);
 						modify_routing_table(area, tmp_table, first, neighbor_item, root_item, l);
 						shortest_path_item_free(neighbor_item);
 					}
@@ -2119,7 +2123,7 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	 * time recording
 	 */
 	clock_gettime(CLOCK_MONOTONIC, &end);
-	elapse_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - end.tv_nsec);
+	elapse_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - start.tv_nsec);
 	clock_gettime(CLOCK_REALTIME, &ts);
 	localtime_r(&ts.tv_sec, &time_info);
 	strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &time_info);
