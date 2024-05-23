@@ -60,3 +60,8 @@ DEFINE_MTYPE(OSPFD, OSPF_GR_HELPER, "OSPF Graceful Restart Helper");
 DEFINE_MTYPE(OSPFD, OSPF_EXTERNAL_RT_AGGR, "OSPF External Route Summarisation");
 DEFINE_MTYPE(OSPFD, OSPF_P_SPACE, "OSPF TI-LFA P-Space");
 DEFINE_MTYPE(OSPFD, OSPF_Q_SPACE, "OSPF TI-LFA Q-Space");
+
+/**
+ * @author sqsq
+ */
+DEFINE_MTYPE(OSPFD, OSPF_SHORTEST_PATH_ITEM, "OSPF Shortest path item used for bfs");

@@ -243,6 +243,13 @@ static void ospf_zebra_add_nexthop(struct ospf *ospf, struct ospf_path *path,
 	}
 	api_nh->vrf_id = ospf->vrf_id;
 
+	/**
+	 * @sqsq
+	 * NOTE: the "weight" in struct nexthop is uint8_t!
+	 * caution for data overflow
+	 */
+	api_nh->weight = path->weight; 
+
 	/* Set TI-LFA backup nexthop info if present */
 	if (path->srni.backup_label_stack) {
 		SET_FLAG(api->message, ZAPI_MESSAGE_BACKUP_NEXTHOPS);

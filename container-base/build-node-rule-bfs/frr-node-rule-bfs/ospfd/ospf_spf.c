@@ -1718,95 +1718,39 @@ void ospf_spf_cleanup(struct vertex *spf, struct list *vertex_list)
 
 /**
  * @author sqsq
- * @brief Get direction from from_satellite_id to to_satellite_id
- * @note 
- * Has constraints for constellation topology. 
- * I.e., the seam (if exists) must between orbit 0 and orbit M, 
- * and neighborging satellites' router id must have only 1 digital difference. 
- * For example, (2, 3) must connects to (3, 3) and (1, 3), not (3, 4) or any else.
- * @note 
- * Only returns theoretical directions, 
- * do not consider wthether corresponding output interface exists.
+ * @brief
+ * the path with smaller cost positions closer to the top, 
+ * smaller cost means smaller weight, 
+ * routes with lower weight value have higher priority, 
+ * thus corresponds "ip ospf route" to "ip route"
  */
-uint32_t get_direction(struct in_addr from_satellite_id, struct in_addr to_satellite_id)
+static int ospf_path_cmp(const void **first, const void **second)
 {
-	uint32_t from_orbit_id = get_orbit_id(from_satellite_id);
-	uint32_t from_inner_orbit_id = get_inner_orbit_id(from_satellite_id);
-	uint32_t to_orbit_id = get_orbit_id(to_satellite_id);
-	uint32_t to_inner_orbit_id = get_inner_orbit_id(to_satellite_id);
-	uint32_t ret = 0;
-
-	/**
-	 * step 1.
-	 * get orbit direction
-	 */
-	if (!use_walker_delta) {	// for polar orbit constellation
-		if (to_orbit_id > from_orbit_id) {
-			ret |= ORBIT_ID_INC_DIRECTION;
-		}
-		if (to_orbit_id < from_orbit_id) {
-			ret |= ORBIT_ID_DEC_DIRECTION;
-		}
+	struct ospf_path *path_first = (struct ospf_path *)(*first), *path_second = (struct ospf_path *)(*second);
+	if (path_first->cost < path_second->cost) {
+		return -1;
 	}
-	else {	// for inclined orbit constellation
-		if (to_orbit_id > from_orbit_id) {
-			if (to_orbit_id - from_orbit_id <= orbit_num / 2) {
-				ret |= ORBIT_ID_INC_DIRECTION;
-			}
-			if (to_orbit_id - from_orbit_id >= orbit_num / 2) {
-				ret |= ORBIT_ID_DEC_DIRECTION;
-			}
-		}
-		if (to_orbit_id < from_orbit_id) {
-			if (from_orbit_id - to_orbit_id <= orbit_num / 2) {
-				ret |= ORBIT_ID_DEC_DIRECTION;
-			}
-			if (from_orbit_id - to_orbit_id >= orbit_num / 2) {
-				ret |= ORBIT_ID_INC_DIRECTION;
-			}
-		}
+	else if (path_first->cost > path_second->cost) {
+		return 1;
 	}
-
-	/**
-	 * step 2.
-	 * get inner orbit direction
-	 */
-	if (to_inner_orbit_id > from_inner_orbit_id) {
-		if (to_inner_orbit_id - from_inner_orbit_id 
-			<= sat_per_orbit / 2) {
-			ret |= INNER_ORBIT_ID_INC_DIRECTION;
-		}
-		if (to_inner_orbit_id - from_inner_orbit_id 
-			>= sat_per_orbit / 2) {
-			ret |= INNER_ORBIT_ID_DEC_DIRECTION;
-		}
+	else {
+		return 0;
 	}
-	if (to_inner_orbit_id < from_inner_orbit_id) {
-		if (from_inner_orbit_id - to_inner_orbit_id 
-			<= sat_per_orbit / 2) {
-			ret |= INNER_ORBIT_ID_DEC_DIRECTION;
-		}
-		if (from_inner_orbit_id - to_inner_orbit_id 
-			>= sat_per_orbit / 2) {
-			ret |= INNER_ORBIT_ID_INC_DIRECTION;
-		}
-	}
-
-	return ret;
 }
 
 /**
  * @author sqsq
- * @brief return the count of elements equals to path
+ * @brief 
+ * return the count of elements whose nexthop equals to nexthop
  */
-int count_in_path_list(struct list* list, struct in_addr ip)
+static int count_in_path_list(struct list* list, struct in_addr nexthop)
 {
 	struct listnode *node, *nnode;
 	struct ospf_path *path_in_list;
 	int ret = 0;
 	for (ALL_LIST_ELEMENTS(list, node, nnode, path_in_list)) {
 		// zlog_debug("next hop in list: %pI4, next hop to add: %pI4", &(path_in_list->nexthop), &(path->nexthop));
-		if (path_in_list->nexthop.s_addr == ip.s_addr) {
+		if (path_in_list->nexthop.s_addr == nexthop.s_addr) {
 			ret++;
 		}
 	}
@@ -1816,74 +1760,67 @@ int count_in_path_list(struct list* list, struct in_addr ip)
 /**
  * @author sqsq
  * @brief 
- * For root_lsa (current satellite), set all its output interface and nexthop ip address
+ * modify routing table use item's nexthop and ifindex
  */
-void set_output_interface_and_nexthop(struct ospf_area *area, struct ospf_lsa *root_lsa, 
-				struct ospf_interface **output_interfaces, struct in_addr *output_nexthops)
+static void modify_routing_table(struct ospf_area *area, 
+								struct route_table *new_table, 
+								struct shortest_path_item *item)
 {
-	struct in_addr current_router_id = {.s_addr = root_lsa->data->id.s_addr};
-	struct lsa_header *root_lsa_header = root_lsa->data;
-	uint8_t *p = (uint8_t *)root_lsa_header + OSPF_LSA_HEADER_SIZE + 4; // point to the beginning of the first link
-	uint8_t *lim = (uint8_t *)root_lsa_header + ntohs(root_lsa_header->length);
-	while (p < lim) // iterate through all links of root_lsa_header to build output_interfaces
-	{
+	struct lsa_header *dest_lsa_header = item->lsa->data;
+	uint8_t *p = (uint8_t *)dest_lsa_header + OSPF_LSA_HEADER_SIZE + 4;
+	uint8_t *lim = (uint8_t *)dest_lsa_header + ntohs(dest_lsa_header->length);
+
+	while (p < lim) {
 		struct router_lsa_link *l = (struct router_lsa_link *)p;
 		int link_type = l->m[0].type;
 		p += (OSPF_ROUTER_LSA_LINK_SIZE + l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE);
-		if (link_type == LSA_LINK_TYPE_POINTOPOINT) {
-			struct in_addr interface_ip = l->link_data;
-			struct in_addr neighbor_router_id = l->link_id;
-			struct ospf_interface *oi = ospf_if_lookup_by_local_addr(area->ospf, NULL, interface_ip);
-			uint32_t integrated_direction = get_direction(current_router_id, neighbor_router_id);
-			/**
-			 * note: here for neighbor satellites, integrated_direction should have only one bit set to 1
-			 */
-			struct ospf_lsa *neighbor_lsa = ospf_lsa_lookup(area->ospf, area, OSPF_ROUTER_LSA, 
-														neighbor_router_id, neighbor_router_id);
-			uint32_t directions[4] = {ORBIT_ID_INC_DIRECTION, 
-							ORBIT_ID_DEC_DIRECTION, 
-							INNER_ORBIT_ID_INC_DIRECTION, 
-							INNER_ORBIT_ID_DEC_DIRECTION};
-			int direction_pos;
-			for (direction_pos = 0; direction_pos < 4; ++direction_pos) {
-				uint32_t direction = directions[direction_pos];
-				if ((direction & integrated_direction) != 0) {
-					output_interfaces[direction] = oi;
-					output_nexthops[direction] = get_neighbor_intf_ip(root_lsa, l, neighbor_lsa);
-					// zlog_debug("%s    current id:%pI4  direction:%u  ifindex:%d  nexthop:%pI4", 
-					// 															__func__, 
-					// 															&current_router_id.s_addr,
-					// 															direction, 
-					// 															oi->ifp->ifindex, 
-					// 															&output_nexthops[direction].s_addr);	
-				}
-			}
-		}
-	}
-}
+		if (link_type == LSA_LINK_TYPE_POINTOPOINT) { 
+			struct prefix_ipv4 p;
+			struct route_node *rn;
+			struct ospf_route *or;
 
-/**
- * @author sqsq
- * @brief set output path of param or, based on integrated_direction
- */
-static void set_path(struct ospf_route *or, uint32_t integrated_direction, 
-				struct ospf_interface **output_interfaces, 
-				struct in_addr *output_nexthops, 
-				struct in_addr current_router_id)
-{
-	uint32_t directions[4] = {ORBIT_ID_INC_DIRECTION, 
-							ORBIT_ID_DEC_DIRECTION, 
-							INNER_ORBIT_ID_INC_DIRECTION, 
-							INNER_ORBIT_ID_DEC_DIRECTION};
-	int direction_pos = 0;
-	for (direction_pos = 0; direction_pos < 4; ++direction_pos) {
-		uint32_t direction = directions[direction_pos];
-		if ((direction & integrated_direction) != 0 && output_interfaces[direction] != NULL) {
-			if (count_in_path_list(or->paths, output_nexthops[direction]) == 0) {
+			p.family = AF_INET;
+			p.prefix = l->link_data;
+			p.prefixlen = 32;
+			// p.prefix = l->link_id;
+			// p.prefixlen = ip_masklen(l->link_data);
+			apply_mask_ipv4(&p);
+
+			// zlog_debug("%s    dest id:%pI4, dest prefix:%pI4", __func__, &dest_lsa_header->id, &p.prefix);
+
+			/**
+			 * step 1
+			 * get routing info
+			 */
+			rn = route_node_get(new_table, (struct prefix *)&p);
+			if (rn->info != NULL) {	// there is already a routing entry, using ECMP
+				or = rn->info;
+			}
+			else {	// there is no routing entry, then allocate one
+				or = ospf_route_new();
+				or->id = item->lsa->data->id;
+				or->u.std.area_id = area->area_id;
+				or->u.std.external_routing = area->external_routing;
+				or->path_type = OSPF_PATH_INTRA_AREA;
+				or->cost = UINT32_MAX;
+				or->type = OSPF_DESTINATION_NETWORK;
+				or->u.std.origin = dest_lsa_header;	
+				rn->info = or;	
+			}
+
+			/**
+			 * step 2
+			 * update routing info
+			 */
+			if (count_in_path_list(or->paths, item->nexthop) == 0) {
 				struct ospf_path *path = ospf_path_new();
-				path->nexthop = output_nexthops[direction];
-				path->adv_router = current_router_id;
-				path->ifindex = output_interfaces[direction]->ifp->ifindex;
+				path->nexthop = item->nexthop;
+				path->ifindex = item->ifindex;
+				path->cost = item->cost;
+				path->adv_router = item->lsa->data->id;
+				if (or->cost > path->cost) {
+					or->cost = path->cost;
+				}
 				listnode_add(or->paths, path);
 			}
 		}
@@ -1902,142 +1839,192 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 			struct route_table *new_rtrs, bool is_dry_run,
 			bool is_root_node)
 {
-	uint32_t dest_orbit_id, dest_inner_orbit_id;
-	struct in_addr current_router_id = {.s_addr = root_lsa->data->id.s_addr};
+	struct bfs_queue_head queue_head;	// queue for bfs
+	struct dst_dict_head dict_head;		// nodes in dict_head have been determined hop_cnt
+	struct shortest_path_item *root_item = shortest_path_item_init(root_lsa, 1, 0), *dict_item;
 
-	struct ospf_interface *output_interfaces[10] = {};	
-	// output_interfaces[ORBIT_ID_INC_DIRECTION] is the output interface ont the corresponding direction
-	struct in_addr output_nexthops[10] = {};
-	// output ip address of corresponding output_interface
+	bfs_queue_init(&queue_head);
+	dst_dict_init(&dict_head);
+	bfs_queue_add_tail(&queue_head, root_item);
+	dst_dict_add(&dict_head, shortest_path_item_dup(root_item));
 
-	// struct bfs_item *item1 = malloc(sizeof(struct bfs_item)), *top;
-	// struct dict_item *item2 = malloc(sizeof(struct dict_item)), *find_item;
-	// struct dict_item searchfor1 = {.addr = {.s_addr = inet_addr("10.2.2.3")}};
-	// struct dict_item searchfor2 = {.addr = {.s_addr = inet_addr("10.1.2.3")}};
-	// item1->addr.s_addr = inet_addr("192.168.1.1");
-	// item1->cost = 100;
-	// bfs_queue_init(&queue_head);
-	// bfs_queue_add_tail(&queue_head, item1);
-	// top = bfs_queue_pop(&queue_head);
-	// zlog_debug("%s    addr:%pI4, cost:%u", __func__, &top->addr, top->cost);
-	// free(top);
-	// bfs_queue_fini(&queue_head);
+	while (bfs_queue_count(&queue_head) != 0) {
+		/**
+		 * in every "round" of bfs, several nodes are searched,
+		 * and "smallest-hop-smallest-sum-cost path" to them are determined
+		 */
+		struct shortest_path_item *first = bfs_queue_first(&queue_head), *find;
+		uint32_t current_hop = first->hop_cnt;
+		
+		while(bfs_queue_count(&queue_head) != 0) {
+			struct lsa_header *header = first->lsa->data;
+			uint8_t *p = (uint8_t *)header + OSPF_LSA_HEADER_SIZE + 4;
+			uint8_t *lim = (uint8_t *)header + ntohs(header->length);
 
-	// item2->addr.s_addr = inet_addr("10.1.2.3");
-	// item2->cost = 1024;
-	// dst_dict_add(&dict_head, item2);
-	// find_item = dst_dict_find(&dict_head, &searchfor1);
-	// if (find_item == NULL) {
-	// 	zlog_debug("%s    find null", __func__);
-	// }
-	// else {
-	// 	zlog_debug("%s    find addr %pI4", __func__, &find_item->addr);
-	// }
-	// find_item = dst_dict_find(&dict_head, &searchfor2);
-	// if (find_item == NULL) {
-	// 	zlog_debug("%s    find null", __func__);
-	// }
-	// else {
-	// 	zlog_debug("%s    find addr %pI4", __func__, &find_item->addr);
-	// }
-
-
-	set_output_interface_and_nexthop(area, root_lsa, output_interfaces, output_nexthops);
-
-	for (dest_orbit_id = 0; dest_orbit_id < orbit_num; ++dest_orbit_id) {
-		for (dest_inner_orbit_id = 0; dest_inner_orbit_id < sat_per_orbit; ++dest_inner_orbit_id) {
-			struct in_addr dest_router_id = {.s_addr = set_ip_addr(0, 0, dest_orbit_id, dest_inner_orbit_id)};
-			struct ospf_lsa *dest_lsa = ospf_lsa_lookup(area->ospf, area, OSPF_ROUTER_LSA, 
-														dest_router_id, dest_router_id);
-			uint32_t integrated_direction = get_direction(current_router_id, dest_router_id);
-			struct lsa_header *dest_lsa_header;
-			uint8_t *p, *lim;
-
-			if (dest_lsa == NULL || dest_router_id.s_addr == current_router_id.s_addr) {	// dest satellite exists
-				continue;
+			first = bfs_queue_first(&queue_head);
+			if (first->hop_cnt != current_hop) {	// end of one round
+				break;
 			}
 
-			// zlog_debug("%s    current id: %pI4  dest id:%pI4  direction: %u\n", 
-			// 		__func__,
-			// 		&current_router_id,
-			// 		&dest_router_id,
-			// 		integrated_direction);
+			bfs_queue_pop(&queue_head);
 
-			dest_lsa_header = dest_lsa->data;
-			p = (uint8_t *)dest_lsa_header + OSPF_LSA_HEADER_SIZE + 4;
-			lim = (uint8_t *)dest_lsa_header + ntohs(dest_lsa_header->length);
-			
+			zlog_debug("%s    first->id:%pI4, first->hop_cnt:%u", 
+							__func__, 
+							&first->lsa->data->id, 
+							first->hop_cnt);
+
 			/**
-			 * for each lsa, iterate through all its stub links,
-			 * and get corresponding nexthop
+			 * iterate through all neighbors,
+			 * and select eligible ones to enqueue bfs.
+			 * note that in first round, 
+			 * neighbors of root_item have no nexthop,
+			 * so need to setup
 			 */
 			while (p < lim) {
 				struct router_lsa_link *l = (struct router_lsa_link *)p;
 				int link_type = l->m[0].type;
 				p += (OSPF_ROUTER_LSA_LINK_SIZE + l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE);
-				if (link_type == LSA_LINK_TYPE_POINTOPOINT) { 
-					struct prefix_ipv4 p;
-					struct route_node *rn;
-
-					p.family = AF_INET;
-					p.prefix = l->link_data;
-					p.prefixlen = 32;
-					// p.prefix = l->link_id;
-					// p.prefixlen = ip_masklen(l->link_data);
-					apply_mask_ipv4(&p);
-
-					// zlog_debug("%s    dest id:%pI4, dest prefix:%pI4", __func__, &dest_lsa_header->id, &p.prefix);
-
-					rn = route_node_get(new_table, (struct prefix *)&p);
-					if (rn->info != NULL) {	// there is already a routing entry, using ECMP
-						struct ospf_route *cur_or = rn->info;
-						
-						// route_unlock_node(rn);
-
-						set_path(cur_or, integrated_direction, output_interfaces, output_nexthops, current_router_id);
+				if (link_type == LSA_LINK_TYPE_POINTOPOINT) {
+					struct in_addr neighbor_router_id = l->link_id;
+					uint32_t link_cost = l->m[0].metric;
+					struct ospf_lsa *neighbor_lsa = ospf_lsa_lookup(area->ospf, 
+																	area, 
+																	OSPF_ROUTER_LSA, 
+																	neighbor_router_id, 
+																	neighbor_router_id);
+					struct shortest_path_item *neighbor_item;
+					if (neighbor_lsa == NULL) {
+						continue;
 					}
-					else {	// there is no nexthop, then allocate one
-						struct ospf_route *or = ospf_route_new();
-						or->id = dest_router_id;
-						or->u.std.area_id = area->area_id;
-						or->u.std.external_routing = area->external_routing;
-						or->path_type = OSPF_PATH_INTRA_AREA;
-						or->cost = 100;
-						or->type = OSPF_DESTINATION_NETWORK;
-						or->u.std.origin = dest_lsa_header;	
-						rn->info = or;			
 
-						set_path(or, integrated_direction, output_interfaces, output_nexthops, current_router_id);	
+					/**
+					 * build neighbor item
+					 */
+					neighbor_item = shortest_path_item_init(neighbor_lsa, 
+															first->cost + link_cost, 
+															current_hop + 1);
+					if (first == root_item) {
+						neighbor_item->nexthop = get_neighbor_intf_ip(first->lsa, l, neighbor_lsa);
+						neighbor_item->ifindex = ospf_if_lookup_by_local_addr(area->ospf, NULL, l->link_data)->ifp->ifindex;
 					}
-				}
+					else {
+						neighbor_item->nexthop = first->nexthop;
+						neighbor_item->ifindex = first->ifindex;
+					}
+					
+					/**
+					 * check if neighbor item is eligible to enqueue
+					 */
+					find = dst_dict_find(&dict_head, neighbor_item);
+					if (find == NULL) {
+						dst_dict_add(&dict_head, neighbor_item);
+						bfs_queue_add_tail(&queue_head, neighbor_item);
+						modify_routing_table(area, new_table, neighbor_item);
+					}
+					else if (find->hop_cnt == neighbor_item->hop_cnt) {
+						bfs_queue_add_tail(&queue_head, neighbor_item);
+						modify_routing_table(area, new_table, neighbor_item);
+					}
+					else if (find->hop_cnt > neighbor_item->hop_cnt) {
+						shortest_path_item_free(neighbor_item);
+					}
+					else if (find->hop_cnt < neighbor_item->hop_cnt) {
+						zlog_warn("%s    id:%pI4, find_cnt:%u, neighbor_cnt:%u", 
+										__func__, 
+										&find->lsa->data->id,
+										find->hop_cnt,
+										neighbor_item->hop_cnt);
+					}
+				}				
 			}
+
+			shortest_path_item_free(first);
 		}
 	}
+
+	/**
+	 * clear up
+	 */
+	bfs_queue_fini(&queue_head);
+	while ((dict_item = dst_dict_pop(&dict_head))) {
+		shortest_path_item_free(dict_item);
+	}
+	dst_dict_fini(&dict_head);
+
+	/**
+	 * sort the routing table
+	 */
+	for (struct route_node *rn = route_top(new_table); rn; rn = route_next(rn)) {
+		struct ospf_route *or = rn->info;
+		if (or != NULL) { // NOTE this judgement is important
+			// zlog_debug("length: %d", or->paths->count);
+			int weight = 0;
+			struct listnode *node, *nnode;
+			struct ospf_path *path;
+
+			if (or->paths->count > 4) {
+				zlog_warn("routing table has duplicate next hops!!");
+			}
+			list_sort(or->paths, ospf_path_cmp);
+			
+			for (ALL_LIST_ELEMENTS(or->paths, node, nnode, path)) {
+				weight++;
+				path->weight = weight;
+			}
+		}
+	}	
 }
+
 
 /**
  * @author sqsq
+ * @brief newing and freeing of struct shortest_path_item
+ * @ref ospf_route_new()
  */
-int hash_dict_compare_func(const struct dict_item *a, const struct dict_item *b)
+int shortest_path_item_compare_func(const struct shortest_path_item *a, const struct shortest_path_item *b)
 {
-	if (a->addr.s_addr == b->addr.s_addr) {
+	uint32_t a_addr = a->lsa->data->id.s_addr;
+	uint32_t b_addr = b->lsa->data->id.s_addr;
+	if (a_addr == b_addr) {
 		return 0;
 	}
-	else if (a->addr.s_addr < b->addr.s_addr) {
+	else if (a_addr < b_addr) {
 		return -1;
 	}
 	else {
 		return 1;
 	}
 }
-
-/**
- * @author sqsq
- */
-uint32_t hash_dict_hash_func(const struct dict_item *a)
+uint32_t shortest_path_item_hash_func(const struct shortest_path_item *a)
 {
-	return a->addr.s_addr;
+	return a->lsa->data->id.s_addr;
 }
+struct shortest_path_item *shortest_path_item_new(void)
+{
+	struct shortest_path_item *new;
+	new = XCALLOC(MTYPE_OSPF_SHORTEST_PATH_ITEM, sizeof(struct shortest_path_item));
+	new->nexthop.s_addr = INADDR_ANY;
+	return new;
+}
+struct shortest_path_item *shortest_path_item_init(struct ospf_lsa *lsa, uint32_t cost, uint32_t hop_cnt)
+{
+	struct shortest_path_item *new = shortest_path_item_new();
+	new->lsa = lsa;
+	new->cost = cost;
+	new->hop_cnt = hop_cnt;
+	return new;
+}
+void shortest_path_item_free(struct shortest_path_item *item)
+{	
+	XFREE(MTYPE_OSPF_SHORTEST_PATH_ITEM, item);
+}
+struct shortest_path_item *shortest_path_item_dup(struct shortest_path_item *item)
+{
+	struct shortest_path_item *new = shortest_path_item_new();
+	memcpy(new, item, sizeof(struct shortest_path_item));
+	return new;
+}
+
 
 /* Calculating the shortest-path tree for an area, see RFC2328 16.1. */
 void ospf_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa,

@@ -146,7 +146,7 @@ def start_simulation(docker_client: DockerClient, link_failure_rate: float, send
     control_overhead = shared_result_list[3]['control overhead']
 
     with open('./result_tmp.csv', 'a') as f:
-        print(f"{protocol_name},"
+        print(f"{lofi_n},"
                 f"{link_failure_rate},{random_seed},{test},"
                 f"{drop_rate},{delay},{throughput},{control_overhead},"
                 f"{ttl_rate},{no_entry_rate}", file=f)
@@ -390,13 +390,13 @@ if __name__ == "__main__":
         os.system("chmod 777 ./result_tmp.csv")
 
     for link_failure_rate in link_failure_rate_list:
-        for i, protocol_name in enumerate(protocol_name_list):
+        for i, lofi_n in enumerate(protocol_name_list):
             if RECORD_LONG_TERM_RESULT:
                 with open('./long_term_result.log', 'a') as f:
-                    print(f"failure: {link_failure_rate}, n: {protocol_name}", file=f, flush=True)
+                    print(f"failure: {link_failure_rate}, n: {lofi_n}", file=f, flush=True)
             for random_seed in random_seeds:
                 for test in range(1, test_nums[i] + 1):
-                    run(protocol_name, 
+                    run(lofi_n, 
                         link_failure_rate, 
                         UDP_SEND_INTERVAL, 
                         test, 

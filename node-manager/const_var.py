@@ -111,8 +111,8 @@ PROTOCOL_RELATED_ARGS = {
 		]
 	},
 }
-for protocol_name in range(10):
-	PROTOCOL_RELATED_ARGS[f"lofi({protocol_name}-{LOFI_DELTA})"] = {
+for lofi_n in range(10):
+	PROTOCOL_RELATED_ARGS[f"lofi({lofi_n}-{LOFI_DELTA})"] = {
 		"image_name": "lofi:latest",
 		"modules_before_constellation_creation": [
 			"./sqsq-kernel-modules/install_satellite_id.sh",
@@ -122,7 +122,7 @@ for protocol_name in range(10):
 			"./sqsq-kernel-modules/install_multipath.sh",
 		],
 		"frr_configurations": [
-			f"ospf lofi {protocol_name}"
+			f"ospf lofi {lofi_n}"
 			f"ospf warmup_period {WARMUP_PERIOD}"
 		],
 		"lofi_delta": LOFI_DELTA,

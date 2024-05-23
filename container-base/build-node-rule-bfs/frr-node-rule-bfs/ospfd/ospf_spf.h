@@ -62,29 +62,28 @@ struct vertex_parent {
 /**
  * @author sqsq
  */
-PREDECL_LIST(bfs_queue);
-struct bfs_item {
-	struct in_addr addr;
-	uint32_t cost;
+PREDECL_LIST(bfs_queue);				// Z1 = bfs_queue
+PREDECL_HASH(dst_dict);					// Z2 = dst_dict
+PREDECL_SORTLIST_UNIQ(path_list);		// Z3 = path_list
+struct shortest_path_item {
+	struct ospf_lsa *lsa;				// lsa of dst router
+	uint32_t cost;						// cost on this search path
+	uint32_t hop_cnt;					// hop cnt from calculating router to dst router
+	struct in_addr nexthop;				// nexthop ip address on the search path form root to dst
+	ifindex_t ifindex;					// and in dst_dict_head, nexthop and ifindex is useless
 	struct bfs_queue_item queue_item;
-};
-struct bfs_queue_head queue_head;
-DECLARE_LIST(bfs_queue, struct bfs_item, queue_item);
-
-/**
- * @author sqsq
- */
-PREDECL_HASH(dst_dict);	// Z = dst_dict
-struct dict_item {
-	struct in_addr addr;
-	uint32_t cost;
 	struct dst_dict_item hash_item;
+	struct path_list_item sorted_item;
 };
-struct dst_dict_head dict_head;
-extern int hash_dict_compare_func(const struct dict_item *a, const struct dict_item *b);
-extern uint32_t hash_dict_hash_func(const struct dict_item *a);
-DECLARE_HASH(dst_dict, struct dict_item, hash_item, hash_dict_compare_func, hash_dict_hash_func);
-
+DECLARE_LIST(bfs_queue, struct shortest_path_item, queue_item);
+extern int shortest_path_item_compare_func(const struct shortest_path_item *a, const struct shortest_path_item *b);
+extern uint32_t shortest_path_item_hash_func(const struct shortest_path_item *a);
+extern struct shortest_path_item *shortest_path_item_new(void);
+extern struct shortest_path_item *shortest_path_item_init(struct ospf_lsa *lsa, uint32_t cost, uint32_t hop_cnt);
+extern void shortest_path_item_free(struct shortest_path_item *item);
+extern struct shortest_path_item *shortest_path_item_dup(struct shortest_path_item *item);
+DECLARE_HASH(dst_dict, struct shortest_path_item, hash_item, shortest_path_item_compare_func, shortest_path_item_hash_func);
+DECLARE_SORTLIST_UNIQ(path_list, struct shortest_path_item, sorted_item, shortest_path_item_compare_func);
 
 /* What triggered the SPF ? */
 typedef enum {
@@ -147,13 +146,9 @@ extern void ospf_restart_spf(struct ospf *ospf);
 /* void ospf_spf_calculate_timer_add (); */
 
 /** @sqsq */
-extern int count_in_path_list(struct list* list, struct in_addr ip);
 extern void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 			struct route_table *new_table,
 			struct route_table *all_rtrs,
 			struct route_table *new_rtrs, bool is_dry_run,
 			bool is_root_node);
-extern uint32_t get_direction(struct in_addr from_satellite_id, struct in_addr to_satellite_id);
-extern void set_output_interface_and_nexthop(struct ospf_area *area, struct ospf_lsa *root_lsa, 
-				struct ospf_interface **output_interfaces, struct in_addr *output_nexthops);
 #endif /* _QUAGGA_OSPF_SPF_H */
