@@ -64,7 +64,6 @@ struct vertex_parent {
  */
 PREDECL_LIST(bfs_queue);				// Z1 = bfs_queue
 PREDECL_HASH(dst_dict);					// Z2 = dst_dict
-PREDECL_SORTLIST_UNIQ(path_list);		// Z3 = path_list
 struct shortest_path_item {
 	struct ospf_lsa *lsa;				// lsa of dst router
 	uint32_t cost;						// cost on this search path
@@ -73,7 +72,6 @@ struct shortest_path_item {
 	ifindex_t ifindex;					// and in dst_dict_head, nexthop and ifindex is useless
 	struct bfs_queue_item queue_item;
 	struct dst_dict_item hash_item;
-	struct path_list_item sorted_item;
 };
 DECLARE_LIST(bfs_queue, struct shortest_path_item, queue_item);
 extern int shortest_path_item_compare_func(const struct shortest_path_item *a, const struct shortest_path_item *b);
@@ -83,7 +81,6 @@ extern struct shortest_path_item *shortest_path_item_init(struct ospf_lsa *lsa, 
 extern void shortest_path_item_free(struct shortest_path_item *item);
 extern struct shortest_path_item *shortest_path_item_dup(struct shortest_path_item *item);
 DECLARE_HASH(dst_dict, struct shortest_path_item, hash_item, shortest_path_item_compare_func, shortest_path_item_hash_func);
-DECLARE_SORTLIST_UNIQ(path_list, struct shortest_path_item, sorted_item, shortest_path_item_compare_func);
 
 /* What triggered the SPF ? */
 typedef enum {

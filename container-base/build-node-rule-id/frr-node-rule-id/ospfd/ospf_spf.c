@@ -1910,6 +1910,15 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	struct in_addr output_nexthops[10] = {};
 	// output ip address of corresponding output_interface
 
+	/**
+	 * used for time recording
+	 */
+	struct timespec ts, start, end;
+	struct tm time_info;
+	char time_str[50];
+	long long elapse_time_ns;
+	clock_gettime(CLOCK_MONOTOTIC, &start);
+
 	set_output_interface_and_nexthop(area, root_lsa, output_interfaces, output_nexthops);
 
 	for (dest_orbit_id = 0; dest_orbit_id < orbit_num; ++dest_orbit_id) {
@@ -1981,30 +1990,17 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 			}
 		}
 	}
-}
 
-/**
- * @author sqsq
- */
-int hash_dict_compare_func(const struct dict_item *a, const struct dict_item *b)
-{
-	if (a->addr.s_addr == b->addr.s_addr) {
-		return 0;
-	}
-	else if (a->addr.s_addr < b->addr.s_addr) {
-		return -1;
-	}
-	else {
-		return 1;
-	}
-}
-
-/**
- * @author sqsq
- */
-uint32_t hash_dict_hash_func(const struct dict_item *a)
-{
-	return a->addr.s_addr;
+	/**
+	 * time recording
+	 */
+	clock_gettime(CLOCK_MONOTOTIC, &end);
+	elapse_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - end.tv_nsec);
+	clock_gettime(CLOCK_REALTIME, &ts);
+	localtime_r(&ts.tv_sec, &time_info);
+	strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &time_info);
+	sprintf(time_str + strlen(time_str), ".%ld", ts.tv_nsec);
+	zlog_debug("%s    %s, finished spf first stage calculate, elapsed %lld ns", __func__, time_str, elapse_time_ns);
 }
 
 /* Calculating the shortest-path tree for an area, see RFC2328 16.1. */
