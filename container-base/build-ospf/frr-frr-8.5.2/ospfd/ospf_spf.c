@@ -1723,7 +1723,7 @@ void ospf_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	struct tm time_info;
 	char time_str[50];
 	long long elapse_time_ns;
-	clock_gettime(CLOCK_MONOTOTIC, &start);
+	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	if (IS_DEBUG_OSPF_EVENT) {
 		zlog_debug("%s: Start: running Dijkstra for area %pI4",
@@ -1827,7 +1827,7 @@ void ospf_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	 * @author sqsq
 	 * time recording
 	 */
-	clock_gettime(CLOCK_MONOTOTIC, &end);
+	clock_gettime(CLOCK_MONOTONIC, &end);
 	elapse_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - end.tv_nsec);
 	clock_gettime(CLOCK_REALTIME, &ts);
 	localtime_r(&ts.tv_sec, &time_info);

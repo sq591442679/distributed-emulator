@@ -1850,7 +1850,7 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	struct tm time_info;
 	char time_str[50];
 	long long elapse_time_ns;
-	clock_gettime(CLOCK_MONOTOTIC, &start);
+	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	bfs_queue_init(&queue_head);
 	dst_dict_init(&dict_head);
@@ -1994,7 +1994,7 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	/**
 	 * time recording
 	 */
-	clock_gettime(CLOCK_MONOTOTIC, &end);
+	clock_gettime(CLOCK_MONOTONIC, &end);
 	elapse_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - end.tv_nsec);
 	clock_gettime(CLOCK_REALTIME, &ts);
 	localtime_r(&ts.tv_sec, &time_info);
