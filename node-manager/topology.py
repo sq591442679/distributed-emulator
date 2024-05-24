@@ -136,7 +136,7 @@ log record-priority
 
 router ospf
     timers lsa min-arrival 0
-    ospf router-id 0.0.{node_id[0]}.{node_id[1]}
+    ospf router-id {satellite_id_tuple_to_router_id(node_id)}
 {protocol_conf}
     # redistribute connected
 interface eth1

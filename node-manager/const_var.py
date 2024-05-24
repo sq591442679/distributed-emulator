@@ -59,7 +59,7 @@ TIME_BASE = datetime(2024, 1, 1)
 
 UDP_SEND_INTERVAL = 0.01
 DRY_RUN = True
-WARMUP_PERIOD = 3000000      # unit: s
+WARMUP_PERIOD = 10      # unit: s
 RANDOM_SEED_NUM = 5     # number of tests with different random seeds
 
 RECORD_LONG_TERM_RESULT = True
@@ -67,7 +67,7 @@ RECORD_LONG_TERM_RESULT = True
 LOFI_DELTA = 1.0
 LINK_FAILURE_RATE_LIST = [0.05]
 # PROTOCOL_LIST = [f"lofi(3-{LOFI_DELTA:.3f})"]
-PROTOCOL_LIST = ["node_rule_bfs"]
+PROTOCOL_LIST = ["ospf"]
 TEST_NUMS = [1]
 RANDOM_SEEDS = [451]
 PROTOCOL_RELATED_ARGS = {
@@ -109,6 +109,7 @@ PROTOCOL_RELATED_ARGS = {
 			f"ospf orbit_num {ORBIT_NUM}",
 			f"ospf sat_per_orbit {SAT_PER_ORBIT}",
 			f"ospf use_walker_delta {int(USE_WALKER_DELTA)}",
+			f"ospf warmup_period {WARMUP_PERIOD}"
 		]
 	},
 }
@@ -128,3 +129,7 @@ for lofi_n in range(10):
 		],
 		"lofi_delta": LOFI_DELTA,
 	}
+
+
+	NOTE:
+	router-id cannot be 0.0.0.0

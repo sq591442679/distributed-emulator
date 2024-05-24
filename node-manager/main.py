@@ -103,15 +103,15 @@ def set_satellite_id_in_kernel(docker_client: DockerClient):
     logger.info('configuring satellite id in kernel net ns')
     for id in satellite_map.keys():
         satellite_name = satellite_id_tuple_to_str(id)
-        satellite_id = socket.htonl(ip_str_to_int(f"0.0.{id[0]}.{id[1]}"))
-        # logger.info(f"configuring kernel net id {satellite_id}(0.0.{id[0]}.{id[1]}) to {satellite_name}: "
-        #       f"/set-satellite-id/set_satellite_id {satellite_id}")
-        ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
+        satellite_router_id = socket.htonl(ip_str_to_int(satellite_id_tuple_to_router_id(id)))
+        # logger.info(f"configuring kernel net id {satellite_id}({satellite_id_tuple_to_router_id(id)}) to {satellite_name}: "
+        #       f"/set-satellite-id/set_satellite_id {satellite_router_id}")
+        ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_router_id}")
         # logger.info(ret[1].decode().strip())
         while ret[0] != 0:
             logger.warning(ret[1].decode().strip())
             time.sleep(random.random())
-            ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_id}")
+            ret = docker_client.exec_cmd(satellite_name, f"/set-satellite-id/set_satellite_id {satellite_router_id}")
             # logger.info(ret[1].decode().strip())
 
 

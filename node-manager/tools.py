@@ -43,11 +43,24 @@ def satellite_index_to_id_tuple(index: int) -> tuple:
 
 
 def satellite_id_tuple_to_str(id: tuple) -> str:
-    return 'node_' + str(id[0]) + '_' + str(id[1])
+    """
+    note that router-id cannot be 0.0.0.0,
+    so container name should be (x+1, y+1)
+    """
+    return 'node_' + str(id[0] + 1) + '_' + str(id[1] + 1)
+
+
+def satellite_id_tuple_to_router_id(id: tuple) -> str:
+    """
+    returns an str in ipv4 address format.
+    note that router-id cannot be 0.0.0.0,
+    so router id should be 0.0.x+1.y+1
+    """
+    return f"0.0.{id[0] + 1}.{id[1] + 1}"
 
 
 def satellite_str_to_id_tuple(str: str) -> tuple:
-    return (int(str.split('_')[1]), int(str.split('_')[2]))
+    return (int(str.split('_')[1]) - 1, int(str.split('_')[2]) - 1)
 
 
 def use_walker_delta() -> bool:

@@ -10962,6 +10962,20 @@ static void show_ip_ospf_route_router(struct vty *vty, struct ospf *ospf,
 /**
  * @sqsq
  */
+DEFUN (show_ip_ospf_warmup,
+		show_ip_ospf_warmup_cmd,
+		"show ip ospf warmup_period",
+		SHOW_STR IP_STR
+		"OSPF information\n"
+		"Show warmup period of Lofi\n")
+{
+	vty_out(vty, "%u\n", warmup_period);
+	return CMD_SUCCESS;
+}
+
+/**
+ * @sqsq
+ */
 DEFUN (show_ip_ospf_orbit_num,
 		show_ip_ospf_orbit_num_cmd,
 		"show ip ospf orbit_num",
@@ -12881,6 +12895,7 @@ void ospf_vty_show_init(void)
 	 */
 	install_element(VIEW_NODE, &show_ip_ospf_orbit_num_cmd);
 	install_element(VIEW_NODE, &show_ip_ospf_sat_per_orbit_cmd);
+	install_element(VIEW_NODE, &show_ip_ospf_warmup_cmd);
 }
 
 /* Initialization of OSPF interface. */
