@@ -65,3 +65,4 @@ DEFINE_MTYPE(OSPFD, OSPF_Q_SPACE, "OSPF TI-LFA Q-Space");
  * @author sqsq
  */
 DEFINE_MTYPE(OSPFD, OSPF_SHORTEST_PATH_ITEM, "OSPF Shortest path item used for bfs");
+DEFINE_MTYPE(OSPFD, OSPF_PATH_ITEM, "OSPF path item used for bfs");

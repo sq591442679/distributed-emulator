@@ -79,6 +79,21 @@ extern void shortest_path_item_free(struct shortest_path_item *item);
 extern struct shortest_path_item *shortest_path_item_dup(struct shortest_path_item *item);
 DECLARE_HASH(dst_dict, struct shortest_path_item, hash_item, shortest_path_item_compare_func, shortest_path_item_hash_func);
 
+/**
+ * @author sqsq
+ */
+PREDECL_HASH(nexthop_dict);
+struct nexthop_item {
+	struct in_addr nexthop;
+	struct nexthop_dict_item nexthop_dict_field;
+};
+extern int nexthop_item_compare_func(const struct nexthop_item *a, const struct nexthop_item *b);
+extern uint32_t nexthop_item_hash_func(const struct nexthop_item *a);
+extern struct nexthop_item *nexthop_item_new(void);
+extern struct nexthop_item *nexthop_item_init(struct in_addr nexthop);
+extern void nexthop_item_free(struct nexthop_item *item);
+DECLARE_HASH(nexthop_dict, struct nexthop_item, nexthop_dict_field, nexthop_item_compare_func, nexthop_item_hash_func);
+
 /* What triggered the SPF ? */
 typedef enum {
 	SPF_FLAG_ROUTER_LSA_INSTALL = 1,

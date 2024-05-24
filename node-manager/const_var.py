@@ -28,8 +28,8 @@ NETWORK_LOSS = 0        # percent 0 means 0%
 QUEUE_CAPACITY = 10000    # unit: pkt
 
 # CONSTELLATION PARAMETERS
-ORBIT_NUM = 4
-SAT_PER_ORBIT = 4
+ORBIT_NUM = 6
+SAT_PER_ORBIT = 11
 USE_WALKER_DELTA = False		# if True, then no seam
 INCLINE_DEGREE: float = 89	
 # note that in particular, when USE_WALKER_DELTA is False, INCLINE_DEGREE is usually near 90
@@ -49,8 +49,10 @@ LINK_FAILURE_DURATION = 5       # unit: s
 SIMULATION_DURATION = 100      # unit: s, better do not exceed OSPF_LSA_MAXAGE (3600)
 
 # TRANSMISSION PAIR
+# note that node id (0, 0) is container node_1_1
 SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(0, 1)]
-RECEIVER_NODE_ID = (2, 2)
+RECEIVER_NODE_ID = (4, 4)
+# RECEIVER_NODE_ID = (1, 2)
 # SENDER_NODE_ID_LIST: List[Tuple[int, int]] = []
 # RECEIVER_NODE_ID = (0, 0)
 
@@ -67,7 +69,7 @@ RECORD_LONG_TERM_RESULT = True
 LOFI_DELTA = 1.0
 LINK_FAILURE_RATE_LIST = [0.05]
 # PROTOCOL_LIST = [f"lofi(3-{LOFI_DELTA:.3f})"]
-PROTOCOL_LIST = ["ospf"]
+PROTOCOL_LIST = ["node_rule_bfs"]
 TEST_NUMS = [1]
 RANDOM_SEEDS = [451]
 PROTOCOL_RELATED_ARGS = {
@@ -129,7 +131,3 @@ for lofi_n in range(10):
 		],
 		"lofi_delta": LOFI_DELTA,
 	}
-
-
-	NOTE:
-	router-id cannot be 0.0.0.0

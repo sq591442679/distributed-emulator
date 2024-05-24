@@ -2000,7 +2000,7 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	localtime_r(&ts.tv_sec, &time_info);
 	strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &time_info);
 	sprintf(time_str + strlen(time_str), ".%ld", ts.tv_nsec);
-	zlog_debug("%s    %s, finished spf first stage calculate, elapsed %lld ns", __func__, time_str, elapse_time_ns);
+	zlog_debug("%s    %s, finished routing table calculation, elapsed %lldns", __func__, time_str, elapse_time_ns);
 }
 
 /* Calculating the shortest-path tree for an area, see RFC2328 16.1. */
