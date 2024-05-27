@@ -10800,12 +10800,13 @@ static void show_ip_ospf_route_network(struct vty *vty, struct ospf *ospf,
 									ospf->vrf_id));
 						} else {
 							vty_out(vty,
-								"%24s   via %pI4, %s\n",
+								"%24s   via %pI4, %s, cost: %u, weight: %u, ifindex:%d\n",  /** sqsq */
 								"",
 								&path->nexthop,
 								ifindex2ifname(
 									path->ifindex,
-									ospf->vrf_id));
+									ospf->vrf_id),
+								path->cost, path->weight, path->ifindex);
 						}
 					}
 				}

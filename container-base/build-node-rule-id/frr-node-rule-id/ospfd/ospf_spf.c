@@ -1952,15 +1952,15 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 				struct router_lsa_link *l = (struct router_lsa_link *)p;
 				int link_type = l->m[0].type;
 				p += (OSPF_ROUTER_LSA_LINK_SIZE + l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE);
-				if (link_type == LSA_LINK_TYPE_POINTOPOINT) { 
+				if (link_type == LSA_LINK_TYPE_STUB) { 
 					struct prefix_ipv4 p;
 					struct route_node *rn;
 
 					p.family = AF_INET;
-					p.prefix = l->link_data;
-					p.prefixlen = 32;
-					// p.prefix = l->link_id;
-					// p.prefixlen = ip_masklen(l->link_data);
+					// p.prefix = l->link_data;
+					// p.prefixlen = 32;
+					p.prefix = l->link_id;
+					p.prefixlen = ip_masklen(l->link_data);
 					apply_mask_ipv4(&p);
 
 					// zlog_debug("%s    dest id:%pI4, dest prefix:%pI4", __func__, &dest_lsa_header->id, &p.prefix);

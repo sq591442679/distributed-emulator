@@ -61,38 +61,57 @@ struct vertex_parent {
 
 /**
  * @author sqsq
+ * @brief object used to maintain bfs search path
  */
-PREDECL_LIST(bfs_queue);				// Z1 = bfs_queue
-PREDECL_HASH(dst_dict);					// Z2 = dst_dict
-struct shortest_path_item {
-	struct ospf_lsa *lsa;				// lsa of dst router
-	uint32_t hop_cnt;					// hop cnt from calculating router to dst router
-	struct bfs_queue_item queue_item;
-	struct dst_dict_item hash_item;
+struct search_parent_item {
+	struct in_addr parent_router_id;
+	uint32_t cost;						// cost from root to parent_router_id
 };
-DECLARE_LIST(bfs_queue, struct shortest_path_item, queue_item);
-extern int shortest_path_item_compare_func(const struct shortest_path_item *a, const struct shortest_path_item *b);
-extern uint32_t shortest_path_item_hash_func(const struct shortest_path_item *a);
-extern struct shortest_path_item *shortest_path_item_new(void);
-extern struct shortest_path_item *shortest_path_item_init(struct ospf_lsa *lsa, uint32_t hop_cnt);
-extern void shortest_path_item_free(struct shortest_path_item *item);
-extern struct shortest_path_item *shortest_path_item_dup(struct shortest_path_item *item);
-DECLARE_HASH(dst_dict, struct shortest_path_item, hash_item, shortest_path_item_compare_func, shortest_path_item_hash_func);
+extern struct search_parent_item *search_parent_item_new(void);
+extern struct search_parent_item *search_parent_item_init(struct in_addr parent_router_id, uint32_t cost);
+extern void search_parent_item_free(struct search_parent_item *item);
+
 
 /**
  * @author sqsq
  */
-PREDECL_HASH(nexthop_dict);
-struct nexthop_item {
-	struct in_addr nexthop;
-	struct nexthop_dict_item nexthop_dict_field;
+PREDECL_LIST(bfs_queue);				// Z1 = bfs_queue
+PREDECL_HASH(dst_dict);					// Z2 = dst_dict
+/**
+ * object used in bfs search
+ */
+struct search_item {
+	struct ospf_lsa *lsa;				// lsa of dst router
+	uint32_t hop_cnt;					// hop cnt from root to current router
+	uint32_t cost;						// min cost from root to current router
+	struct list *parents;				// list of search_parent_item
+	struct bfs_queue_item queue_item;
+	struct dst_dict_item hash_item;
 };
-extern int nexthop_item_compare_func(const struct nexthop_item *a, const struct nexthop_item *b);
-extern uint32_t nexthop_item_hash_func(const struct nexthop_item *a);
-extern struct nexthop_item *nexthop_item_new(void);
-extern struct nexthop_item *nexthop_item_init(struct in_addr nexthop);
-extern void nexthop_item_free(struct nexthop_item *item);
-DECLARE_HASH(nexthop_dict, struct nexthop_item, nexthop_dict_field, nexthop_item_compare_func, nexthop_item_hash_func);
+DECLARE_LIST(bfs_queue, struct search_item, queue_item);
+extern int search_item_compare_func(const struct search_item *a, const struct search_item *b);
+extern uint32_t search_item_hash_func(const struct search_item *a);
+extern struct search_item *search_item_new(void);
+extern struct search_item *search_item_init(struct ospf_lsa *lsa, uint32_t hop_cnt, uint32_t cost);
+extern void search_item_free(struct search_item *item);
+extern struct search_item *search_item_dup(struct search_item *item);
+DECLARE_HASH(dst_dict, struct search_item, hash_item, search_item_compare_func, search_item_hash_func);
+
+/**
+ * @author sqsq
+ */
+PREDECL_HASH(path_dict);
+struct path_item {
+	struct in_addr nexthop;
+	struct ospf_path *path;
+	struct path_dict_item path_dict_field;
+};
+extern int path_item_compare_func(const struct path_item *a, const struct path_item *b);
+extern uint32_t path_item_hash_func(const struct path_item *a);
+extern struct path_item *path_item_new(void);
+extern struct path_item *path_item_init(struct in_addr nexthop);
+extern void path_item_free(struct path_item *item);
+DECLARE_HASH(path_dict, struct path_item, path_dict_field, path_item_compare_func, path_item_hash_func);
 
 /* What triggered the SPF ? */
 typedef enum {
