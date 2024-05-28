@@ -103,7 +103,7 @@ PREDECL_HASH(search_item_dict);
  * object used in bfs search
  */
 struct search_item {
-	struct node_item *current_node;
+	struct node_item *node;
 	uint32_t hop_cnt;									// hop cnt from root to current router
 	uint32_t cost;										// min cost from root to current router
 	struct node_dict_head parents_dict_head;			// dict of node_item

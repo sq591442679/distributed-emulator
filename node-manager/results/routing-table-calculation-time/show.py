@@ -32,8 +32,8 @@ plt.figure(figsize=(10, 10))
 bar_width = 0.4
 
 # 绘制柱状图
-bars1 = plt.bar(desired_order, average_execution_time, color='C0', label='Other Time')
-bars2 = plt.bar(desired_order, average_pure_calculation_time, color='C1', bottom=average_execution_time - average_pure_calculation_time, label='Pure Calculation Time')
+bars1 = plt.bar(desired_order, average_execution_time - average_pure_calculation_time, color='C0', bottom=average_pure_calculation_time, label='Other Time')
+bars2 = plt.bar(desired_order, average_pure_calculation_time, color='C1', label='Pure Calculation Time')
 
 # 添加标题和标签，增大字号
 plt.title('Average Execution Time and Pure Calculation Time', fontsize=20)

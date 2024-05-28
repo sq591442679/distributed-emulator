@@ -2406,7 +2406,7 @@ int rescale(int x, int X)
 /**
  * @author sqsq
  * @brief 
- * for link l of current_lsa, find the corresponding nexthop ip address of netghbor_lsa
+ * for link l of current_lsa, find the corresponding nexthop ip address of neighbor_lsa
  */
 struct in_addr get_neighbor_intf_ip(struct ospf_lsa *current_lsa, struct router_lsa_link *l, struct ospf_lsa *neighbor_lsa)
 {

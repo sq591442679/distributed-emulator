@@ -90,7 +90,7 @@ def print_and_store_interface_map(interface_map_tmp):
                   f"/{satellite_id_tuple_to_str(node_id)}_interface_table.conf"
         with open(storage, "w") as f:
             for interface in interface_map_tmp[node_id]["interface"]:
-                f.write(f"{interface[0]},{interface[1]},0.0.{interface[2][0]}.{interface[2][1]}\n")
+                f.write(f"{interface[0]},{interface[1]},{satellite_id_tuple_to_str(interface[2])}\n")
 
 
 def modify_interface_map(conn_index, network_node_id, interface_map_tmp):
@@ -241,7 +241,8 @@ def generate_mission_for_network(link_connections, satellites_tmp, docker_client
 
             # added by sqsq
             with open("eth_dict.log", "a") as f:
-                print(f"{node_id1}<-->{node_id2}:{subnet_ip_str}/29", flush=True, file=f)
+                print(f"{satellite_id_tuple_to_str(node_id1)}<-->{satellite_id_tuple_to_str(node_id2)}:{subnet_ip_str}/29", 
+                      flush=True, file=f)
 
             # tmp mission generated
             tmp_mission = (node_id1, node_id2, container_name1, container_name2, network_index, ipam_config)

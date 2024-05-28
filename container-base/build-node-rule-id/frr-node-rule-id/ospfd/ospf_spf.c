@@ -1921,8 +1921,8 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 
 	set_output_interface_and_nexthop(area, root_lsa, output_interfaces, output_nexthops);
 
-	for (dest_orbit_id = 0; dest_orbit_id < orbit_num; ++dest_orbit_id) {
-		for (dest_inner_orbit_id = 0; dest_inner_orbit_id < sat_per_orbit; ++dest_inner_orbit_id) {
+	for (dest_orbit_id = 1; dest_orbit_id <= orbit_num; ++dest_orbit_id) {
+		for (dest_inner_orbit_id = 1; dest_inner_orbit_id <= sat_per_orbit; ++dest_inner_orbit_id) {
 			struct in_addr dest_router_id = {.s_addr = set_ip_addr(0, 0, dest_orbit_id, dest_inner_orbit_id)};
 			struct ospf_lsa *dest_lsa = ospf_lsa_lookup(area->ospf, area, OSPF_ROUTER_LSA, 
 														dest_router_id, dest_router_id);

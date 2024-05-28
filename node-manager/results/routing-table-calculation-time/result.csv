@@ -9,16 +9,16 @@ node-rule-id,7,311325ns,42242ns
 node-rule-id,8,367111ns,40960ns
 node-rule-id,9,386220ns,30087ns
 node-rule-id,10,379122ns,47918ns
-node-rule-bfs,1,926438ns,0ns
-node-rule-bfs,2,499042ns,0ns
-node-rule-bfs,3,2724705ns,0ns
-node-rule-bfs,4,516619ns,0ns
-node-rule-bfs,5,439137ns,0ns
-node-rule-bfs,6,420276ns,0ns
-node-rule-bfs,7,471610ns,0ns
-node-rule-bfs,8,476152ns,0ns
-node-rule-bfs,9,516605ns,0ns
-node-rule-bfs,10,841752ns,0ns
+node-rule-bfs,1,468578ns,215106ns
+node-rule-bfs,2,754262ns,115287ns
+node-rule-bfs,3,796438ns,114121ns
+node-rule-bfs,4,768170ns,113998ns
+node-rule-bfs,5,696735ns,222436ns
+node-rule-bfs,6,458323ns,130670ns
+node-rule-bfs,7,824935ns,213944ns
+node-rule-bfs,8,388710ns,217628ns
+node-rule-bfs,9,408112ns,239355ns
+node-rule-bfs,10,753782ns,126395ns
 ospf,1,709340ns,179700ns
 ospf,2,588838ns,166819ns
 ospf,3,298642ns,316837ns
@@ -30,3 +30,9 @@ ospf,8,612764ns,328127ns
 ospf,9,617981ns,317484ns
 ospf,10,653664ns,111955ns
 comment,monitor node_2_3 and change eth1 of node_3_7,0
+
+
+
+
+
+
