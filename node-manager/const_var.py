@@ -69,10 +69,10 @@ RECORD_LONG_TERM_RESULT = True
 LOFI_DELTA = 1.0
 LINK_FAILURE_RATE_LIST = [0.05]
 # PROTOCOL_LIST = [f"lofi(3-{LOFI_DELTA:.3f})"]
-PROTOCOL_LIST = ["node_rule_bfs"]
-# PROTOCOL_LIST = ["ospf"]
-TEST_NUMS = [1]
-RANDOM_SEEDS = [451]
+# PROTOCOL_LIST = ["node_rule_bfs_multipath", "ospf", "node-rule-id"]
+PROTOCOL_LIST = ["node_rule_bfs_no_multipath"]
+TEST_NUMS = [10]
+RANDOM_SEEDS = [42]
 PROTOCOL_RELATED_ARGS = {
 	"ospf": {
 		"image_name": "ospf:latest",
@@ -100,7 +100,7 @@ PROTOCOL_RELATED_ARGS = {
 			f"ospf use_walker_delta {int(USE_WALKER_DELTA)}",
 		]
 	},
-	"node_rule_bfs": {
+	"node_rule_bfs_multipath": {
 		"image_name": "node_rule_bfs:latest",
 		"modules_before_constellation_creation": [
 			"./sqsq-kernel-modules/install_satellite_id.sh",
@@ -112,7 +112,24 @@ PROTOCOL_RELATED_ARGS = {
 			f"ospf orbit_num {ORBIT_NUM}",
 			f"ospf sat_per_orbit {SAT_PER_ORBIT}",
 			f"ospf use_walker_delta {int(USE_WALKER_DELTA)}",
-			f"ospf warmup_period {WARMUP_PERIOD}"
+			f"ospf warmup_period {WARMUP_PERIOD}",
+			f"ospf enable_multipath 1"
+		]
+	},
+	"node_rule_bfs_no_multipath": {
+		"image_name": "node_rule_bfs:latest",
+		"modules_before_constellation_creation": [
+			"./sqsq-kernel-modules/install_satellite_id.sh",
+		],
+		"modules_after_constellation_creation": [
+
+		],
+		"frr_configurations": [
+			f"ospf orbit_num {ORBIT_NUM}",
+			f"ospf sat_per_orbit {SAT_PER_ORBIT}",
+			f"ospf use_walker_delta {int(USE_WALKER_DELTA)}",
+			f"ospf warmup_period {WARMUP_PERIOD}",
+			f"ospf enable_multipath 0"
 		]
 	},
 }

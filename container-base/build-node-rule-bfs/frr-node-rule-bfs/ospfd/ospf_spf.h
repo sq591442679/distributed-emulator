@@ -66,10 +66,11 @@ struct vertex_parent {
 PREDECL_HASH(node_dict);
 struct node_item {
 	struct ospf_lsa *lsa;
+	struct router_lsa_link *l;			// used for parents, l is the link from parent to current lsa
 	struct node_dict_item hash_item;
 };
 extern struct node_item *node_item_new(void);
-extern struct node_item *node_item_init(struct ospf_lsa *lsa);
+extern struct node_item *node_item_init(struct ospf_lsa *lsa, struct router_lsa_link *l);
 extern void node_item_free(struct node_item *item);
 extern int node_item_compare_func(const struct node_item *a, 
 											const struct node_item *b);
@@ -106,7 +107,9 @@ struct search_item {
 	struct node_item *node;
 	uint32_t hop_cnt;									// hop cnt from root to current router
 	uint32_t cost;										// min cost from root to current router
+	bool is_leaf;							
 	struct node_dict_head parents_dict_head;			// dict of node_item
+	struct node_dict_head children_dict_head;
 	struct path_dict_head nexthop_dict_head;			// dict of path_item
 	struct search_item_queue_item queue_item;
 	struct search_item_dict_item hash_item;
@@ -114,8 +117,11 @@ struct search_item {
 DECLARE_LIST(search_item_queue, struct search_item, queue_item);
 extern struct search_item *search_item_new(void);
 extern struct search_item *search_item_init(struct ospf_lsa *lsa, uint32_t hop_cnt, uint32_t cost);
+extern void search_item_delete_all_parents(struct search_item *item, struct search_item_dict_head *dict_head);
+extern void search_item_delete_all_children(struct search_item *item);
+extern void search_item_delete_all_nexthops(struct search_item *item);
 extern void search_item_free(struct search_item *item);
-extern void search_item_add_parent(struct search_item *item, struct search_item *parent);
+extern void search_item_add_parent(struct search_item *item, struct search_item *parent, struct router_lsa_link *l);
 extern int search_item_compare_func(const struct search_item *a, const struct search_item *b);
 extern uint32_t search_item_hash_func(const struct search_item *a);
 DECLARE_HASH(search_item_dict, struct search_item, hash_item, search_item_compare_func, search_item_hash_func);

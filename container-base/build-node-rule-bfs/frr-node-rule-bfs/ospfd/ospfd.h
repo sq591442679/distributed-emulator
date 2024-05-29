@@ -54,6 +54,7 @@ extern uint32_t orbit_num;
 extern uint32_t sat_per_orbit;
 extern bool use_walker_delta;
 extern uint32_t warmup_period;
+extern bool enable_multipath;
 
 #define OSPF_NSSA_TRANS_STABLE_DEFAULT		40
 

@@ -83,6 +83,7 @@ uint32_t orbit_num = 10;
 uint32_t sat_per_orbit = 20;
 bool use_walker_delta = false;
 uint32_t warmup_period = UINT32_MAX;
+bool enable_multipath = false;
 
 static void ospf_remove_vls_through_area(struct ospf *, struct ospf_area *);
 static void ospf_network_free(struct ospf *, struct ospf_network *);

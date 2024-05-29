@@ -338,6 +338,34 @@ DEFUN (
 	return CMD_SUCCESS;
 }
 
+/**
+ * @sqsq
+ */
+DEFUN (
+	ospf_enable_multipath,
+	ospf_enable_multipath_cmd,
+	"ospf enable_multipath (0-1)",
+	"OSPF specific commands\n"
+	"whether enable multipath\n"
+	"1 for multipath, 0 for no multipath"
+)
+{
+	int idx = 0;
+	uint32_t n = 0;
+
+	// get arguments
+	char *n_str = NULL;
+
+	argv_find(argv, argc, "(0-1)", &idx);
+	n_str = argv[idx]->arg;
+	n = strtol(n_str, NULL, 10);
+
+	enable_multipath = (bool)n;
+
+	return CMD_SUCCESS;
+}
+
+
 DEFUN (no_router_ospf,
        no_router_ospf_cmd,
        "no router ospf [{(1-65535)|vrf NAME}]",
@@ -10963,6 +10991,20 @@ static void show_ip_ospf_route_router(struct vty *vty, struct ospf *ospf,
 /**
  * @sqsq
  */
+DEFUN (show_ip_ospf_enable_multipath,
+		show_ip_ospf_enable_multipath_cmd,
+		"show ip ospf enable_multipath",
+		SHOW_STR IP_STR
+		"OSPF information\n"
+		"Show whether enable multipath\n")
+{
+	vty_out(vty, "%u\n", enable_multipath);
+	return CMD_SUCCESS;
+}
+
+/**
+ * @sqsq
+ */
 DEFUN (show_ip_ospf_warmup,
 		show_ip_ospf_warmup_cmd,
 		"show ip ospf warmup_period",
@@ -12894,6 +12936,7 @@ void ospf_vty_show_init(void)
 	/**
 	 * @sqsq
 	 */
+	install_element(VIEW_NODE, &show_ip_ospf_enable_multipath_cmd);
 	install_element(VIEW_NODE, &show_ip_ospf_orbit_num_cmd);
 	install_element(VIEW_NODE, &show_ip_ospf_sat_per_orbit_cmd);
 	install_element(VIEW_NODE, &show_ip_ospf_warmup_cmd);
@@ -13161,6 +13204,7 @@ void ospf_vty_init(void)
 	/**
 	 * @sqsq
 	 */
+	install_element(OSPF_NODE, &ospf_enable_multipath_cmd);
 	install_element(OSPF_NODE, &ospf_orbit_num_cmd);
 	install_element(OSPF_NODE, &ospf_sat_per_orbit_cmd);
 	install_element(OSPF_NODE, &ospf_use_inclined_orbit_cmd);
