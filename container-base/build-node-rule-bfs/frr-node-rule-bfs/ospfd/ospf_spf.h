@@ -77,6 +77,8 @@ extern int node_item_compare_func(const struct node_item *a,
 extern uint32_t node_item_hash_func(const struct node_item *a);
 DECLARE_HASH(node_dict, struct node_item, hash_item, 
 				node_item_compare_func, node_item_hash_func);
+extern void node_dict_free_all_elements(struct node_dict_head *head);
+
 
 /**
  * @author sqsq
@@ -93,13 +95,14 @@ extern struct path_item *path_item_new(void);
 extern struct path_item *path_item_init(struct in_addr nexthop);
 extern void path_item_free(struct path_item *item);
 DECLARE_HASH(path_dict, struct path_item, path_dict_field, path_item_compare_func, path_item_hash_func);
-
+extern void path_dict_free_all_elements(struct path_dict_head *head);
 
 /**
  * @author sqsq
  */
 PREDECL_LIST(search_item_queue);				// Z1 = search_item_queue
 PREDECL_HASH(search_item_dict);
+PREDECL_HASH(search_item_cost_dict);
 /**
  * object used in bfs search
  */
@@ -113,21 +116,40 @@ struct search_item {
 	struct path_dict_head nexthop_dict_head;			// dict of path_item
 	struct search_item_queue_item queue_item;
 	struct search_item_dict_item hash_item;
+	struct search_item_cost_dict_item cost_hash_item;
 };
 DECLARE_LIST(search_item_queue, struct search_item, queue_item);
 extern struct search_item *search_item_new(void);
 extern struct search_item *search_item_init(struct ospf_lsa *lsa, uint32_t hop_cnt, uint32_t cost);
 extern void search_item_delete_all_parents(struct search_item *item, struct search_item_dict_head *dict_head);
-extern void search_item_delete_all_children(struct search_item *item);
-extern void search_item_delete_all_nexthops(struct search_item *item);
 extern void search_item_free(struct search_item *item);
 extern void search_item_add_parent(struct search_item *item, struct search_item *parent, struct router_lsa_link *l);
 extern int search_item_compare_func(const struct search_item *a, const struct search_item *b);
+extern int search_item_cost_compare_func(const struct search_item *a, const struct search_item *b);
 extern uint32_t search_item_hash_func(const struct search_item *a);
 DECLARE_HASH(search_item_dict, struct search_item, hash_item, search_item_compare_func, search_item_hash_func);
-
+DECLARE_HASH(search_item_cost_dict, struct search_item, cost_hash_item, search_item_cost_compare_func, search_item_hash_func);
 extern void search_item_add_nexthop(struct ospf_area *area, struct search_item *item, struct search_item *neighbor_item, struct search_item *root_item, struct router_lsa_link *l);
+void search_item_add_nexthop_recursively(struct ospf_area *area, struct search_item *current_item, struct search_item *root_item, struct search_item_dict_head *dict_head);
 
+/**
+ * @author sqsq
+ */
+PREDECL_HASH(network_dict);
+struct network_item {
+	struct in_addr id;
+	uint32_t cost;
+	struct prefix_ipv4 pref;
+	struct lsa_header *header;
+	struct path_dict_head nexthop_dict_head;
+	struct network_dict_item hash_item;
+};
+extern int network_item_compare_func(const struct network_item *a, const struct network_item *b);
+extern uint32_t network_item_hash_func(const struct network_item *a);
+extern struct network_item *network_item_new(void);
+extern void network_item_free(struct network_item *item);
+DECLARE_HASH(network_dict, struct network_item, hash_item, network_item_compare_func, network_item_hash_func);
+extern void network_dict_free_all_elements(struct network_dict_head *head);
 
 
 /* What triggered the SPF ? */
