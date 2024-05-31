@@ -102,7 +102,7 @@ extern void path_dict_free_all_elements(struct path_dict_head *head);
  */
 PREDECL_LIST(search_item_queue);				// Z1 = search_item_queue
 PREDECL_HASH(search_item_dict);
-PREDECL_HASH(search_item_cost_dict);
+// PREDECL_HASH(search_item_cost_dict);
 /**
  * object used in bfs search
  */
@@ -116,7 +116,7 @@ struct search_item {
 	struct path_dict_head nexthop_dict_head;			// dict of path_item
 	struct search_item_queue_item queue_item;
 	struct search_item_dict_item hash_item;
-	struct search_item_cost_dict_item cost_hash_item;
+	// struct search_item_cost_dict_item cost_hash_item;
 };
 DECLARE_LIST(search_item_queue, struct search_item, queue_item);
 extern struct search_item *search_item_new(void);
@@ -128,7 +128,7 @@ extern int search_item_compare_func(const struct search_item *a, const struct se
 extern int search_item_cost_compare_func(const struct search_item *a, const struct search_item *b);
 extern uint32_t search_item_hash_func(const struct search_item *a);
 DECLARE_HASH(search_item_dict, struct search_item, hash_item, search_item_compare_func, search_item_hash_func);
-DECLARE_HASH(search_item_cost_dict, struct search_item, cost_hash_item, search_item_cost_compare_func, search_item_hash_func);
+// DECLARE_HASH(search_item_cost_dict, struct search_item, cost_hash_item, search_item_cost_compare_func, search_item_hash_func);
 extern void search_item_add_nexthop(struct ospf_area *area, struct search_item *item, struct search_item *neighbor_item, struct search_item *root_item, struct router_lsa_link *l);
 void search_item_add_nexthop_recursively(struct ospf_area *area, struct search_item *current_item, struct search_item *root_item, struct search_item_dict_head *dict_head);
 

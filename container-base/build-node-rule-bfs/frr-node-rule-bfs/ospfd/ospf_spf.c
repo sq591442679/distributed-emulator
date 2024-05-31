@@ -2044,7 +2044,7 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	struct timespec ts, start, end;
 	struct tm time_info;
 	char time_str[50];
-	long long elapse_time_ns;
+	long long total_time_ns, calculation_time_ns;
 	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	search_item_queue_init(&queue_head);
@@ -2062,26 +2062,17 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 		 */
 		struct search_item *first = search_item_queue_first(&queue_head), *find;
 		uint32_t current_hop = first->hop_cnt;
-		struct search_item_cost_dict_head cost_dict_head;
-		search_item_cost_dict_init(&cost_dict_head);
 		
 		while(search_item_queue_count(&queue_head) != 0) {
+			struct lsa_header *header;
+			uint8_t *p;
+			uint8_t *lim;
+
 			first = search_item_queue_first(&queue_head);
 			if (first == NULL || first->hop_cnt != current_hop) {	// end of one round
 				break;
 			}
-			search_item_cost_dict_add(&cost_dict_head, first);
 			search_item_queue_pop(&queue_head);
-		}
-
-		// frr_each(search_item_cost_dict, &cost_dict_head, first) {
-		// 	zlog_debug("%s    first_:%pI4, cost:%u", __func__, &first->node->lsa->data->id, first->cost);
-		// }
-
-		while ((first = search_item_cost_dict_pop(&cost_dict_head))) {
-			struct lsa_header *header;
-			uint8_t *p;
-			uint8_t *lim;
 
 			header = first->node->lsa->data;
 			p = (uint8_t *)header + OSPF_LSA_HEADER_SIZE + 4;
@@ -2147,17 +2138,17 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 						search_item_queue_add_tail(&queue_head, neighbor_item);
 					}
 					else if (find->hop_cnt == neighbor_hop_cnt) {
-						zlog_debug("%s    from %pI4 eqaul-hop searched %pI4, modifying routing table", 
-										__func__, 
-										&first->node->lsa->data->id,
-										&neighbor_lsa->data->id);
+						// zlog_debug("%s    from %pI4 eqaul-hop searched %pI4, modifying routing table", 
+						// 				__func__, 
+						// 				&first->node->lsa->data->id,
+						// 				&neighbor_lsa->data->id);
 
 						if (!enable_multipath) {
 							if (find->cost == neighbor_cost) {
 								search_item_add_parent(find, first, l);
 							}
 							else if (find->cost > neighbor_cost) {
-								zlog_debug("%s    deleting all parents", __func__);
+								// zlog_debug("%s    deleting all parents", __func__);
 								search_item_delete_all_parents(find, &dict_head);
 								search_item_add_parent(find, first, l);
 								find->cost = neighbor_cost;
@@ -2186,7 +2177,6 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 				}				
 			}
 		}
-		search_item_cost_dict_fini(&cost_dict_head);
 
 		// zlog_debug("%s    end of one round", __func__);
 		/**
@@ -2207,6 +2197,9 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 			search_item_add_nexthop_recursively(area, dict_item, root_search_item, &dict_head);
 		}
 	}
+
+	clock_gettime(CLOCK_MONOTONIC, &end);
+	calculation_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - start.tv_nsec);
 
 	build_route_table(area, new_table, root_lsa, &dict_head);
 
@@ -2249,12 +2242,12 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	 * time recording
 	 */
 	clock_gettime(CLOCK_MONOTONIC, &end);
-	elapse_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - start.tv_nsec);
+	total_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - start.tv_nsec);
 	clock_gettime(CLOCK_REALTIME, &ts);
 	localtime_r(&ts.tv_sec, &time_info);
 	strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &time_info);
 	sprintf(time_str + strlen(time_str), ".%ld", ts.tv_nsec);
-	zlog_debug("%s    %s, finished routing table calculation, elapsed %lldns", __func__, time_str, elapse_time_ns);
+	zlog_debug("%s    %s, finished routing table calculation, elapsed %lldns,%lldns", __func__, time_str, total_time_ns, calculation_time_ns);
 }
 
 /**
