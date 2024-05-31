@@ -218,4 +218,9 @@ extern void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *roo
 			struct route_table *all_rtrs,
 			struct route_table *new_rtrs, bool is_dry_run,
 			bool is_root_node);
+extern void dump_routing_table(struct route_table *new_table, struct ospf_area *area);
+extern void build_output_paths(struct ospf_area *area, struct ospf_lsa *root_lsa, struct path_dict_head *dict_head);
+extern void build_stub_network_dict(struct ospf_area *area, struct search_item_dict_head *dict_head, struct network_dict_head *network_item_dict_head);
+extern void build_route_table(struct ospf_area *area, struct route_table *new_table, struct ospf_lsa *root_lsa, struct search_item_dict_head *dict_head);
+
 #endif /* _QUAGGA_OSPF_SPF_H */

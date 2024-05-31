@@ -1785,14 +1785,16 @@ static void set_ospf_path(struct ospf_path *path,
 /**
  * @author sqsq
  */
-static void dump_routing_table(struct route_table *new_table, struct ospf_area *area)
+void dump_routing_table(struct route_table *new_table, struct ospf_area *area)
 {
 	// if (monotime(NULL) - area->ospf->start_time < warmup_period) {
 	// 	zlog_debug("%s    waiting for warmup", __func__);
 	// 	return;
 	// }
 	zlog_debug("%s ----------------------------------------------------", __func__);
-	for (struct route_node *node_in_new = route_top(new_table); node_in_new; node_in_new = route_next(node_in_new)) {
+	for (struct route_node *node_in_new = route_top(new_table); 
+			node_in_new; 
+			node_in_new = route_next(node_in_new)) {
 		struct ospf_route *route_in_new = node_in_new->info;
 		if (route_in_new != NULL) {
 			struct listnode *node, *nnode;
@@ -1801,7 +1803,10 @@ static void dump_routing_table(struct route_table *new_table, struct ospf_area *
 			prefix2str(&node_in_new->p, buf1, sizeof(buf1));
 			zlog_debug("%-18s", buf1);
 			for (ALL_LIST_ELEMENTS(route_in_new->paths, node, nnode, path)) {
-				zlog_debug("    nexthop:%pI4, ifname:%d, cost:%u", &path->nexthop, path->ifindex, path->cost);
+				zlog_debug("    nexthop:%pI4, ifname:%d, cost:%u", 
+							&path->nexthop, 
+							path->ifindex, 
+							path->cost);
 			}
 		}
 	}	
@@ -1812,7 +1817,9 @@ static void dump_routing_table(struct route_table *new_table, struct ospf_area *
 /**
  * @author sqsq
  */
-static void build_output_paths(struct ospf_area *area, struct ospf_lsa *root_lsa, struct path_dict_head *dict_head)
+void build_output_paths(struct ospf_area *area, 
+						struct ospf_lsa *root_lsa, 
+						struct path_dict_head *dict_head)
 {
 	struct lsa_header *header = root_lsa->data;
 	uint8_t *p = (uint8_t *)header + OSPF_LSA_HEADER_SIZE + 4;
@@ -1822,12 +1829,16 @@ static void build_output_paths(struct ospf_area *area, struct ospf_lsa *root_lsa
 		int link_type = l->m[0].type;
 		p += (OSPF_ROUTER_LSA_LINK_SIZE + l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE);
 		if (link_type == LSA_LINK_TYPE_POINTOPOINT) {
-			struct ospf_lsa *neighbor_lsa = ospf_lsa_lookup_by_id(area, OSPF_ROUTER_LSA, l->link_id);
+			struct ospf_lsa *neighbor_lsa = ospf_lsa_lookup_by_id(area, 
+																OSPF_ROUTER_LSA, 
+																l->link_id);
 			if (neighbor_lsa) {
 				struct in_addr nexthop = get_neighbor_intf_ip(root_lsa, 
 																l, 
 																neighbor_lsa);
-				struct ospf_interface *oi = ospf_if_lookup_by_local_addr(area->ospf, NULL, l->link_data);
+				struct ospf_interface *oi = ospf_if_lookup_by_local_addr(area->ospf, 
+																		NULL, 
+																		l->link_data);
 				if (oi && nexthop.s_addr != INADDR_ANY) {
 					struct path_item *item = path_item_init(nexthop);
 					struct ospf_path *path = ospf_path_new();
@@ -1847,7 +1858,7 @@ static void build_output_paths(struct ospf_area *area, struct ospf_lsa *root_lsa
 	}
 }
 
-static void build_stub_network_dict(struct ospf_area *area, 
+void build_stub_network_dict(struct ospf_area *area, 
 									struct search_item_dict_head *dict_head,
 									struct network_dict_head *network_item_dict_head)
 {
@@ -1874,14 +1885,15 @@ static void build_stub_network_dict(struct ospf_area *area,
 				};
 				apply_mask_ipv4(&pref);
 
-				zlog_debug("%s    link_id:%pI4, link_data:%pI4, network_id:%pI4",
-							__func__,
-							&l->link_id,
-							&l->link_data,
-							&network_id);
+				// zlog_debug("%s    link_id:%pI4, link_data:%pI4, network_id:%pI4",
+				// 			__func__,
+				// 			&l->link_id,
+				// 			&l->link_data,
+				// 			&network_id);
 
 				network_in_dict = network_dict_find(network_item_dict_head, &tmp);
 				if (network_in_dict == NULL) {
+					// zlog_debug("%s    network not explored before", __func__);
 					struct network_item *new = network_item_new();
 					struct path_item *nexthop_from_router;
 					new->id = network_id;
@@ -1895,6 +1907,7 @@ static void build_stub_network_dict(struct ospf_area *area,
 					network_dict_add(network_item_dict_head, new);
 				}
 				else {
+					// zlog_debug("%s    network explored", __func__);
 					if (network_in_dict->cost > dict_item->cost + link_cost) {
 						struct path_item *nexthop_from_router;
 						network_in_dict->cost = dict_item->cost + link_cost;
@@ -1903,38 +1916,32 @@ static void build_stub_network_dict(struct ospf_area *area,
 						frr_each(path_dict, &dict_item->nexthop_dict_head, nexthop_from_router) {
 							struct path_item *new_path = path_item_init(nexthop_from_router->nexthop);
 							path_dict_add(&network_in_dict->nexthop_dict_head, new_path);
-						}	
+						}
 					}
 					else if (network_in_dict->cost == dict_item->cost + link_cost) {
 						struct path_item *nexthop_from_router;
 						frr_each(path_dict, &dict_item->nexthop_dict_head, nexthop_from_router) {
 							struct path_item tmp = { .nexthop = nexthop_from_router->nexthop };
-							if (path_dict_find(&network_in_dict->nexthop_dict_head, &tmp)) {
+							if (path_dict_find(&network_in_dict->nexthop_dict_head, &tmp) == NULL) {
 								struct path_item *new_path = path_item_init(nexthop_from_router->nexthop);
 								path_dict_add(&network_in_dict->nexthop_dict_head, new_path);
 							}
-						}	
+						}
 					}
 				}
 			}
 		}
 	}
-	frr_each(network_dict, network_item_dict_head, network_in_dict) {
-		struct path_item *tmp_item;
-		frr_each(path_dict, &network_in_dict->nexthop_dict_head, tmp_item) {
-			zlog_debug("%s    network id:%pI4, nexthop:%pI4", 
-						__func__, 
-						&network_in_dict->id,
-						&tmp_item->nexthop);	
-		}
-	}
+	// frr_each(network_dict, network_item_dict_head, network_in_dict) {
+	// 	network_item_dump(network_in_dict);
+	// }
 }
 
 /**
  * @author sqsq
  * @brief build new_table based on results of bfs
  */
-static void build_route_table(struct ospf_area *area, 
+void build_route_table(struct ospf_area *area, 
 								struct route_table *new_table, 
 								struct ospf_lsa *root_lsa, 
 								struct search_item_dict_head *dict_head)
@@ -2011,7 +2018,7 @@ static void build_route_table(struct ospf_area *area,
 	network_dict_free_all_elements(&network_item_dict_head);
 	network_dict_fini(&network_item_dict_head);
 
-	dump_routing_table(new_table, area);	
+	// dump_routing_table(new_table, area);	
 }
 
 /**
@@ -2140,10 +2147,10 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 						search_item_queue_add_tail(&queue_head, neighbor_item);
 					}
 					else if (find->hop_cnt == neighbor_hop_cnt) {
-						// zlog_debug("%s    from %pI4 eqaul-hop searched %pI4, modifying routing table", 
-						// 				__func__, 
-						// 				&first->node->lsa->data->id,
-						// 				&neighbor_lsa->data->id);
+						zlog_debug("%s    from %pI4 eqaul-hop searched %pI4, modifying routing table", 
+										__func__, 
+										&first->node->lsa->data->id,
+										&neighbor_lsa->data->id);
 
 						if (!enable_multipath) {
 							if (find->cost == neighbor_cost) {
@@ -2182,7 +2189,6 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 		search_item_cost_dict_fini(&cost_dict_head);
 
 		// zlog_debug("%s    end of one round", __func__);
-		// dump_routing_table(tmp_table, area);
 		/**
 		 * do not free first here, because it is in dict_head
 		 */
@@ -2493,7 +2499,7 @@ void search_item_add_nexthop(struct ospf_area *area,
 				// 			__func__, 
 				// 			&parent_item->node->lsa->data->id,
 				// 			&current_item->node->lsa->data->id,
-				// 			&new_item->path->nexthop);
+				// 			&new_item->nexthop);
 			}	
 		}	
 	}
@@ -2585,7 +2591,7 @@ uint32_t network_item_hash_func(const struct network_item *a)
 struct network_item *network_item_new(void)
 {
 	struct network_item *new;
-	XCALLOC(MTYPE_OSPF_NETWORK_ITEM, sizeof(struct network_item));
+	new = XCALLOC(MTYPE_OSPF_NETWORK_ITEM, sizeof(struct network_item));
 	path_dict_init(&new->nexthop_dict_head);
 	return new;
 }
@@ -2601,6 +2607,16 @@ void network_dict_free_all_elements(struct network_dict_head *head)
 	while ((a = network_dict_pop(head)) != NULL) {
 		network_item_free(a);
 	}
+}
+void network_item_dump(struct network_item *item) {
+	struct path_item *path;
+	frr_each(path_dict, &item->nexthop_dict_head, path) {
+		zlog_debug("%s    network id:%pI4, nexthop:%pI4", 
+					__func__, 
+					&item->id,
+					&path->nexthop);
+	}
+	zlog_debug("dump end");
 }
 
 /* Calculating the shortest-path tree for an area, see RFC2328 16.1. */
