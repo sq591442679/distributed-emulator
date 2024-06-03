@@ -1910,13 +1910,15 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	struct in_addr output_nexthops[10] = {};
 	// output ip address of corresponding output_interface
 
+	uint32_t integrated_directions[100][100] = {};
+
 	/**
 	 * used for time recording
 	 */
 	struct timespec ts, start, end;
 	struct tm time_info;
 	char time_str[50];
-	long long elapse_time_ns;
+	long long elapse_time_ns, calculation_time_ns;
 	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	set_output_interface_and_nexthop(area, root_lsa, output_interfaces, output_nexthops);
@@ -1924,9 +1926,20 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	for (dest_orbit_id = 1; dest_orbit_id <= orbit_num; ++dest_orbit_id) {
 		for (dest_inner_orbit_id = 1; dest_inner_orbit_id <= sat_per_orbit; ++dest_inner_orbit_id) {
 			struct in_addr dest_router_id = {.s_addr = set_ip_addr(0, 0, dest_orbit_id, dest_inner_orbit_id)};
+			integrated_directions[current_router_id] = get_direction(current_router_id, dest_router_id);
+		}
+	}
+	clock_gettime(CLOCK_MONOTONIC, &end);
+	calculation_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - start.tv_nsec);	
+
+
+	for (dest_orbit_id = 1; dest_orbit_id <= orbit_num; ++dest_orbit_id) {
+		for (dest_inner_orbit_id = 1; dest_inner_orbit_id <= sat_per_orbit; ++dest_inner_orbit_id) {
+			struct in_addr dest_router_id = {.s_addr = set_ip_addr(0, 0, dest_orbit_id, dest_inner_orbit_id)};
 			struct ospf_lsa *dest_lsa = ospf_lsa_lookup(area->ospf, area, OSPF_ROUTER_LSA, 
 														dest_router_id, dest_router_id);
-			uint32_t integrated_direction = get_direction(current_router_id, dest_router_id);
+			// uint32_t integrated_direction = get_direction(current_router_id, dest_router_id);
+			uint32_t integrated_direction = integrated_directions[current_router_id, dest_router_id];
 			struct lsa_header *dest_lsa_header;
 			uint8_t *p, *lim;
 
@@ -2000,7 +2013,11 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	localtime_r(&ts.tv_sec, &time_info);
 	strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &time_info);
 	sprintf(time_str + strlen(time_str), ".%ld", ts.tv_nsec);
-	zlog_debug("%s    %s, finished routing table calculation, elapsed %lldns", __func__, time_str, elapse_time_ns);
+	zlog_debug("%s    %s, finished routing table calculation, elapsed %lldns,%lldns", 
+				__func__, 
+				time_str, 
+				elapse_time_ns, 
+				calculation_time_ns);
 }
 
 /* Calculating the shortest-path tree for an area, see RFC2328 16.1. */

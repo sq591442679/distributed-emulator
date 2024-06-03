@@ -68,3 +68,4 @@ DEFINE_MTYPE(OSPFD, OSPF_SEARCH_ITEM, "OSPF Shortest path item used for bfs");
 DEFINE_MTYPE(OSPFD, OSPF_PATH_ITEM, "OSPF path item used for bfs");
 DEFINE_MTYPE(OSPFD, OSPF_NODE_ITEM, "OSPF parent item used for maintaing parent router on bfs path");
 DEFINE_MTYPE(OSPFD, OSPF_NETWORK_ITEM, "OSPF network item used for building routing table");
+DEFINE_MTYPE(OSPFD, OSPF_NEXTHOP_ITEM, "OSPF nexthop item used for hashing a struct in_addr");

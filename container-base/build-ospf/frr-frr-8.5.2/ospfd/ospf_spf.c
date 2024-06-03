@@ -1722,7 +1722,7 @@ void ospf_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	struct timespec ts, start, end;
 	struct tm time_info;
 	char time_str[50];
-	long long elapse_time_ns;
+	long long elapse_time_ns, calculation_time_ns;
 	clock_gettime(CLOCK_MONOTONIC, &start);
 
 	if (IS_DEBUG_OSPF_EVENT) {
@@ -1805,6 +1805,12 @@ void ospf_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa,
 			ospf_router_route_table_dump(all_rtrs);
 	}
 
+	/**
+	 * @sqsq
+	 */
+	clock_gettime(CLOCK_MONOTONIC, &end);
+	calculation_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - start.tv_nsec);
+
 	/*
 	 * Second stage of SPF calculation procedure's, add leaves to the tree
 	 * for stub networks.
@@ -1833,7 +1839,11 @@ void ospf_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa,
 	localtime_r(&ts.tv_sec, &time_info);
 	strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &time_info);
 	sprintf(time_str + strlen(time_str), ".%ld", ts.tv_nsec);
-	zlog_debug("%s    %s, finished routing table calculation, elapsed %lldns", __func__, time_str, elapse_time_ns);
+	zlog_debug("%s    %s, finished routing table calculation, elapsed %lldns,%lldns", 
+				__func__, 
+				time_str, 
+				elapse_time_ns,
+				calculation_time_ns);
 }
 
 void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,

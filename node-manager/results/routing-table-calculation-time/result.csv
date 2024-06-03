@@ -9,34 +9,27 @@ node-rule-id,7,311325ns,42242ns
 node-rule-id,8,367111ns,40960ns
 node-rule-id,9,386220ns,30087ns
 node-rule-id,10,379122ns,47918ns
-node-rule-bfs,1,545717ns,253778ns
-node-rule-bfs,2,865883ns,265041ns
-node-rule-bfs,3,576646ns,361587ns
-node-rule-bfs,4,872054ns,218427ns
-node-rule-bfs,5,425987ns,187328ns
-node-rule-bfs,6,499277ns,626795ns
-node-rule-bfs,7,843823ns,269703ns
-node-rule-bfs,8,880110ns,205457ns
-node-rule-bfs,9,545750ns,377015ns
-node-rule-bfs,10,426999ns,328492ns
-ospf,1,709340ns,179700ns
-ospf,2,588838ns,166819ns
-ospf,3,298642ns,316837ns
-ospf,4,371322ns,170311ns
-ospf,5,353100ns,143300ns
-ospf,6,305362ns,146490ns
-ospf,7,587525ns,328181ns
-ospf,8,612764ns,328127ns
-ospf,9,617981ns,317484ns
-ospf,10,653664ns,111955ns
+node-rule-bfs,1,462742ns,166023ns
+node-rule-bfs,2,1211969ns,322990ns
+node-rule-bfs,3,698718ns,194426ns
+node-rule-bfs,4,500424ns,185182ns
+node-rule-bfs,5,731184ns,227256ns
+node-rule-bfs,6,783505ns,252463ns
+node-rule-bfs,7,832013ns,298139ns
+node-rule-bfs,8,695178ns,191602ns
+node-rule-bfs,9,454199ns,160858ns
+node-rule-bfs,10,735354ns,224505ns
+ospf,1,588335ns,323521ns
+ospf,2,604897ns,325874ns
+ospf,3,600050ns,321045ns
+ospf,4,576448ns,311158ns
+ospf,5,283590ns,151066ns
+ospf,6,673246ns,390983ns
+ospf,7,731622ns,423046ns
+ospf,8,614567ns,327287ns
+ospf,9,601743ns,319764ns
+ospf,10,586182ns,310043ns
 comment,monitor node_2_3 and change eth1 of node_3_7,0
-
-
-
-
-
-
-
 
 
 
