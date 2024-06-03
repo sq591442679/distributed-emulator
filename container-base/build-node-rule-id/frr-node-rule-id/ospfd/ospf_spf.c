@@ -1923,14 +1923,14 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 
 	set_output_interface_and_nexthop(area, root_lsa, output_interfaces, output_nexthops);
 
-	for (dest_orbit_id = 1; dest_orbit_id <= orbit_num; ++dest_orbit_id) {
-		for (dest_inner_orbit_id = 1; dest_inner_orbit_id <= sat_per_orbit; ++dest_inner_orbit_id) {
-			struct in_addr dest_router_id = {.s_addr = set_ip_addr(0, 0, dest_orbit_id, dest_inner_orbit_id)};
-			integrated_directions[current_router_id] = get_direction(current_router_id, dest_router_id);
-		}
-	}
-	clock_gettime(CLOCK_MONOTONIC, &end);
-	calculation_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - start.tv_nsec);	
+	// for (dest_orbit_id = 1; dest_orbit_id <= orbit_num; ++dest_orbit_id) {
+	// 	for (dest_inner_orbit_id = 1; dest_inner_orbit_id <= sat_per_orbit; ++dest_inner_orbit_id) {
+	// 		struct in_addr dest_router_id = {.s_addr = set_ip_addr(0, 0, dest_orbit_id, dest_inner_orbit_id)};
+	// 		integrated_directions[dest_orbit_id][dest_inner_orbit_id] = get_direction(current_router_id, dest_router_id);
+	// 	}
+	// }
+	// clock_gettime(CLOCK_MONOTONIC, &end);
+	// calculation_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - start.tv_nsec);	
 
 
 	for (dest_orbit_id = 1; dest_orbit_id <= orbit_num; ++dest_orbit_id) {
@@ -1938,8 +1938,8 @@ void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
 			struct in_addr dest_router_id = {.s_addr = set_ip_addr(0, 0, dest_orbit_id, dest_inner_orbit_id)};
 			struct ospf_lsa *dest_lsa = ospf_lsa_lookup(area->ospf, area, OSPF_ROUTER_LSA, 
 														dest_router_id, dest_router_id);
-			// uint32_t integrated_direction = get_direction(current_router_id, dest_router_id);
-			uint32_t integrated_direction = integrated_directions[current_router_id, dest_router_id];
+			uint32_t integrated_direction = get_direction(current_router_id, dest_router_id);
+			// uint32_t integrated_direction = integrated_directions[dest_orbit_id][dest_inner_orbit_id];
 			struct lsa_header *dest_lsa_header;
 			uint8_t *p, *lim;
 
