@@ -37,16 +37,16 @@ bars2 = plt.bar(desired_order, average_pure_calculation_time, color='C1', label=
 
 # 添加标题和标签，增大字号
 plt.title('Average Execution Time and Pure Calculation Time', fontsize=20)
-plt.xlabel('Protocol', fontsize=16)
-plt.ylabel('Average Time (μs)', fontsize=16)
+# plt.xlabel('Protocol', fontsize=16)
+plt.ylabel('Average Time (μs)', fontsize=18)
 
 # 设置刻度的字号
-plt.xticks(rotation=0, fontsize=14)
+plt.xticks(rotation=0, fontsize=18)
 plt.yticks(fontsize=14)
 plt.ylim(0, 900)
 
 # 添加图例
-plt.legend()
+plt.legend(fontsize=14)
 
 # 显示图表
 plt.show()

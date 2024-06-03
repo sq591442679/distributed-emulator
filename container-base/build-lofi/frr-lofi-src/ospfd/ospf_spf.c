@@ -1891,7 +1891,7 @@ void sqsq_calculate_route_table(struct ospf *ospf, struct ospf_area *area,
 				path->nexthop = neighbor_intf_ip;
 				// zlog_info("%s:	path->nexthop: %pI4", __func__, &neighbor_intf_ip);
 				oi = ospf_if_lookup_by_local_addr(ospf, NULL, l->link_data);
-				if (oi) {
+				if (oi && neighbor_intf_ip.s_addr != INADDR_ANY) {
 					path->ifindex = oi->ifp->ifindex;
 					if (!sqsq_ip_prefix_match(rn->p.u.prefix4, current_intf_ip, rn->p.prefixlen)) {
 						or->cost += ntohs(l->m[0].metric);

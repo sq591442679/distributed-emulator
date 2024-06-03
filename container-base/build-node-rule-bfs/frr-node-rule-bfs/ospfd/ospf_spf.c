@@ -1869,6 +1869,7 @@ void build_stub_network_dict(struct ospf_area *area,
 	struct network_item *network_in_dict;
 	frr_each(search_item_dict, dict_head, dict_item) {
 		struct ospf_lsa *lsa = dict_item->node->lsa;
+		uint32_t hop_cnt = dict_item->hop_cnt;
 		struct lsa_header *header = lsa->data;
 		uint8_t *p = (uint8_t *)header + OSPF_LSA_HEADER_SIZE + 4;
 		uint8_t *lim = (uint8_t *)header + ntohs(header->length);
@@ -1884,37 +1885,36 @@ void build_stub_network_dict(struct ospf_area *area,
 				struct prefix_ipv4 pref = {
 					.family = AF_INET,
 					.prefix = l->link_id,
-					.prefixlen = ip_masklen(l->link_data),
+					.prefixlen = ip_masklen(l->link_data)
 				};
 				apply_mask_ipv4(&pref);
 
-				// zlog_debug("%s    link_id:%pI4, link_data:%pI4, network_id:%pI4",
-				// 			__func__,
-				// 			&l->link_id,
-				// 			&l->link_data,
-				// 			&network_id);
+				zlog_debug("%s    link_id:%pI4, link_data:%pI4, network_id:%pI4",
+							__func__,
+							&l->link_id,
+							&l->link_data,
+							&network_id);
 
 				network_in_dict = network_dict_find(network_item_dict_head, &tmp);
 				if (network_in_dict == NULL) {
-					// zlog_debug("%s    network not explored before", __func__);
-					struct network_item *new = network_item_new();
+					zlog_debug("%s    network not explored before", __func__);
+					struct network_item *new = network_item_init(network_id, 
+																dict_item->cost + link_cost, 
+																hop_cnt, 
+																&pref, 
+																header);
 					struct nexthop_item *nexthop_from_router;
-					new->id = network_id;
-					new->cost = dict_item->cost + link_cost;
-					new->pref = pref;
-					new->header = header;
 					frr_each(nexthop_item_dict, &dict_item->nexthop_dict_head, nexthop_from_router) {
 						struct nexthop_item *new_nexthop = nexthop_item_init(nexthop_from_router->nexthop);
 						nexthop_item_dict_add(&new->nexthop_dict_head, new_nexthop);
 					}
 					network_dict_add(network_item_dict_head, new);
 				}
-				/*
 				else {
-					// zlog_debug("%s    network explored", __func__);
-					if (network_in_dict->cost > dict_item->cost + link_cost) {
+					if (network_in_dict->hop_cnt > dict_item->hop_cnt) {
+						zlog_debug("%s    network explored with larger hop, free old nexthops", __func__);
 						struct nexthop_item *nexthop_from_router;
-						network_in_dict->cost = dict_item->cost + link_cost;
+						network_in_dict->hop_cnt = dict_item->hop_cnt;
 						network_in_dict->header = header;
 						nexthop_item_dict_free_all_elements(&network_in_dict->nexthop_dict_head);
 						frr_each(nexthop_item_dict, &dict_item->nexthop_dict_head, nexthop_from_router) {
@@ -1922,7 +1922,8 @@ void build_stub_network_dict(struct ospf_area *area,
 							nexthop_item_dict_add(&network_in_dict->nexthop_dict_head, new_nexthop);
 						}
 					}
-					else if (network_in_dict->cost == dict_item->cost + link_cost) {
+					else if (network_in_dict->hop_cnt == dict_item->hop_cnt) {
+						zlog_debug("%s    network explored with equal hop, add new nexthops", __func__);
 						struct nexthop_item *nexthop_from_router;
 						frr_each(nexthop_item_dict, &dict_item->nexthop_dict_head, nexthop_from_router) {
 							struct nexthop_item tmp = { .nexthop = nexthop_from_router->nexthop };
@@ -1933,7 +1934,6 @@ void build_stub_network_dict(struct ospf_area *area,
 						}
 					}
 				}
-				*/
 			}
 		}
 	}
@@ -1981,7 +1981,7 @@ void build_route_table(struct ospf_area *area,
 		struct route_node *rn;
 		struct ospf_route *or;
 		struct nexthop_item *nexthop_item_to_network;
-		rn = route_node_get(new_table, (struct prefix *)&network_in_dict->pref);
+		rn = route_node_get(new_table, (struct prefix *)network_in_dict->pref);
 		if (rn->info != NULL) {	// there is already a routing entry
 			or = rn->info;
 			zlog_warn("%s    there is already a routing entry!!", __func__);
@@ -2437,12 +2437,12 @@ void search_item_add_nexthop_recursively(struct ospf_area *area,
 		struct search_item *find = search_item_dict_find(dict_head, &tmp_parent_item);
 		struct router_lsa_link *l = parent->l;
 
-		// zlog_debug("%s    current:%pI4, parent:%pI4, link id:%pI4, link data:%pI4", 
-		// 			__func__,
-		// 			&current_item->node->lsa->data->id,
-		// 			&parent->lsa->data->id,
-		// 			&l->link_id,
-		// 			&l->link_data);
+		zlog_debug("%s    current:%pI4, parent:%pI4, link id:%pI4, link data:%pI4", 
+					__func__,
+					&current_item->node->lsa->data->id,
+					&parent->lsa->data->id,
+					&l->link_id,
+					&l->link_data);
 
 		if (find == NULL || l == NULL) {
 			continue;
@@ -2482,22 +2482,13 @@ void search_item_add_nexthop(struct ospf_area *area,
 		if (oi != NULL) {
 			struct nexthop_item item = { .nexthop = nexthop };
 			if (nexthop_item_dict_find(&current_item->nexthop_dict_head, &item) == NULL) {
-				// struct ospf_path *path = ospf_path_new();
 				struct nexthop_item *new_item = nexthop_item_init(nexthop);
-
-				// set_ospf_path(path, 
-				// 			nexthop, 
-				// 			oi->ifp->ifindex, 
-				// 			current_item->node->lsa->data->id, 
-				// 			(uint32_t)ntohs(l->m[0].metric));
-
-				// new_item->path = path;
 				nexthop_item_dict_add(&current_item->nexthop_dict_head, new_item);
-				// zlog_debug("%s    %pI4->%pI4, added nexthop %pI4", 
-				// 			__func__, 
-				// 			&parent_item->node->lsa->data->id,
-				// 			&current_item->node->lsa->data->id,
-				// 			&nexthop);
+				zlog_debug("%s    %pI4->%pI4, added nexthop %pI4", 
+							__func__, 
+							&parent_item->node->lsa->data->id,
+							&current_item->node->lsa->data->id,
+							&nexthop);
 			}	
 		}
 	}
@@ -2508,19 +2499,13 @@ void search_item_add_nexthop(struct ospf_area *area,
 		struct nexthop_item *nexthop_item_in_current;
 		frr_each(nexthop_item_dict, &parent_item->nexthop_dict_head, nexthop_item_in_current) {
 			if (nexthop_item_dict_find(&current_item->nexthop_dict_head, nexthop_item_in_current) == NULL) {
-				// struct ospf_path *path = ospf_path_new();
 				struct nexthop_item *new_item = nexthop_item_init(nexthop_item_in_current->nexthop);
-
-				// memcpy(path, nexthop_item_in_current->path, sizeof(struct ospf_path));
-				// path->cost += (uint32_t)ntohs(l->m[0].metric);
-
-				// new_item->path = path;
 				nexthop_item_dict_add(&current_item->nexthop_dict_head, new_item);
-				// zlog_debug("%s    %pI4->%pI4, added nexthop %pI4", 
-				// 			__func__, 
-				// 			&parent_item->node->lsa->data->id,
-				// 			&current_item->node->lsa->data->id,
-				// 			&new_item->nexthop);
+				zlog_debug("%s    %pI4->%pI4, added nexthop %pI4", 
+							__func__, 
+							&parent_item->node->lsa->data->id,
+							&current_item->node->lsa->data->id,
+							&new_item->nexthop);
 			}	
 		}	
 	}
@@ -2607,13 +2592,28 @@ struct network_item *network_item_new(void)
 {
 	struct network_item *new;
 	new = XCALLOC(MTYPE_OSPF_NETWORK_ITEM, sizeof(struct network_item));
+	new->pref = XCALLOC(MTYPE_OSPF_PREFIX_IPV4, sizeof(struct prefix_ipv4));
 	nexthop_item_dict_init(&new->nexthop_dict_head);
 	return new;
+}
+struct network_item *network_item_init(struct in_addr id, 
+										uint32_t cost, 
+										uint32_t hop_cnt, 
+										struct prefix_ipv4 *pref, 
+										struct lsa_header *header)
+{
+	struct network_item *new = network_item_new();
+	new->id = id;
+	new->cost = cost;
+	new->hop_cnt = hop_cnt;
+	memcpy(new->pref, pref, sizeof(struct prefix_ipv4));
+	new->header = header;
 }
 void network_item_free(struct network_item *item)
 {
 	nexthop_item_dict_free_all_elements(&item->nexthop_dict_head);
 	nexthop_item_dict_fini(&item->nexthop_dict_head);
+	XFREE(MTYPE_OSPF_PREFIX_IPV4, item->pref);
 	XFREE(MTYPE_OSPF_NETWORK_ITEM, item);
 }
 void network_dict_free_all_elements(struct network_dict_head *head) 

@@ -154,7 +154,8 @@ PREDECL_HASH(network_dict);
 struct network_item {
 	struct in_addr id;
 	uint32_t cost;
-	struct prefix_ipv4 pref;
+	uint32_t hop_cnt;
+	struct prefix_ipv4 *pref;
 	struct lsa_header *header;
 	struct nexthop_item_dict_head nexthop_dict_head;
 	struct network_dict_item hash_item;
@@ -162,6 +163,7 @@ struct network_item {
 extern int network_item_compare_func(const struct network_item *a, const struct network_item *b);
 extern uint32_t network_item_hash_func(const struct network_item *a);
 extern struct network_item *network_item_new(void);
+extern struct network_item *network_item_init(struct in_addr id, uint32_t cost, uint32_t hop_cnt, struct prefix_ipv4 *pref, struct lsa_header *header);
 extern void network_item_free(struct network_item *item);
 DECLARE_HASH(network_dict, struct network_item, hash_item, network_item_compare_func, network_item_hash_func);
 extern void network_dict_free_all_elements(struct network_dict_head *head);
