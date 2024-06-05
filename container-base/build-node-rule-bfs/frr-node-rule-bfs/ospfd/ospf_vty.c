@@ -226,146 +226,6 @@ DEFUN_NOSH (router_ospf,
 	return ret;
 }
 
-/**
- * @sqsq
- * set lofi warmup period
- */
-DEFUN (
-	ospf_warmup,
-	ospf_warmup_cmd,
-	"ospf warmup_period (0-65535)",
-	"OSPF specific commands\n"
-	"warmup period for the OSPF process before really using lofi\n"
-	"unit: s\n"
-)
-{
-	int idx = 0;
-	uint32_t n = 0;
-
-	// get arguments
-	char *n_str = NULL;
-
-	argv_find(argv, argc, "(0-65535)", &idx);
-	n_str = argv[idx]->arg;
-	n = strtol(n_str, NULL, 10);
-
-	warmup_period = n;
-
-	// zlog_debug("%s lofi_n:%d", __func__, lofi_n);
-
-	return CMD_SUCCESS;
-}
-
-/**
- * @sqsq
- */
-DEFUN (
-	ospf_orbit_num,
-	ospf_orbit_num_cmd,
-	"ospf orbit_num (0-65535)",
-	"OSPF specific commands\n"
-	"number of orbit in the constellation\n"
-	"in integer format"
-)
-{
-	int idx = 0;
-	uint32_t n = 0;
-
-	// get arguments
-	char *n_str = NULL;
-
-	argv_find(argv, argc, "(0-65535)", &idx);
-	n_str = argv[idx]->arg;
-	n = strtol(n_str, NULL, 10);
-
-	orbit_num = n;
-
-	return CMD_SUCCESS;
-}
-
-
-/**
- * @sqsq
- */
-DEFUN (
-	ospf_sat_per_orbit,
-	ospf_sat_per_orbit_cmd,
-	"ospf sat_per_orbit (0-65535)",
-	"OSPF specific commands\n"
-	"number of satellites in one orbit\n"
-	"in integer format"
-)
-{
-	int idx = 0;
-	uint32_t n = 0;
-
-	// get arguments
-	char *n_str = NULL;
-
-	argv_find(argv, argc, "(0-65535)", &idx);
-	n_str = argv[idx]->arg;
-	n = strtol(n_str, NULL, 10);
-
-	sat_per_orbit = n;
-
-	return CMD_SUCCESS;
-}
-
-/**
- * @sqsq
- */
-DEFUN (
-	ospf_use_inclined_orbit,
-	ospf_use_inclined_orbit_cmd,
-	"ospf use_walker_delta (0-1)",
-	"OSPF specific commands\n"
-	"whether use walker delta\n"
-	"1 for inclined orbit, 0 for polar orbit"
-)
-{
-	int idx = 0;
-	uint32_t n = 0;
-
-	// get arguments
-	char *n_str = NULL;
-
-	argv_find(argv, argc, "(0-1)", &idx);
-	n_str = argv[idx]->arg;
-	n = strtol(n_str, NULL, 10);
-
-	use_walker_delta = (bool)n;
-
-	return CMD_SUCCESS;
-}
-
-/**
- * @sqsq
- */
-DEFUN (
-	ospf_enable_multipath,
-	ospf_enable_multipath_cmd,
-	"ospf enable_multipath (0-1)",
-	"OSPF specific commands\n"
-	"whether enable multipath\n"
-	"1 for multipath, 0 for no multipath"
-)
-{
-	int idx = 0;
-	uint32_t n = 0;
-
-	// get arguments
-	char *n_str = NULL;
-
-	argv_find(argv, argc, "(0-1)", &idx);
-	n_str = argv[idx]->arg;
-	n = strtol(n_str, NULL, 10);
-
-	enable_multipath = (bool)n;
-
-	return CMD_SUCCESS;
-}
-
-
 DEFUN (no_router_ospf,
        no_router_ospf_cmd,
        "no router ospf [{(1-65535)|vrf NAME}]",
@@ -3520,15 +3380,6 @@ static int show_ip_ospf_common(struct vty *vty, struct ospf *ospf,
 		}
 	} else
 		vty_out(vty, "\n");
-
-	/**
-	 * @sqsq
-	 */
-	vty_out(vty, "orbit id:%u, inner orbit id:%u, use inclined orbit:%d, router id:%pI4\n", 
-			get_orbit_id(ospf->backbone->router_lsa_self->data->id),
-			get_inner_orbit_id(ospf->backbone->router_lsa_self->data->id),
-			use_walker_delta,
-			&(ospf->router_id.s_addr));
 
 	return CMD_SUCCESS;
 }
@@ -10828,13 +10679,12 @@ static void show_ip_ospf_route_network(struct vty *vty, struct ospf *ospf,
 									ospf->vrf_id));
 						} else {
 							vty_out(vty,
-								"%24s   via %pI4, %s, cost: %u, weight: %u, ifindex:%d\n",  /** sqsq */
+								"%24s   via %pI4, %s\n",
 								"",
 								&path->nexthop,
 								ifindex2ifname(
 									path->ifindex,
-									ospf->vrf_id),
-								path->cost, path->weight, path->ifindex);
+									ospf->vrf_id));
 						}
 					}
 				}
@@ -10986,62 +10836,6 @@ static void show_ip_ospf_route_router(struct vty *vty, struct ospf *ospf,
 	}
 	if (!json)
 		vty_out(vty, "\n");
-}
-
-/**
- * @sqsq
- */
-DEFUN (show_ip_ospf_enable_multipath,
-		show_ip_ospf_enable_multipath_cmd,
-		"show ip ospf enable_multipath",
-		SHOW_STR IP_STR
-		"OSPF information\n"
-		"Show whether enable multipath\n")
-{
-	vty_out(vty, "%u\n", enable_multipath);
-	return CMD_SUCCESS;
-}
-
-/**
- * @sqsq
- */
-DEFUN (show_ip_ospf_warmup,
-		show_ip_ospf_warmup_cmd,
-		"show ip ospf warmup_period",
-		SHOW_STR IP_STR
-		"OSPF information\n"
-		"Show warmup period of Lofi\n")
-{
-	vty_out(vty, "%u\n", warmup_period);
-	return CMD_SUCCESS;
-}
-
-/**
- * @sqsq
- */
-DEFUN (show_ip_ospf_orbit_num,
-		show_ip_ospf_orbit_num_cmd,
-		"show ip ospf orbit_num",
-		SHOW_STR IP_STR
-		"OSPF information\n"
-		"Show number of orbit\n")
-{
-	vty_out(vty, "%u\n", orbit_num);
-	return CMD_SUCCESS;
-}
-
-/**
- * @sqsq
- */
-DEFUN (show_ip_ospf_sat_per_orbit,
-		show_ip_ospf_sat_per_orbit_cmd,
-		"show ip ospf sat_per_orbit",
-		SHOW_STR IP_STR
-		"OSPF information\n"
-		"Show number of satellite in one orbit\n")
-{
-	vty_out(vty, "%u\n", sat_per_orbit);
-	return CMD_SUCCESS;
 }
 
 static void show_ip_ospf_route_external(struct vty *vty, struct ospf *ospf,
@@ -12932,14 +12726,6 @@ void ospf_vty_show_init(void)
 
 	/* "show ip ospf summary-address" command */
 	install_element(VIEW_NODE, &show_ip_ospf_external_aggregator_cmd);
-
-	/**
-	 * @sqsq
-	 */
-	install_element(VIEW_NODE, &show_ip_ospf_enable_multipath_cmd);
-	install_element(VIEW_NODE, &show_ip_ospf_orbit_num_cmd);
-	install_element(VIEW_NODE, &show_ip_ospf_sat_per_orbit_cmd);
-	install_element(VIEW_NODE, &show_ip_ospf_warmup_cmd);
 }
 
 /* Initialization of OSPF interface. */
@@ -13200,15 +12986,6 @@ void ospf_vty_init(void)
 	install_element(OSPF_NODE, &ospf_router_id_cmd);
 	install_element(OSPF_NODE, &ospf_router_id_old_cmd);
 	install_element(OSPF_NODE, &no_ospf_router_id_cmd);
-
-	/**
-	 * @sqsq
-	 */
-	install_element(OSPF_NODE, &ospf_enable_multipath_cmd);
-	install_element(OSPF_NODE, &ospf_orbit_num_cmd);
-	install_element(OSPF_NODE, &ospf_sat_per_orbit_cmd);
-	install_element(OSPF_NODE, &ospf_use_inclined_orbit_cmd);
-	install_element(OSPF_NODE, &ospf_warmup_cmd);
 
 	/* "passive-interface" commands. */
 	install_element(OSPF_NODE, &ospf_passive_interface_default_cmd);

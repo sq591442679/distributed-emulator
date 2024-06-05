@@ -57,7 +57,7 @@ struct ospf_path {
 	struct sr_nexthop_info srni;
 
 	/**
-	 * @sqsq
+	 * @author sqsq
 	 * added new members
 	 */
 	uint32_t cost;

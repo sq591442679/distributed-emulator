@@ -47,15 +47,6 @@
 /* Default configuration file name for ospfd. */
 #define OSPF_DEFAULT_CONFIG   "ospfd.conf"
 
-/**
- * @sqsq
- */
-extern uint32_t orbit_num;
-extern uint32_t sat_per_orbit;
-extern bool use_walker_delta;
-extern uint32_t warmup_period;
-extern bool enable_multipath;
-
 #define OSPF_NSSA_TRANS_STABLE_DEFAULT		40
 
 #define OSPF_ALLSPFROUTERS              0xe0000005      /* 224.0.0.5 */
@@ -156,12 +147,6 @@ struct ospf_gr_info {
 
 /* OSPF instance structure. */
 struct ospf {
-	/**
-	 * @author sqsq
-	 * added member
-	 */
-	__time_t start_time;
-
 	/* OSPF's running state based on the '[no] router ospf [<instance>]'
 	 * config. */
 	uint8_t oi_running;
@@ -779,17 +764,5 @@ extern int p_spaces_compare_func(const struct p_space *a,
 				 const struct p_space *b);
 extern int q_spaces_compare_func(const struct q_space *a,
 				 const struct q_space *b);
-
-/**
- * @sqsq
- */
-extern in_addr_t set_ip_addr(uint8_t a, uint8_t b, uint8_t c, uint8_t d);
-extern uint8_t get_byte_of_ip(struct in_addr ip_struct, int pos);
-extern uint8_t get_orbit_id(struct in_addr router_id);
-extern uint8_t get_inner_orbit_id(struct in_addr router_id);
-extern int rescale(int x, int X);
-extern struct in_addr get_neighbor_intf_ip(struct ospf_lsa *current_lsa, 
-											struct router_lsa_link *l, 
-											struct ospf_lsa *neighbor_lsa);
 
 #endif /* _ZEBRA_OSPFD_H */

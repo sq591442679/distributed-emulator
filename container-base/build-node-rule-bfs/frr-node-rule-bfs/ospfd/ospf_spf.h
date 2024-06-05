@@ -33,6 +33,12 @@
 
 /* The "root" is the node running the SPF calculation */
 
+/**
+ * @author sqsq
+ */
+PREDECL_HASH(vertex_dict);
+PREDECL_LIST(vertex_list);
+
 PREDECL_SKIPLIST_NONUNIQ(vertex_pqueue);
 /* A router or network in an area */
 struct vertex {
@@ -43,6 +49,14 @@ struct vertex {
 	struct ospf_lsa *lsa_p;
 	struct lsa_header *lsa; /* Router or Network LSA */
 	uint32_t distance;      /* from root to this vertex */
+	
+	/**
+	 * @author sqsq
+	 */
+	uint32_t hop;			/** hop cnt from root */
+	struct vertex_dict_item hash_item;
+	struct vertex_list_item list_item;
+
 	struct list *parents;   /* list of parents in SPF tree */
 	struct list *children;  /* list of children in SPF tree*/
 };
@@ -50,6 +64,12 @@ struct vertex {
 struct vertex_nexthop {
 	struct in_addr router;     /* router address to send to */
 	int lsa_pos; /* LSA position for resolving the interface */
+
+	/**
+	 * @author sqsq
+	 * added new member
+	 */
+	uint32_t cost;
 };
 
 struct vertex_parent {
@@ -58,116 +78,6 @@ struct vertex_parent {
 	struct vertex *parent;		      /* parent vertex */
 	int backlink; /* index back to parent for router-lsa's */
 };
-
-/**
- * @author sqsq
- * @brief object used to maintain bfs search path
- */
-PREDECL_HASH(node_dict);
-struct node_item {
-	struct ospf_lsa *lsa;
-	struct router_lsa_link *l;			// used for parents, l is the link from parent to current lsa
-	struct node_dict_item hash_item;
-};
-extern struct node_item *node_item_new(void);
-extern struct node_item *node_item_init(struct ospf_lsa *lsa, struct router_lsa_link *l);
-extern void node_item_free(struct node_item *item);
-extern int node_item_compare_func(const struct node_item *a, 
-											const struct node_item *b);
-extern uint32_t node_item_hash_func(const struct node_item *a);
-DECLARE_HASH(node_dict, struct node_item, hash_item, 
-				node_item_compare_func, node_item_hash_func);
-extern void node_dict_free_all_elements(struct node_dict_head *head);
-
-/**
- * @author sqsq
- */
-PREDECL_HASH(path_item_dict);
-struct path_item {
-	struct in_addr nexthop;
-	struct ospf_path *path;
-	struct path_item_dict_item hash_field;
-};
-extern int path_item_compare_func(const struct path_item *a, const struct path_item *b);
-extern uint32_t path_item_hash_func(const struct path_item *a);
-extern struct path_item *path_item_new(void);
-extern struct path_item *path_item_init(struct in_addr nexthop);
-extern void path_item_free(struct path_item *item);
-extern void path_item_dict_free_all_elements(struct path_item_dict_head *head);
-DECLARE_HASH(path_item_dict, struct path_item, hash_field, path_item_compare_func, path_item_hash_func);
-
-/**
- * @author sqsq
- */
-PREDECL_HASH(nexthop_item_dict);
-struct nexthop_item {
-	struct in_addr nexthop;
-	struct nexthop_item_dict_item nexthop_item_dict_field;
-};
-extern int nexthop_item_compare_func(const struct nexthop_item *a, const struct nexthop_item *b);
-extern uint32_t nexthop_item_hash_func(const struct nexthop_item *a);
-extern struct nexthop_item *nexthop_item_new(void);
-extern struct nexthop_item *nexthop_item_init(struct in_addr nexthop);
-extern void nexthop_item_free(struct nexthop_item *item);
-DECLARE_HASH(nexthop_item_dict, struct nexthop_item, nexthop_item_dict_field, nexthop_item_compare_func, nexthop_item_hash_func);
-extern void nexthop_item_dict_free_all_elements(struct nexthop_item_dict_head *head);
-
-/**
- * @author sqsq
- */
-PREDECL_LIST(search_item_queue);				// Z1 = search_item_queue
-PREDECL_HASH(search_item_dict);
-PREDECL_HASH(search_item_cost_dict);
-/**
- * object used in bfs search
- */
-struct search_item {
-	struct node_item *node;
-	uint32_t hop_cnt;									// hop cnt from root to current router
-	uint32_t cost;										// min cost from root to current router
-	bool is_leaf;							
-	struct node_dict_head parents_dict_head;			// dict of node_item
-	struct node_dict_head children_dict_head;
-	struct nexthop_item_dict_head nexthop_dict_head;			// dict of nexthop_item
-	struct search_item_queue_item queue_item;
-	struct search_item_dict_item hash_item;
-	struct search_item_cost_dict_item cost_hash_item;
-};
-DECLARE_LIST(search_item_queue, struct search_item, queue_item);
-extern struct search_item *search_item_new(void);
-extern struct search_item *search_item_init(struct ospf_lsa *lsa, uint32_t hop_cnt, uint32_t cost);
-extern void search_item_delete_all_parents(struct search_item *item, struct search_item_dict_head *dict_head);
-extern void search_item_free(struct search_item *item);
-extern void search_item_add_parent(struct search_item *item, struct search_item *parent, struct router_lsa_link *l);
-extern int search_item_compare_func(const struct search_item *a, const struct search_item *b);
-extern int search_item_cost_compare_func(const struct search_item *a, const struct search_item *b);
-extern uint32_t search_item_hash_func(const struct search_item *a);
-DECLARE_HASH(search_item_dict, struct search_item, hash_item, search_item_compare_func, search_item_hash_func);
-DECLARE_HASH(search_item_cost_dict, struct search_item, cost_hash_item, search_item_cost_compare_func, search_item_hash_func);
-extern void search_item_add_nexthop(struct ospf_area *area, struct search_item *item, struct search_item *neighbor_item, struct search_item *root_item, struct router_lsa_link *l);
-void search_item_add_nexthop_recursively(struct ospf_area *area, struct search_item *current_item, struct search_item *root_item, struct search_item_dict_head *dict_head);
-
-/**
- * @author sqsq
- */
-PREDECL_HASH(network_dict);
-struct network_item {
-	struct in_addr id;
-	uint32_t cost;
-	uint32_t hop_cnt;
-	struct prefix_ipv4 *pref;
-	struct lsa_header *header;
-	struct nexthop_item_dict_head nexthop_dict_head;
-	struct network_dict_item hash_item;
-};
-extern int network_item_compare_func(const struct network_item *a, const struct network_item *b);
-extern uint32_t network_item_hash_func(const struct network_item *a);
-extern struct network_item *network_item_new(void);
-extern struct network_item *network_item_init(struct in_addr id, uint32_t cost, uint32_t hop_cnt, struct prefix_ipv4 *pref, struct lsa_header *header);
-extern void network_item_free(struct network_item *item);
-DECLARE_HASH(network_dict, struct network_item, hash_item, network_item_compare_func, network_item_hash_func);
-extern void network_dict_free_all_elements(struct network_dict_head *head);
-
 
 /* What triggered the SPF ? */
 typedef enum {
@@ -181,20 +91,6 @@ typedef enum {
 	SPF_FLAG_CONFIG_CHANGE,
 	SPF_FLAG_GR_FINISH,
 } ospf_spf_reason_t;
-
-/**
- * @author sqsq
- * @brief 
- * There can be multiple directions from satellite A to satellite B. 
- * @example
- * satellite (0, 4) to (1, 5) is both ORBIT_ID_INC_DIRECTION and INNER_ORBIT_ID_INC_DIRECTION
- */
-typedef enum {
-	ORBIT_ID_INC_DIRECTION = 1,
-	ORBIT_ID_DEC_DIRECTION = (1 << 1),
-	INNER_ORBIT_ID_INC_DIRECTION = (1 << 2),
-	INNER_ORBIT_ID_DEC_DIRECTION = (1 << 3),
-} ospf_spf_direction;
 
 extern void ospf_spf_calculate_schedule(struct ospf *, ospf_spf_reason_t);
 extern void ospf_spf_calculate(struct ospf_area *area,
@@ -229,15 +125,34 @@ extern void ospf_spf_print(struct vty *vty, struct vertex *v, int i);
 extern void ospf_restart_spf(struct ospf *ospf);
 /* void ospf_spf_calculate_timer_add (); */
 
-/** @sqsq */
-extern void ospf_spf_calculate_rule(struct ospf_area *area, struct ospf_lsa *root_lsa,
-			struct route_table *new_table,
-			struct route_table *all_rtrs,
-			struct route_table *new_rtrs, bool is_dry_run,
-			bool is_root_node);
-extern void dump_routing_table(struct route_table *new_table, struct ospf_area *area);
-extern void build_output_paths(struct ospf_area *area, struct ospf_lsa *root_lsa, struct path_item_dict_head *dict_head);
-extern void build_stub_network_dict(struct ospf_area *area, struct search_item_dict_head *dict_head, struct network_dict_head *network_item_dict_head);
-extern void build_route_table(struct ospf_area *area, struct route_table *new_table, struct ospf_lsa *root_lsa, struct search_item_dict_head *dict_head);
+/**
+ * @author sqsq
+ */
+extern struct vertex_parent *bfs_add_parent(struct vertex *v,
+									struct vertex *w,
+									struct vertex_nexthop *newhop,
+									uint32_t distance,
+									uint32_t hop);
+extern int bfs_nexthop_calculation(struct ospf_area *area,
+							struct vertex *v, 
+							struct vertex *w,
+							struct router_lsa_link *l,
+							uint32_t distance, 
+							uint32_t hop);
+extern void bfs_spf_next(struct vertex *v, 
+						struct ospf_area *area, 
+						struct vertex_list_head *bfs_queue,
+						struct vertex_dict_head *bfs_dict);
+extern void bfs_spf_calculate(struct ospf_area *area, 
+								struct ospf_lsa *root_lsa,
+								struct route_table *new_table,
+								struct route_table *all_rtrs,
+								struct route_table *new_rtrs, 
+								bool is_dry_run,
+								bool is_root_node);
+extern int vertex_compare_func(const struct vertex *a, const struct vertex *b);
+extern uint32_t vertex_hash_func(const struct vertex *a);
+DECLARE_LIST(vertex_list, struct vertex, list_item);
+DECLARE_HASH(vertex_dict, struct vertex, hash_item, vertex_compare_func, vertex_hash_func);
 
 #endif /* _QUAGGA_OSPF_SPF_H */

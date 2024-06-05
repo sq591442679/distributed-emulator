@@ -60,13 +60,3 @@ DEFINE_MTYPE(OSPFD, OSPF_GR_HELPER, "OSPF Graceful Restart Helper");
 DEFINE_MTYPE(OSPFD, OSPF_EXTERNAL_RT_AGGR, "OSPF External Route Summarisation");
 DEFINE_MTYPE(OSPFD, OSPF_P_SPACE, "OSPF TI-LFA P-Space");
 DEFINE_MTYPE(OSPFD, OSPF_Q_SPACE, "OSPF TI-LFA Q-Space");
-
-/**
- * @author sqsq
- */
-DEFINE_MTYPE(OSPFD, OSPF_SEARCH_ITEM, "OSPF Shortest path item used for bfs");
-DEFINE_MTYPE(OSPFD, OSPF_PATH_ITEM, "OSPF path item used for bfs");
-DEFINE_MTYPE(OSPFD, OSPF_NODE_ITEM, "OSPF parent item used for maintaing parent router on bfs path");
-DEFINE_MTYPE(OSPFD, OSPF_NETWORK_ITEM, "OSPF network item used for building routing table");
-DEFINE_MTYPE(OSPFD, OSPF_NEXTHOP_ITEM, "OSPF nexthop item used for hashing a struct in_addr");
-DEFINE_MTYPE(OSPFD, OSPF_PREFIX_IPV4, "OSPF prefix_ipv4 struct");

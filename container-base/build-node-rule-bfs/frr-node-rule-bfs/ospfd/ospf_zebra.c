@@ -244,9 +244,7 @@ static void ospf_zebra_add_nexthop(struct ospf *ospf, struct ospf_path *path,
 	api_nh->vrf_id = ospf->vrf_id;
 
 	/**
-	 * @sqsq
-	 * NOTE: the "weight" in struct nexthop is uint8_t!
-	 * caution for data overflow
+	 * @author sqsq
 	 */
 	api_nh->weight = path->weight; 
 

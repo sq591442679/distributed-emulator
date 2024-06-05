@@ -28,8 +28,8 @@ NETWORK_LOSS = 0        # percent 0 means 0%
 QUEUE_CAPACITY = 10000    # unit: pkt
 
 # CONSTELLATION PARAMETERS
-ORBIT_NUM = 6
-SAT_PER_ORBIT = 11
+ORBIT_NUM = 4
+SAT_PER_ORBIT = 4
 USE_WALKER_DELTA = False		# if True, then no seam
 INCLINE_DEGREE: float = 89	
 # note that in particular, when USE_WALKER_DELTA is False, INCLINE_DEGREE is usually near 90
@@ -51,8 +51,8 @@ SIMULATION_DURATION = 100      # unit: s, better do not exceed OSPF_LSA_MAXAGE (
 # TRANSMISSION PAIR
 # note that node id (0, 0) is container node_1_1
 SENDER_NODE_ID_LIST: List[Tuple[int, int]] = [(0, 1)]
-RECEIVER_NODE_ID = (4, 4)
-# RECEIVER_NODE_ID = (1, 2)
+# RECEIVER_NODE_ID = (4, 4)
+RECEIVER_NODE_ID = (1, 2)
 # SENDER_NODE_ID_LIST: List[Tuple[int, int]] = []
 # RECEIVER_NODE_ID = (0, 0)
 
@@ -125,11 +125,11 @@ PROTOCOL_RELATED_ARGS = {
 
 		],
 		"frr_configurations": [
-			f"ospf orbit_num {ORBIT_NUM}",
-			f"ospf sat_per_orbit {SAT_PER_ORBIT}",
-			f"ospf use_walker_delta {int(USE_WALKER_DELTA)}",
-			f"ospf warmup_period {WARMUP_PERIOD}",
-			f"ospf enable_multipath 0"
+			# f"ospf orbit_num {ORBIT_NUM}",
+			# f"ospf sat_per_orbit {SAT_PER_ORBIT}",
+			# f"ospf use_walker_delta {int(USE_WALKER_DELTA)}",
+			# f"ospf warmup_period {WARMUP_PERIOD}",
+			# f"ospf enable_multipath 0"
 		]
 	},
 }

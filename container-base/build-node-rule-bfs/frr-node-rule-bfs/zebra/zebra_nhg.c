@@ -3010,7 +3010,7 @@ void zebra_nhg_install_kernel(struct nhg_hash_entry *nhe)
 
 	if (CHECK_FLAG(nhe->flags, NEXTHOP_GROUP_VALID)
 		/**
-		 * @sqsq
+		 * @author sqsq
 		 * comment this condition
 		 */
 	    // && !CHECK_FLAG(nhe->flags, NEXTHOP_GROUP_INSTALLED)
