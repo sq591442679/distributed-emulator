@@ -100,6 +100,11 @@ struct ospf_lsa {
 	/* Flags for the SPF calculation. */
 	struct vertex *stat;
 
+	/**
+	 * sqsq
+	 */
+	struct bfs_vertex *bfs_stat;
+
 	/* References to this LSA in neighbor retransmission lists*/
 	int retransmit_counter;
 

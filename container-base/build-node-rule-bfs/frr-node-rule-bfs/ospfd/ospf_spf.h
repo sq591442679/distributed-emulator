@@ -33,12 +33,6 @@
 
 /* The "root" is the node running the SPF calculation */
 
-/**
- * @author sqsq
- */
-PREDECL_HASH(vertex_dict);
-PREDECL_LIST(vertex_list);
-
 PREDECL_SKIPLIST_NONUNIQ(vertex_pqueue);
 /* A router or network in an area */
 struct vertex {
@@ -49,13 +43,6 @@ struct vertex {
 	struct ospf_lsa *lsa_p;
 	struct lsa_header *lsa; /* Router or Network LSA */
 	uint32_t distance;      /* from root to this vertex */
-	
-	/**
-	 * @author sqsq
-	 */
-	uint32_t hop;			/** hop cnt from root */
-	struct vertex_dict_item hash_item;
-	struct vertex_list_item list_item;
 
 	struct list *parents;   /* list of parents in SPF tree */
 	struct list *children;  /* list of children in SPF tree*/
@@ -64,12 +51,6 @@ struct vertex {
 struct vertex_nexthop {
 	struct in_addr router;     /* router address to send to */
 	int lsa_pos; /* LSA position for resolving the interface */
-
-	/**
-	 * @author sqsq
-	 * added new member
-	 */
-	uint32_t cost;
 };
 
 struct vertex_parent {
@@ -128,31 +109,57 @@ extern void ospf_restart_spf(struct ospf *ospf);
 /**
  * @author sqsq
  */
-extern struct vertex_parent *bfs_add_parent(struct vertex *v,
-									struct vertex *w,
-									struct vertex_nexthop *newhop,
-									uint32_t distance,
-									uint32_t hop);
-extern int bfs_nexthop_calculation(struct ospf_area *area,
-							struct vertex *v, 
-							struct vertex *w,
-							struct router_lsa_link *l,
-							uint32_t distance, 
-							uint32_t hop);
-extern void bfs_spf_next(struct vertex *v, 
-						struct ospf_area *area, 
-						struct vertex_list_head *bfs_queue,
-						struct vertex_dict_head *bfs_dict);
-extern void bfs_spf_calculate(struct ospf_area *area, 
-								struct ospf_lsa *root_lsa,
-								struct route_table *new_table,
-								struct route_table *all_rtrs,
-								struct route_table *new_rtrs, 
-								bool is_dry_run,
-								bool is_root_node);
-extern int vertex_compare_func(const struct vertex *a, const struct vertex *b);
-extern uint32_t vertex_hash_func(const struct vertex *a);
-DECLARE_LIST(vertex_list, struct vertex, list_item);
-DECLARE_HASH(vertex_dict, struct vertex, hash_item, vertex_compare_func, vertex_hash_func);
+PREDECL_HASH(bfs_vertex_dict);
+PREDECL_LIST(bfs_vertex_list);
+struct bfs_vertex {
+	struct in_addr id;      /* copied from LSA header */
+	struct ospf_lsa *lsa_p;
+	struct lsa_header *lsa; /* Router or Network LSA */
+	uint32_t distance;      /* from root to this vertex */
+	
+	uint32_t hop;			/** hop cnt from root */
+	struct bfs_vertex_dict_item hash_item;
+	struct bfs_vertex_list_item list_item;
+
+	struct list *parents;   /* list of parents in SPF tree */
+};
+struct bfs_vertex_nexthop {
+	struct in_addr nexthop;     /* ip address to send to */
+	uint32_t cost;
+};
+struct bfs_vertex_parent {
+	struct bfs_vertex_nexthop *nexthop;
+	struct bfs_vertex *parent;		      /* parent vertex */
+};
+
+/**
+ * @author sqsq
+ */
+extern struct bfs_vertex_parent *bfs_add_parent(struct bfs_vertex *v, struct bfs_vertex *w, struct bfs_vertex_nexthop *newhop);
+extern int bfs_nexthop_calculation(struct ospf_area *area, struct bfs_vertex *v,  struct bfs_vertex *w, struct router_lsa_link *l, uint32_t distance);
+extern void bfs_spf_next(struct bfs_vertex *v, struct ospf_area *area, struct bfs_vertex_list_head *bfs_queue, struct bfs_vertex_dict_head *bfs_dict);
+extern void bfs_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa, struct route_table *new_table);
+
+/**
+ * sqsq
+ */
+extern struct bfs_vertex_nexthop *bfs_vertex_nexthop_new(void);
+extern void bfs_vertex_nexthop_free(struct bfs_vertex_nexthop *nh);
+extern int bfs_vertex_nexthop_cmp(void *aa, void *bb);
+
+/**
+ * sqsq
+ */
+extern struct bfs_vertex_parent *bfs_vertex_parent_new(struct bfs_vertex *v, struct bfs_vertex_nexthop *nh);
+extern void bfs_vertex_parent_free(struct bfs_vertex_parent *a);
+extern int bfs_vertex_parent_cmp(void *aa, void *bb);
+
+extern int bfs_vertex_compare_func(const struct bfs_vertex *a, const struct bfs_vertex *b);
+extern uint32_t bfs_vertex_hash_func(const struct bfs_vertex *a);
+extern struct bfs_vertex *bfs_vertex_new(struct ospf_area *area, struct ospf_lsa *lsa);
+extern void bfs_vertex_free(void *data);
+extern void bfs_vertex_dump(const struct bfs_vertex *a);
+DECLARE_LIST(bfs_vertex_list, struct bfs_vertex, list_item);
+DECLARE_HASH(bfs_vertex_dict, struct bfs_vertex, hash_item, bfs_vertex_compare_func, bfs_vertex_hash_func);
 
 #endif /* _QUAGGA_OSPF_SPF_H */

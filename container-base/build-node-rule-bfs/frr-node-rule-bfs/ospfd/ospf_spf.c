@@ -62,6 +62,13 @@ static const struct vertex vertex_in_spftree = {};
 #define LSA_SPF_IN_SPFTREE	(struct vertex *)&vertex_in_spftree
 #define LSA_SPF_NOT_EXPLORED	NULL
 
+/** 
+ * @author sqsq
+ */
+static const struct bfs_vertex v_searched = {};
+#define BFS_SEARCHED	(struct bfs_vertex *)&v_searched
+#define BFS_NOT_EXPLORED	NULL
+
 static void ospf_clear_spf_reason_flags(void)
 {
 	spf_reason_flags = 0;
@@ -105,8 +112,14 @@ static void lsdb_clean_stat(struct ospf_lsdb *lsdb)
 	for (i = OSPF_MIN_LSA; i < OSPF_MAX_LSA; i++) {
 		table = lsdb->type[i].db;
 		for (rn = route_top(table); rn; rn = route_next(rn))
-			if ((lsa = (rn->info)) != NULL)
+			if ((lsa = (rn->info)) != NULL) {
 				lsa->stat = LSA_SPF_NOT_EXPLORED;
+
+				/**
+				 * sqsq
+				 */
+				lsa->bfs_stat = BFS_NOT_EXPLORED;
+			}
 	}
 }
 
@@ -186,27 +199,12 @@ static void vertex_parent_free(struct vertex_parent *p)
 	XFREE(MTYPE_OSPF_VERTEX_PARENT, p);
 }
 
-/**
- * @note modified by sqsq
- */
 int vertex_parent_cmp(void *aa, void *bb)
 {
 	struct vertex_parent *a = aa, *b = bb;
-	// return IPV4_ADDR_CMP(&a->nexthop->router, &b->nexthop->router);
-	if (a->nexthop->cost < b->nexthop->cost) {
-		return -1;
-	}
-	else if (a->nexthop->cost > b->nexthop->cost) {
-		return 1;
-	}
-	else {
-		return IPV4_ADDR_CMP(&a->nexthop->router, &b->nexthop->router);
-	}
+	return IPV4_ADDR_CMP(&a->nexthop->router, &b->nexthop->router);
 }
 
-/**
- * @note modified by sqsq
- */
 static struct vertex *ospf_vertex_new(struct ospf_area *area,
 				      struct ospf_lsa *lsa)
 {
@@ -227,11 +225,6 @@ static struct vertex *ospf_vertex_new(struct ospf_area *area,
 	lsa->stat = new;
 
 	listnode_add(area->spf_vertex_list, new);
-
-	/** added by sqsq */
-	new->distance = 0;
-	new->hop = 0;
-
 
 	if (IS_DEBUG_OSPF_EVENT)
 		zlog_debug("%s: Created %s vertex %pI4", __func__,
@@ -1732,40 +1725,43 @@ void ospf_spf_cleanup(struct vertex *spf, struct list *vertex_list)
  * @brief if v is root, then get nexthop directly;
  * 			if v is not root, then w inherits nexthop from v
  */
-struct vertex_parent *bfs_add_parent(struct vertex *v,
-									struct vertex *w,
-									struct vertex_nexthop *newhop,
-									uint32_t distance,
-									uint32_t hop)
+struct bfs_vertex_parent *bfs_add_parent(struct bfs_vertex *v,
+									struct bfs_vertex *w,
+									struct bfs_vertex_nexthop *newhop)
 {
-	struct vertex_parent *vp, *wp;
-	struct listnode *node;
+	struct bfs_vertex_parent *vp, *wp;
+	struct listnode *node, *nnode;
 
-	if (hop > w->hop) {
-		return NULL;
-	}
-	if (w->distance == 0 || w->distance > distance) {
-		w->distance = distance;
-	}
-	if (hop < w->hop) {
-		ospf_spf_flush_parents(w);
-		w->hop = hop;
-	}
-
-	for (ALL_LIST_ELEMENTS_RO(w->parents, node, wp)) {
+	for (ALL_LIST_ELEMENTS(w->parents, node, nnode, wp)) {
 		if (memcmp(newhop, wp->nexthop, sizeof(*newhop)) == 0) {
 			/** nexthop is already on list */
 			return NULL;
 		}
-		else if (IPV4_ADDR_CMP(&newhop->router, &wp->nexthop->router) == 0
-					&& newhop->cost < wp->nexthop->cost) {
-			wp->nexthop->cost = newhop->cost;
-			return NULL;
+		else if (IPV4_ADDR_CMP(&newhop->nexthop, &wp->nexthop->nexthop) == 0) {
+			if (newhop->cost < wp->nexthop->cost) {
+				list_delete_node(w->parents, node);
+				vp = bfs_vertex_parent_new(v, newhop);
+				listnode_add_sort(w->parents, vp);
+				zlog_debug("%s    find a better path, nexthop:%pI4, old parent:%pI4/%u, new parent:%pI4/%u",
+							__func__,
+							&newhop->nexthop,
+							&wp->parent->id,
+							wp->nexthop->cost,
+							&vp->parent->id,
+							vp->nexthop->cost);		
+				return vp;		
+			}
+			else {
+				return NULL;
+			}
 		}
 	}
 
-	vp = vertex_parent_new(v, 0, newhop, NULL);
+	vp = bfs_vertex_parent_new(v, newhop);
 	listnode_add_sort(w->parents, vp);
+
+	bfs_vertex_dump(w);
+
 	return vp;
 }
 
@@ -1776,15 +1772,14 @@ struct vertex_parent *bfs_add_parent(struct vertex *v,
  * @returns 0 if fail
  */
 int bfs_nexthop_calculation(struct ospf_area *area,
-							struct vertex *v, 
-							struct vertex *w,
+							struct bfs_vertex *v, 
+							struct bfs_vertex *w,
 							struct router_lsa_link *l,
-							uint32_t distance, 
-							uint32_t hop)
+							uint32_t distance)
 {
-	struct vertex_nexthop *nh;
+	struct bfs_vertex_nexthop *nh;
 
-	if (v == area->spf) {
+	if (v->lsa_p == area->router_lsa_self) {
 		/**
 		 * v is root
 		 */
@@ -1798,12 +1793,12 @@ int bfs_nexthop_calculation(struct ospf_area *area,
 			struct ospf_neighbor *nbr_w = ospf_nbr_lookup_by_routerid(oi->nbrs, 
 																		&l->link_id);
 			if (nbr_w != NULL) {
-				nh = vertex_nexthop_new();
-				nh->router = nbr_w->src;
+				nh = bfs_vertex_nexthop_new();
+				nh->nexthop = nbr_w->src;
 				nh->cost = distance;
 
-				if (bfs_add_parent(v, w, nh, distance, hop) == NULL) {
-					vertex_nexthop_free(nh);
+				if (bfs_add_parent(v, w, nh) == NULL) {
+					bfs_vertex_nexthop_free(nh);
 				}
 				return 1;
 			}
@@ -1816,15 +1811,15 @@ int bfs_nexthop_calculation(struct ospf_area *area,
 		/** v is not root, w's nexthop should inherit v's */
 		int added = 0;
 		struct listnode *node, *nnode;
-		struct vertex_parent *vp;
+		struct bfs_vertex_parent *vp;
 		for (ALL_LIST_ELEMENTS(v->parents, node, nnode, vp)) {
 			added = 1;
-			nh = vertex_nexthop_new();
-			memcpy(nh, vp->nexthop, sizeof(struct vertex_nexthop));
+			nh = bfs_vertex_nexthop_new();
+			nh->nexthop = vp->nexthop->nexthop;
 			nh->cost = distance;
 
-			if (bfs_add_parent(v, w, nh, distance, hop) == NULL) {
-				vertex_nexthop_free(nh);
+			if (bfs_add_parent(v, w, nh) == NULL) {
+				bfs_vertex_nexthop_free(nh);
 			}
 		}
 		return added;
@@ -1835,24 +1830,20 @@ int bfs_nexthop_calculation(struct ospf_area *area,
  * @author sqsq
  * @brief iterate neighbors of v
  */
-void bfs_spf_next(struct vertex *v, 
+void bfs_spf_next(struct bfs_vertex *v, 
 						struct ospf_area *area, 
-						struct vertex_list_head *bfs_queue,
-						struct vertex_dict_head *bfs_dict)
+						struct bfs_vertex_list_head *bfs_queue,
+						struct bfs_vertex_dict_head *bfs_dict)
 {
 	uint8_t *p = ((uint8_t *)v->lsa) + OSPF_LSA_HEADER_SIZE + 4;
 	uint8_t *lim = ((uint8_t *)v->lsa) + ntohs(v->lsa->length);
-	int lsa_pos = -1, lsa_pos_next = 0;
 
 	while (p < lim) {
-		struct vertex *w;
+		struct bfs_vertex *w;
 		
 		struct router_lsa_link *l = (struct router_lsa_link *)p;
 		uint8_t link_type = l->m[0].type;
 		uint16_t link_distance = ntohs(l->m[0].metric);	
-
-		lsa_pos = lsa_pos_next;
-		lsa_pos_next++;
 
 		p += (OSPF_ROUTER_LSA_LINK_SIZE
 				+ (l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE));
@@ -1869,15 +1860,16 @@ void bfs_spf_next(struct vertex *v,
 				/** w is illegal */
 				continue;
 			}
-			if (w_lsa->stat == LSA_SPF_IN_SPFTREE) {
+			if (w_lsa->bfs_stat == BFS_SEARCHED) {
 				/** w has been searched */
 				continue;
 			}
-			if (w_lsa->stat == LSA_SPF_NOT_EXPLORED) {
+			if (w_lsa->bfs_stat == BFS_NOT_EXPLORED) {
 				/** first searched w */
-				w = ospf_vertex_new(area, w_lsa);
-				/** here, w->lsa_p->stat has benn set to w */
+				w = bfs_vertex_new(area, w_lsa);
+				/** here, w->lsa_p->bfs_stat has benn set to w */
 				w->hop = hop;
+				w->distance = distance;
 
 				zlog_debug("%s    first search %pI4->%pI4, hop:%u", 
 							__func__, 
@@ -1885,17 +1877,16 @@ void bfs_spf_next(struct vertex *v,
 							&w->id,
 							w->hop);
 				
-				if (bfs_nexthop_calculation(area, v, w, l, distance, hop)) {
-					vertex_list_add_tail(bfs_queue, w);
+				if (bfs_nexthop_calculation(area, v, w, l, distance)) {
+					bfs_vertex_list_add_tail(bfs_queue, w);
 				}
 				else {
-					listnode_delete(area->spf_vertex_list, w);
-					ospf_vertex_free(w);
-					w_lsa->stat = LSA_SPF_NOT_EXPLORED;
+					bfs_vertex_free(w);
+					w_lsa->bfs_stat = BFS_NOT_EXPLORED;
 				}				
 			}
-			else if (w_lsa->stat != LSA_SPF_IN_SPFTREE) {
-				w = w_lsa->stat;
+			else if (w_lsa->bfs_stat != BFS_SEARCHED) {
+				w = w_lsa->bfs_stat;
 				if (w->hop < hop) {
 					continue;
 				}
@@ -1905,7 +1896,10 @@ void bfs_spf_next(struct vertex *v,
 								&v->id,
 								&w->id,
 								w->hop);
-					bfs_nexthop_calculation(area, v, w, l, distance, hop);
+					if (w->distance > distance) {
+						w->distance = distance;
+					}
+					bfs_nexthop_calculation(area, v, w, l, distance);
 				}
 			}
 		}
@@ -1916,16 +1910,12 @@ void bfs_spf_next(struct vertex *v,
  * @author sqsq
  */
 void bfs_spf_calculate(struct ospf_area *area, 
-							struct ospf_lsa *root_lsa,
-							struct route_table *new_table,
-							struct route_table *all_rtrs,
-							struct route_table *new_rtrs, 
-							bool is_dry_run,
-							bool is_root_node)
+								struct ospf_lsa *root_lsa,
+								struct route_table *new_table)
 {
-	struct vertex_list_head bfs_queue;
-	struct vertex_dict_head bfs_dict;
-	struct vertex *v;
+	struct bfs_vertex_list_head bfs_queue;
+	struct bfs_vertex_dict_head bfs_dict;
+	struct bfs_vertex *v;
 
 	/**
 	 * used for time recording
@@ -1937,41 +1927,44 @@ void bfs_spf_calculate(struct ospf_area *area,
 	clock_gettime(CLOCK_MONOTONIC, &start);
 	
 	lsdb_clean_stat(area->lsdb);
-	ospf_spf_init(area, root_lsa, is_dry_run, is_root_node);
 
-	vertex_list_init(&bfs_queue);
-	vertex_dict_init(&bfs_dict);
+	bfs_vertex_list_init(&bfs_queue);
+	bfs_vertex_dict_init(&bfs_dict);
 
-	v = area->spf;
+	v = bfs_vertex_new(area, root_lsa);
+	v->hop = 0;
+	v->distance = 0;
 
-	vertex_list_add_tail(&bfs_queue, v);
-	vertex_dict_add(&bfs_dict, v);
+	bfs_vertex_list_add_tail(&bfs_queue, v);
+	bfs_vertex_dict_add(&bfs_dict, v);
 
-	while (vertex_list_count(&bfs_queue) != 0) {
+	while (bfs_vertex_list_count(&bfs_queue) != 0) {
 		/**
 		 * find a "ring" of vertecies whose hop are the same,
 		 * and set them to LSA_SPF_IN_SPF_TREE,
 		 * because the paths to them must have been determined
 		 */
 		uint32_t current_hop;
-		current_hop = vertex_list_first(&bfs_queue)->hop;
-		frr_each(vertex_list, &bfs_queue, v) {
+		current_hop = bfs_vertex_list_first(&bfs_queue)->hop;
+		frr_each(bfs_vertex_list, &bfs_queue, v) {
 			if (v->hop == current_hop) {
-				v->lsa_p->stat = LSA_SPF_IN_SPFTREE;
+				v->lsa_p->bfs_stat = BFS_SEARCHED;
 			}
 			else {
 				break;
 			}
 		}
 		/**
-		 * then search through all vertices whose stat is LSA_SPF_IN_SPF_TREE
+		 * then search through all vertices whose bfs_stat is BFS_SEARCHED
 		 */
-		while ((v = vertex_list_first(&bfs_queue)) != NULL) {
-			if (v->lsa_p->stat != LSA_SPF_IN_SPFTREE) {
+		while ((v = bfs_vertex_list_first(&bfs_queue)) != NULL) {
+			if (v->lsa_p->bfs_stat != BFS_SEARCHED) {
 				break;
 			}
+
 			zlog_debug("%s    queue first:%pI4", __func__, &v->id);
-			vertex_list_pop(&bfs_queue);
+
+			bfs_vertex_list_pop(&bfs_queue);
 			bfs_spf_next(v, area, &bfs_queue, &bfs_dict);
 		}
 	}
@@ -1979,7 +1972,7 @@ void bfs_spf_calculate(struct ospf_area *area,
 	clock_gettime(CLOCK_MONOTONIC, &end);
 	calculation_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - start.tv_nsec);
 
-	ospf_spf_process_stubs(area, area->spf, new_table, 0);
+	// ospf_spf_process_stubs(area, area->spf, new_table, 0);
 
 	/**
 	 * time recording
@@ -2000,13 +1993,113 @@ void bfs_spf_calculate(struct ospf_area *area,
 /**
  * @author sqsq
  */
-int vertex_compare_func(const struct vertex *a, const struct vertex *b)
+struct bfs_vertex_nexthop *bfs_vertex_nexthop_new(void)
+{
+	return XCALLOC(MTYPE_BFS_NEXTHOP, sizeof(struct bfs_vertex_nexthop));
+}
+int bfs_vertex_nexthop_cmp(void *aa, void *bb)
+{
+	struct bfs_vertex_nexthop *a = aa, *b = bb;
+	if (a->cost > b->cost) {
+		return 1;
+	}
+	else if (a->cost < b->cost) {
+		return -1;
+	}
+	else {
+		return 0;
+	}
+}
+void bfs_vertex_nexthop_free(struct bfs_vertex_nexthop *nh)
+{
+	XFREE(MTYPE_BFS_NEXTHOP, nh);
+}
+
+/**
+ * @author sqsq
+ */
+struct bfs_vertex_parent *bfs_vertex_parent_new(struct bfs_vertex *v, struct bfs_vertex_nexthop *nh)
+{
+	struct bfs_vertex_parent *new;
+
+	new = XMALLOC(MTYPE_BFS_VERTEX_PARENT, sizeof(struct bfs_vertex_parent));
+
+	new->parent = v;
+	new->nexthop = nh;
+
+	return new;
+}
+void bfs_vertex_parent_free(struct bfs_vertex_parent *a)
+{
+	bfs_vertex_nexthop_free(a->nexthop);
+	XFREE(MTYPE_BFS_VERTEX_PARENT, a);
+}
+int bfs_vertex_parent_cmp(void *aa, void *bb)
+{
+	struct bfs_vertex_parent *a = aa, *b = bb;
+	if (a->nexthop->cost < b->nexthop->cost) {
+		return -1;
+	}
+	else if (a->nexthop->cost > b->nexthop->cost) {
+		return 1;
+	}
+	else {
+		return IPV4_ADDR_CMP(&a->nexthop->nexthop, &b->nexthop->nexthop);
+	}
+}
+/**
+ * @author sqsq
+ */
+int bfs_vertex_compare_func(const struct bfs_vertex *a, const struct bfs_vertex *b)
 {
 	return IPV4_ADDR_CMP(&a->id, &b->id);
 }
-uint32_t vertex_hash_func(const struct vertex *a)
+uint32_t bfs_vertex_hash_func(const struct bfs_vertex *a)
 {
 	return a->id.s_addr;
+}
+struct bfs_vertex *bfs_vertex_new(struct ospf_area *area, struct ospf_lsa *lsa)
+{
+	struct bfs_vertex *new;
+
+	new = XCALLOC(MTYPE_BFS_VERTEX, sizeof(struct bfs_vertex));
+
+	new->id = lsa->data->id;
+	new->lsa = lsa->data;
+	new->parents = list_new();
+	new->parents->del = (void (*)(void *))bfs_vertex_parent_free;
+	new->parents->cmp = bfs_vertex_parent_cmp;
+	new->lsa_p = lsa;
+
+	lsa->bfs_stat = new;
+
+	return new;
+}
+void bfs_vertex_free(void *data)
+{
+	struct bfs_vertex *v = data;
+
+	if (v->parents)
+		list_delete(&v->parents);
+
+	v->lsa = NULL;
+
+	XFREE(MTYPE_BFS_VERTEX, v);
+}
+void bfs_vertex_dump(const struct bfs_vertex *a)
+{
+	struct bfs_vertex_parent *vp;
+	struct listnode *node;
+	zlog_debug("--------%s--------", __func__);
+	for(ALL_LIST_ELEMENTS_RO(a->parents, node, vp)) {
+		zlog_debug("%s    %pI4, parent:%pI4, nexthop%pI4, cost:%u", 
+					__func__, 
+					&a->id, 
+					&vp->parent->id,
+					&vp->nexthop->nexthop,
+					vp->nexthop->cost);
+	}
+	zlog_debug("--------%s_end--------", __func__);
 }
 
 /* Calculating the shortest-path tree for an area, see RFC2328 16.1. */
@@ -2127,12 +2220,8 @@ void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
 	 * sqsq
 	 */
 	bfs_spf_calculate(area, 
-							area->router_lsa_self, 
-							new_table, 
-							all_rtrs,
-			   				new_rtrs, 
-							false, 
-							true);
+						area->router_lsa_self, 
+						new_table);
 	// ospf_spf_calculate(area, area->router_lsa_self, new_table, all_rtrs,
 	// 		   new_rtrs, false, true);
 
