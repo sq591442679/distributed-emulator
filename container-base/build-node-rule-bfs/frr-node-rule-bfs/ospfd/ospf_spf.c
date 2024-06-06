@@ -1742,13 +1742,13 @@ struct bfs_vertex_parent *bfs_add_parent(struct bfs_vertex *v,
 				list_delete_node(w->parents, node);
 				vp = bfs_vertex_parent_new(v, newhop);
 				listnode_add_sort(w->parents, vp);
-				zlog_debug("%s    find a better path, nexthop:%pI4, old parent:%pI4/%u, new parent:%pI4/%u",
-							__func__,
-							&newhop->nexthop,
-							&wp->parent->id,
-							wp->nexthop->cost,
-							&vp->parent->id,
-							vp->nexthop->cost);		
+				// zlog_debug("%s    find a better path, nexthop:%pI4, old parent:%pI4/%u, new parent:%pI4/%u",
+				// 			__func__,
+				// 			&newhop->nexthop,
+				// 			&wp->parent->id,
+				// 			wp->nexthop->cost,
+				// 			&vp->parent->id,
+				// 			vp->nexthop->cost);		
 				return vp;		
 			}
 			else {
@@ -1760,7 +1760,7 @@ struct bfs_vertex_parent *bfs_add_parent(struct bfs_vertex *v,
 	vp = bfs_vertex_parent_new(v, newhop);
 	listnode_add_sort(w->parents, vp);
 
-	bfs_vertex_dump(w);
+	// bfs_vertex_dump(w);
 
 	return vp;
 }
@@ -1871,11 +1871,11 @@ void bfs_spf_next(struct bfs_vertex *v,
 				w->hop = hop;
 				w->distance = distance;
 
-				zlog_debug("%s    first search %pI4->%pI4, hop:%u", 
-							__func__, 
-							&v->id,
-							&w->id,
-							w->hop);
+				// zlog_debug("%s    first search %pI4->%pI4, hop:%u", 
+				// 			__func__, 
+				// 			&v->id,
+				// 			&w->id,
+				// 			w->hop);
 				
 				if (bfs_nexthop_calculation(area, v, w, l, distance)) {
 					bfs_vertex_list_add_tail(bfs_queue, w);
@@ -1891,11 +1891,11 @@ void bfs_spf_next(struct bfs_vertex *v,
 					continue;
 				}
 				else {
-					zlog_debug("%s    equal hop search %pI4->%pI4, hop:%u", 
-								__func__, 
-								&v->id,
-								&w->id,
-								w->hop);
+					// zlog_debug("%s    equal hop search %pI4->%pI4, hop:%u", 
+					// 			__func__, 
+					// 			&v->id,
+					// 			&w->id,
+					// 			w->hop);
 					if (w->distance > distance) {
 						w->distance = distance;
 					}
@@ -1962,7 +1962,7 @@ void bfs_spf_calculate(struct ospf_area *area,
 				break;
 			}
 
-			zlog_debug("%s    queue first:%pI4", __func__, &v->id);
+			// zlog_debug("%s    queue first:%pI4", __func__, &v->id);
 
 			bfs_vertex_list_pop(&bfs_queue);
 			bfs_spf_next(v, area, &bfs_queue, &bfs_dict);
