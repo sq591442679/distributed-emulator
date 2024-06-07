@@ -1720,6 +1720,23 @@ void ospf_spf_cleanup(struct vertex *spf, struct list *vertex_list)
 
 /**
  * @author sqsq
+ */
+static int ospf_path_exist(struct list *plist, struct in_addr nexthop,
+			   struct ospf_interface *oi)
+{
+	struct listnode *node, *nnode;
+	struct ospf_path *path;
+
+	for (ALL_LIST_ELEMENTS(plist, node, nnode, path))
+		if (IPV4_ADDR_SAME(&path->nexthop, &nexthop)
+		    && path->ifindex == oi->ifp->ifindex)
+			return 1;
+
+	return 0;
+}
+
+/**
+ * @author sqsq
  * @returns vertex parent pointer if created, 
  * 			otherwise `NULL` if it already exists
  * @brief if v is root, then get nexthop directly;
@@ -1796,6 +1813,7 @@ int bfs_nexthop_calculation(struct ospf_area *area,
 				nh = bfs_vertex_nexthop_new();
 				nh->nexthop = nbr_w->src;
 				nh->cost = distance;
+				nh->oi = oi;
 
 				if (bfs_add_parent(v, w, nh) == NULL) {
 					bfs_vertex_nexthop_free(nh);
@@ -1817,6 +1835,7 @@ int bfs_nexthop_calculation(struct ospf_area *area,
 			nh = bfs_vertex_nexthop_new();
 			nh->nexthop = vp->nexthop->nexthop;
 			nh->cost = distance;
+			nh->oi = vp->nexthop->oi;
 
 			if (bfs_add_parent(v, w, nh) == NULL) {
 				bfs_vertex_nexthop_free(nh);
@@ -1908,6 +1927,137 @@ void bfs_spf_next(struct bfs_vertex *v,
 
 /**
  * @author sqsq
+ * @brief get nexthops from v, then add them into or
+ */
+void bfs_set_nexthops(struct ospf_area *area, 
+						struct ospf_route *or, 
+						int lsa_pos, 
+						struct bfs_vertex *v)
+{
+	struct listnode *node;
+	struct ospf_path *path;
+	struct bfs_vertex_nexthop *nexthop;
+	struct bfs_vertex_parent *vp;
+	struct ospf_interface *oi = NULL;
+
+	assert(or->paths);
+
+	if (v->lsa_p == area->router_lsa_self) {
+		/**
+		 * if we area processing stubs that directly connect to root,
+		 * then v->parents is empty,
+		 * and we must set the output path.
+		 * but in fact, those path are never used,
+		 * because for directly connected stubs,
+		 * linux kernel can get output interface without using ospf
+		 */
+		oi = ospf_if_lookup_by_lsa_pos(area, lsa_pos);
+		if (oi != NULL) {
+			path = ospf_path_new();
+			path->ifindex = oi->ifp->ifindex;
+			path->nexthop.s_addr = INADDR_ANY;
+			/**
+			 * @note here we do not specify the nexthop field, but why
+			 */
+			listnode_add(or->paths, path);
+		}
+	}
+	else {
+		for (ALL_LIST_ELEMENTS_RO(v->parents, node, vp)) {
+			nexthop = vp->nexthop;
+			oi = nexthop->oi;
+
+			if (oi && !ospf_path_exist(or->paths, nexthop->nexthop, oi)) {
+				path = ospf_path_new();
+				path->nexthop = nexthop->nexthop;
+				path->adv_router = v->id;
+				path->ifindex = oi->ifp->ifindex;
+				listnode_add(or->paths, path);
+			}
+		}			
+	}
+}
+
+/**
+ * @author sqsq
+ * @brief build routing table for stub networks
+ */
+void bfs_spf_process_stubs(struct ospf_area *area, 
+							struct bfs_vertex *v, 
+							struct route_table *new_table)
+{
+	struct lsa_header *lsa = v->lsa;
+	uint8_t *p = ((uint8_t *)lsa) + OSPF_LSA_HEADER_SIZE + 4;
+	uint8_t *lim = ((uint8_t *)lsa) + ntohs(lsa->length);
+	struct router_lsa_link *l;
+	struct listnode *cnode, *cnnode;
+	struct bfs_vertex *child;
+	int lsa_pos = 0;
+
+	while (p < lim) {
+		l = (struct router_lsa_link *)p;
+		p += (OSPF_ROUTER_LSA_LINK_SIZE + (l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE));
+
+		if (l->m[0].type == LSA_LINK_TYPE_STUB) {
+			uint32_t cost = v->distance + ntohs(l->m[0].metric);
+			struct route_node *rn;
+			struct ospf_route *or;
+			struct prefix_ipv4 p;
+
+			p.family = AF_INET;
+			p.prefix = l->link_id;
+			p.prefixlen = ip_masklen(l->link_data);
+			apply_mask_ipv4(&p);
+
+			rn = route_node_get(new_table, (struct prefix *)&p);
+
+			if (rn->info != NULL) {
+				route_unlock_node(rn);
+				or = rn->info;
+				if (cost > or->cost) {
+					continue;
+				}
+				else if (cost == or->cost) {
+					bfs_set_nexthops(area, or, lsa_pos, v);
+					if (IPV4_ADDR_CMP(&or->u.std.origin->id, &lsa->id) < 0) {
+						or->u.std.origin = lsa;
+					}
+				}
+				else {
+					or->cost = cost;
+					list_delete_all_node(or->paths);
+					bfs_set_nexthops(area, or, lsa_pos, v);
+					or->u.std.origin = lsa;	
+				}
+			}
+			else {
+				or = ospf_route_new();
+				or->id = v->id;
+				or->u.std.area_id = area->area_id;
+				or->u.std.external_routing = area->external_routing;
+				or->path_type = OSPF_PATH_INTRA_AREA;
+				or->cost = cost;
+				or->type = OSPF_DESTINATION_NETWORK;
+				or->u.std.origin = lsa;	
+				bfs_set_nexthops(area, or, lsa_pos, v);
+			}
+		}
+		lsa_pos++;
+	}	
+
+	for (ALL_LIST_ELEMENTS(v->children, cnode, cnnode, child)) {
+		if (CHECK_FLAG(child->flags, OSPF_VERTEX_PROCESSED)) {
+			continue;
+		}
+
+		bfs_spf_process_stubs(area, child, new_table);
+
+		SET_FLAG(child->flags, OSPF_VERTEX_PROCESSED);
+	}
+}
+
+/**
+ * @author sqsq
  */
 void bfs_spf_calculate(struct ospf_area *area, 
 								struct ospf_lsa *root_lsa,
@@ -1915,7 +2065,7 @@ void bfs_spf_calculate(struct ospf_area *area,
 {
 	struct bfs_vertex_list_head bfs_queue;
 	struct bfs_vertex_dict_head bfs_dict;
-	struct bfs_vertex *v;
+	struct bfs_vertex *v, *root_vertex;
 
 	/**
 	 * used for time recording
@@ -1934,6 +2084,7 @@ void bfs_spf_calculate(struct ospf_area *area,
 	v = bfs_vertex_new(area, root_lsa);
 	v->hop = 0;
 	v->distance = 0;
+	root_vertex = v;
 
 	bfs_vertex_list_add_tail(&bfs_queue, v);
 	bfs_vertex_dict_add(&bfs_dict, v);
@@ -1966,13 +2117,14 @@ void bfs_spf_calculate(struct ospf_area *area,
 
 			bfs_vertex_list_pop(&bfs_queue);
 			bfs_spf_next(v, area, &bfs_queue, &bfs_dict);
+			bfs_vertex_add_parents(v);
 		}
 	}
 
 	clock_gettime(CLOCK_MONOTONIC, &end);
 	calculation_time_ns = (end.tv_sec - start.tv_sec) * 1000000000ll + (end.tv_nsec - start.tv_nsec);
 
-	// ospf_spf_process_stubs(area, area->spf, new_table, 0);
+	bfs_spf_process_stubs(area, root_vertex, new_table);
 
 	/**
 	 * time recording
@@ -2047,6 +2199,7 @@ int bfs_vertex_parent_cmp(void *aa, void *bb)
 		return IPV4_ADDR_CMP(&a->nexthop->nexthop, &b->nexthop->nexthop);
 	}
 }
+
 /**
  * @author sqsq
  */
@@ -2066,10 +2219,13 @@ struct bfs_vertex *bfs_vertex_new(struct ospf_area *area, struct ospf_lsa *lsa)
 
 	new->id = lsa->data->id;
 	new->lsa = lsa->data;
+	new->lsa_p = lsa;
+	
 	new->parents = list_new();
 	new->parents->del = (void (*)(void *))bfs_vertex_parent_free;
 	new->parents->cmp = bfs_vertex_parent_cmp;
-	new->lsa_p = lsa;
+
+	new->children = list_new();
 
 	lsa->bfs_stat = new;
 
@@ -2100,6 +2256,22 @@ void bfs_vertex_dump(const struct bfs_vertex *a)
 					vp->nexthop->cost);
 	}
 	zlog_debug("--------%s_end--------", __func__);
+}
+/** 
+ * for all parents of v, add v into their children
+ */
+void bfs_vertex_add_parents(struct bfs_vertex *v)
+{
+	struct bfs_vertex_parent *vp;
+	struct listnode *node;
+
+	assert(v && v->parents);
+	for (ALL_LIST_ELEMENTS_RO(v->parents, node, vp)) {
+		assert(vp->parent && vp->parent->children);
+		if (listnode_lookup(vp->parent->children, v) == NULL) {
+			listnode_add(vp->parent->children, v);
+		}
+	}
 }
 
 /* Calculating the shortest-path tree for an area, see RFC2328 16.1. */
