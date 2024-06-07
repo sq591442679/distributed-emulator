@@ -1994,6 +1994,8 @@ void bfs_spf_process_stubs(struct ospf_area *area,
 	struct bfs_vertex *child;
 	int lsa_pos = 0;
 
+	zlog_debug("%s    stub searched to node %pI4", __func__, &v->id);
+
 	while (p < lim) {
 		l = (struct router_lsa_link *)p;
 		p += (OSPF_ROUTER_LSA_LINK_SIZE + (l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE));
@@ -2008,6 +2010,8 @@ void bfs_spf_process_stubs(struct ospf_area *area,
 			p.prefix = l->link_id;
 			p.prefixlen = ip_masklen(l->link_data);
 			apply_mask_ipv4(&p);
+
+			zlog_debug("%s    stub searched to sub net %pI4/%u", __func__, &p.prefix, p.prefixlen);
 
 			rn = route_node_get(new_table, (struct prefix *)&p);
 
@@ -2040,6 +2044,7 @@ void bfs_spf_process_stubs(struct ospf_area *area,
 				or->type = OSPF_DESTINATION_NETWORK;
 				or->u.std.origin = lsa;	
 				bfs_set_nexthops(area, or, lsa_pos, v);
+				rn->info = or;
 			}
 		}
 		lsa_pos++;
@@ -2061,7 +2066,8 @@ void bfs_spf_process_stubs(struct ospf_area *area,
  */
 void bfs_spf_calculate(struct ospf_area *area, 
 								struct ospf_lsa *root_lsa,
-								struct route_table *new_table)
+								struct route_table *new_table,
+								struct list *bfs_vertex_list)
 {
 	struct bfs_vertex_list_head bfs_queue;
 	struct bfs_vertex_dict_head bfs_dict;
@@ -2118,6 +2124,7 @@ void bfs_spf_calculate(struct ospf_area *area,
 			bfs_vertex_list_pop(&bfs_queue);
 			bfs_spf_next(v, area, &bfs_queue, &bfs_dict);
 			bfs_vertex_add_parents(v);
+			listnode_add(bfs_vertex_list, v);
 		}
 	}
 
@@ -2391,9 +2398,14 @@ void ospf_spf_calculate_area(struct ospf *ospf, struct ospf_area *area,
 	/**
 	 * sqsq
 	 */
+	struct list *bfs_vertex_list = list_new();
+	bfs_vertex_list->del = bfs_vertex_free;
 	bfs_spf_calculate(area, 
 						area->router_lsa_self, 
-						new_table);
+						new_table,
+						bfs_vertex_list);
+	list_delete(&bfs_vertex_list);	// clean up
+	
 	// ospf_spf_calculate(area, area->router_lsa_self, new_table, all_rtrs,
 	// 		   new_rtrs, false, true);
 

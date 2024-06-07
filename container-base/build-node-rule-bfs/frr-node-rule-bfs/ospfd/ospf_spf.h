@@ -148,7 +148,7 @@ extern int bfs_nexthop_calculation(struct ospf_area *area, struct bfs_vertex *v,
 extern void bfs_spf_next(struct bfs_vertex *v, struct ospf_area *area, struct bfs_vertex_list_head *bfs_queue, struct bfs_vertex_dict_head *bfs_dict);
 extern void bfs_set_nexthops(struct ospf_area *area, struct ospf_route *or, int lsa_pos, struct bfs_vertex *v);
 extern void bfs_spf_process_stubs(struct ospf_area *area, struct bfs_vertex *v, struct route_table *new_table);
-extern void bfs_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa, struct route_table *new_table);
+extern void bfs_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa, struct route_table *new_table, struct list *bfs_vertex_list);
 
 /**
  * sqsq
