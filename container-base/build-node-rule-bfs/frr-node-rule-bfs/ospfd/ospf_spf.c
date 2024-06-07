@@ -1994,7 +1994,7 @@ void bfs_spf_process_stubs(struct ospf_area *area,
 	struct bfs_vertex *child;
 	int lsa_pos = 0;
 
-	zlog_debug("%s    stub searched to node %pI4", __func__, &v->id);
+	// zlog_debug("%s    stub searched to node %pI4", __func__, &v->id);
 
 	while (p < lim) {
 		l = (struct router_lsa_link *)p;
@@ -2011,7 +2011,7 @@ void bfs_spf_process_stubs(struct ospf_area *area,
 			p.prefixlen = ip_masklen(l->link_data);
 			apply_mask_ipv4(&p);
 
-			zlog_debug("%s    stub searched to sub net %pI4/%u", __func__, &p.prefix, p.prefixlen);
+			// zlog_debug("%s    stub searched to sub net %pI4/%u", __func__, &p.prefix, p.prefixlen);
 
 			rn = route_node_get(new_table, (struct prefix *)&p);
 

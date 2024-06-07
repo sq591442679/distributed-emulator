@@ -28,8 +28,8 @@ NETWORK_LOSS = 0        # percent 0 means 0%
 QUEUE_CAPACITY = 10000    # unit: pkt
 
 # CONSTELLATION PARAMETERS
-ORBIT_NUM = 4
-SAT_PER_ORBIT = 4
+ORBIT_NUM = 6
+SAT_PER_ORBIT = 11
 USE_WALKER_DELTA = False		# if True, then no seam
 INCLINE_DEGREE: float = 89	
 # note that in particular, when USE_WALKER_DELTA is False, INCLINE_DEGREE is usually near 90
