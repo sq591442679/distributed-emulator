@@ -266,16 +266,18 @@ def run(protocol_name: int,
     # -------------------------------------------------------------------
     # start frr    added by sqsq
     start_frr(docker_client)
-    if USE_STATIC_POSITION:
-        # set the initial position
-        for node_id in sorted(list(satellite_map.keys())):
-            satellite_node = satellite_map[node_id]
-            node_id_str = satellite_id_tuple_to_str(node_id)
-            position_datas[node_id_str][LATITUDE_KEY], \
-            position_datas[node_id_str][LONGITUDE_KEY], \
-            position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
-            # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
-        update_network_delay(position_datas, connect_order_map)
+    # set the initial position
+    # NOTE must start frr first, then call update_network_delay,
+    # because this function will chenge ospf cost
+    for node_id in sorted(list(satellite_map.keys())):
+        satellite_node = satellite_map[node_id]
+        node_id_str = satellite_id_tuple_to_str(node_id)
+        position_datas[node_id_str][LATITUDE_KEY], \
+        position_datas[node_id_str][LONGITUDE_KEY], \
+        position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
+        # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
+    update_network_delay(position_datas, connect_order_map)
+   
     # time.sleep(WARMUP_PERIOD)
     # -------------------------------------------------------------------
     # -------------------------------------------------------------------

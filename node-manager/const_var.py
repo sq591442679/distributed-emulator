@@ -28,8 +28,8 @@ NETWORK_LOSS = 0        # percent 0 means 0%
 QUEUE_CAPACITY = 10000    # unit: pkt
 
 # CONSTELLATION PARAMETERS
-ORBIT_NUM = 6
-SAT_PER_ORBIT = 11
+ORBIT_NUM = 20
+SAT_PER_ORBIT = 10
 USE_WALKER_DELTA = False		# if True, then no seam
 INCLINE_DEGREE: float = 89	
 # note that in particular, when USE_WALKER_DELTA is False, INCLINE_DEGREE is usually near 90
@@ -69,7 +69,7 @@ RECORD_LONG_TERM_RESULT = True
 LOFI_DELTA = 1.0
 LINK_FAILURE_RATE_LIST = [0.05]
 # PROTOCOL_LIST = [f"lofi(3-{LOFI_DELTA:.3f})"]
-# PROTOCOL_LIST = ["node_rule_bfs_multipath", "ospf", "node_rule_id"]
+# PROTOCOL_LIST = ["node_rule_bfs_no_multipath", "ospf", "node_rule_id"]
 PROTOCOL_LIST = ["node_rule_bfs_no_multipath"]
 TEST_NUMS = [10]
 RANDOM_SEEDS = [42]

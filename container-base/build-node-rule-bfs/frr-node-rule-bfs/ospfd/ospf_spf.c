@@ -1792,7 +1792,8 @@ int bfs_nexthop_calculation(struct ospf_area *area,
 							struct bfs_vertex *v, 
 							struct bfs_vertex *w,
 							struct router_lsa_link *l,
-							uint32_t distance)
+							uint32_t distance,
+							int lsa_pos)
 {
 	struct bfs_vertex_nexthop *nh;
 
@@ -1800,9 +1801,7 @@ int bfs_nexthop_calculation(struct ospf_area *area,
 		/**
 		 * v is root
 		 */
-		struct ospf_interface *oi = ospf_if_lookup_by_local_addr(area->ospf,
-																NULL,
-								       							l->link_data);
+		struct ospf_interface *oi = ospf_if_lookup_by_lsa_pos(area, lsa_pos);
 		if (oi == NULL) {
 			return 0;
 		}
@@ -1856,6 +1855,7 @@ void bfs_spf_next(struct bfs_vertex *v,
 {
 	uint8_t *p = ((uint8_t *)v->lsa) + OSPF_LSA_HEADER_SIZE + 4;
 	uint8_t *lim = ((uint8_t *)v->lsa) + ntohs(v->lsa->length);
+	int lsa_pos = 0;
 
 	while (p < lim) {
 		struct bfs_vertex *w;
@@ -1868,8 +1868,7 @@ void bfs_spf_next(struct bfs_vertex *v,
 				+ (l->m[0].tos_count * OSPF_ROUTER_LSA_TOS_SIZE));
 
 		if (link_type == LSA_LINK_TYPE_POINTOPOINT) {
-			struct ospf_lsa *w_lsa = ospf_lsa_lookup(area->ospf, 
-													area,
+			struct ospf_lsa *w_lsa = ospf_lsdb_lookup_by_id(area->lsdb,
 													OSPF_ROUTER_LSA,
 													l->link_id,
 													l->link_id);
@@ -1896,7 +1895,7 @@ void bfs_spf_next(struct bfs_vertex *v,
 				// 			&w->id,
 				// 			w->hop);
 				
-				if (bfs_nexthop_calculation(area, v, w, l, distance)) {
+				if (bfs_nexthop_calculation(area, v, w, l, distance, lsa_pos)) {
 					bfs_vertex_list_add_tail(bfs_queue, w);
 				}
 				else {
@@ -1915,13 +1914,24 @@ void bfs_spf_next(struct bfs_vertex *v,
 					// 			&v->id,
 					// 			&w->id,
 					// 			w->hop);
+
+					// if (w->distance > distance) {
+					// 	w->distance = distance;
+					// 	list_delete_all_node(w->parents);
+					// 	bfs_nexthop_calculation(area, v, w, l, distance, lsa_pos);
+					// }
+					// if (w->distance == distance) {
+					// 	bfs_nexthop_calculation(area, v, w, l, distance, lsa_pos);
+					// }
+					
 					if (w->distance > distance) {
 						w->distance = distance;
 					}
-					bfs_nexthop_calculation(area, v, w, l, distance);
+					bfs_nexthop_calculation(area, v, w, l, distance, lsa_pos);
 				}
 			}
 		}
+		lsa_pos++;
 	}
 }
 

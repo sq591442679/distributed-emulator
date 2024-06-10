@@ -280,10 +280,10 @@ class Network:
         for container_name, eth_name in self.inner_eth_dict.items():
             command = ['sh', '-c', 
                        f"/change_ospf_cost.sh {eth_name} {cost}"]
-            # logger.info(f'{container_name}: {command}')
-            ret = self.docker_client.exec_cmd(container_name, command, detach=True)
-            # if ret[0] != 0:
-            #     logger.error(ret[1].decode().strip())
+            logger.info(f'{container_name}: {command}')
+            ret = self.docker_client.exec_cmd(container_name, command)
+            if ret[0] != 0:
+                logger.error(ret[1].decode().strip())
 
     
     def print_link_event(self, current_sim_time: float, type: str):

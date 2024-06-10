@@ -144,7 +144,7 @@ struct bfs_vertex_parent {
  * @author sqsq
  */
 extern struct bfs_vertex_parent *bfs_add_parent(struct bfs_vertex *v, struct bfs_vertex *w, struct bfs_vertex_nexthop *newhop);
-extern int bfs_nexthop_calculation(struct ospf_area *area, struct bfs_vertex *v,  struct bfs_vertex *w, struct router_lsa_link *l, uint32_t distance);
+extern int bfs_nexthop_calculation(struct ospf_area *area, struct bfs_vertex *v,  struct bfs_vertex *w, struct router_lsa_link *l, uint32_t distance, int lsa_pos);
 extern void bfs_spf_next(struct bfs_vertex *v, struct ospf_area *area, struct bfs_vertex_list_head *bfs_queue, struct bfs_vertex_dict_head *bfs_dict);
 extern void bfs_set_nexthops(struct ospf_area *area, struct ospf_route *or, int lsa_pos, struct bfs_vertex *v);
 extern void bfs_spf_process_stubs(struct ospf_area *area, struct bfs_vertex *v, struct route_table *new_table);

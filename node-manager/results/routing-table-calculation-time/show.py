@@ -43,7 +43,7 @@ plt.ylabel('Average Time (μs)', fontsize=18)
 # 设置刻度的字号
 plt.xticks(rotation=0, fontsize=18)
 plt.yticks(fontsize=14)
-plt.ylim(0, 900)
+# plt.ylim(0, 900)
 
 # 添加图例
 plt.legend(fontsize=14)
