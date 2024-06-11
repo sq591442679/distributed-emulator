@@ -44,7 +44,7 @@ def generate_tle(orbit_num: int, orbit_satellite_num: int, latitude, longitude, 
     topo = {}
     freq = 1 / period  # if the period is 1, the freq is 1Hz, if the period is 0.5, the freq is 2Hz
     line_1 = "1 00000U 23666A   %02d%012.8f  .00000000  00000-0 00000000 0 0000"
-    line_2 = "2 00000  %02.4f %08.4f 0000011   0.0000 %8.4f %11.8f00000"
+    line_2 = "2 00000  %02.4f %08.4f 0000001   0.0000 %8.4f %11.8f00000"
     # year2, day = get_year_day(datetime.now())
     year2, day = get_year_day(TIME_BASE)  # modified by sqsq
 

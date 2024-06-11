@@ -275,7 +275,7 @@ def run(protocol_name: int,
         position_datas[node_id_str][LATITUDE_KEY], \
         position_datas[node_id_str][LONGITUDE_KEY], \
         position_datas[node_id_str][HEIGHT_KEY] = satellite_node.get_next_position(TIME_BASE)
-        # logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
+        logger.info(f"{node_id_str}: {position_datas[node_id_str]}")
     update_network_delay(position_datas, connect_order_map)
    
     # time.sleep(WARMUP_PERIOD)
@@ -371,6 +371,9 @@ if __name__ == "__main__":
     for log_file in log_file_list:
         with open(log_file, "w") as f:
             print("", flush=True, file=f)
+    os.system("rm -r ../configuration/interface_table/*")
+    os.system("rm -r ../container-events/*")
+
 
     protocol_name_list = PROTOCOL_LIST
     link_failure_rate_list = LINK_FAILURE_RATE_LIST

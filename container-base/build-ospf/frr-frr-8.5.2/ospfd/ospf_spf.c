@@ -62,6 +62,29 @@ static const struct vertex vertex_in_spftree = {};
 #define LSA_SPF_IN_SPFTREE	(struct vertex *)&vertex_in_spftree
 #define LSA_SPF_NOT_EXPLORED	NULL
 
+/**
+ * @author sqsq
+ * @brief used for time recording
+ */
+static void dump_excution_time(const char *func_name, struct timespec *start)
+{
+	struct timespec ts, end;
+	long long time_ns;
+	struct tm time_info;
+	char time_str[50];
+
+	clock_gettime(CLOCK_MONOTONIC, &end);
+	time_ns = (end.tv_sec - start->tv_sec) * 1000000000ll + (end.tv_nsec - start->tv_nsec);
+	clock_gettime(CLOCK_REALTIME, &ts);
+	localtime_r(&ts.tv_sec, &time_info);
+	strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", &time_info);
+	sprintf(time_str + strlen(time_str), ".%ld", ts.tv_nsec);
+	// zlog_debug("%s    %s, finished routing table calculation, elapsed %lldns", 
+	// 			func_name, 
+	// 			time_str, 
+	// 			time_ns);
+}
+
 static void ospf_clear_spf_reason_flags(void)
 {
 	spf_reason_flags = 0;
@@ -808,6 +831,13 @@ static unsigned int ospf_nexthop_calculation(struct ospf_area *area,
 	struct vertex_parent *vp;
 	unsigned int added = 0;
 
+	/**
+	 * sqsq
+	 */
+	struct timespec start;
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	zlog_debug("%s    searching %pI4->%pI4", __func__, &v->id, &w->id);
+
 	if (IS_DEBUG_OSPF_EVENT) {
 		zlog_debug("%s: Start", __func__);
 		ospf_vertex_dump("V (parent):", v, 1, 1);
@@ -853,6 +883,12 @@ static unsigned int ospf_nexthop_calculation(struct ospf_area *area,
 							__func__, lsa_pos,
 							&l->link_id,
 							&l->link_data);
+						
+						/**
+						 * sqsq
+						 */
+						dump_excution_time(__func__, &start);
+
 						return 0;
 					}
 				}
@@ -992,6 +1028,12 @@ static unsigned int ospf_nexthop_calculation(struct ospf_area *area,
 						vertex_nexthop_free(nh);
 						vertex_nexthop_free(lnh);
 					}
+
+					/**
+					 * sqsq
+					 */
+					dump_excution_time(__func__, &start);
+
 					return 1;
 				} else
 					zlog_info(
@@ -1037,12 +1079,23 @@ static unsigned int ospf_nexthop_calculation(struct ospf_area *area,
 						vertex_nexthop_free(lnh);
 					}
 
+					/**
+					 * sqsq
+					 */
+					dump_excution_time(__func__, &start);
+
 					return 1;
 				} else
 					zlog_info(
 						"%s: vl_data for VL link not found",
 						__func__);
 			} /* end virtual-link from V to W */
+			
+			/**
+			 * sqsq
+			 */
+			dump_excution_time(__func__, &start);
+
 			return 0;
 		} /* end W is a Router vertex */
 		else {
@@ -1181,6 +1234,11 @@ static unsigned int ospf_nexthop_calculation(struct ospf_area *area,
 			vertex_nexthop_free(lnh);
 		}
 	}
+
+	/**
+	 * sqsq
+	 */
+	dump_excution_time(__func__, &start);
 
 	return added;
 }

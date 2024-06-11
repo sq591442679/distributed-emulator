@@ -28,6 +28,7 @@
  * sqsq
  */
 #include "ospfd/ospf_route.h"
+#include "monotime.h"
 
 /* values for vertex->type */
 #define OSPF_VERTEX_ROUTER  1  /* for a Router-LSA */
@@ -133,7 +134,7 @@ struct bfs_vertex {
 struct bfs_vertex_nexthop {
 	struct in_addr nexthop;     /* ip address to send to */
 	struct ospf_interface *oi;
-	uint32_t cost;
+	// uint32_t cost;
 };
 struct bfs_vertex_parent {
 	struct bfs_vertex_nexthop *nexthop;
@@ -141,11 +142,16 @@ struct bfs_vertex_parent {
 };
 
 /**
+ * sqsq
+ */
+extern void dump_excution_time(const char *func_name, struct timespec *start);
+
+/**
  * @author sqsq
  */
 extern struct bfs_vertex_parent *bfs_add_parent(struct bfs_vertex *v, struct bfs_vertex *w, struct bfs_vertex_nexthop *newhop);
-extern int bfs_nexthop_calculation(struct ospf_area *area, struct bfs_vertex *v,  struct bfs_vertex *w, struct router_lsa_link *l, uint32_t distance, int lsa_pos);
-extern void bfs_spf_next(struct bfs_vertex *v, struct ospf_area *area, struct bfs_vertex_list_head *bfs_queue, struct bfs_vertex_dict_head *bfs_dict);
+extern int bfs_nexthop_calculation(struct ospf_area *area, struct bfs_vertex *v,  struct bfs_vertex *w, struct router_lsa_link *l, uint32_t distance);
+extern void bfs_spf_next(struct bfs_vertex *v, struct ospf_area *area, struct bfs_vertex_list_head *bfs_queue);
 extern void bfs_set_nexthops(struct ospf_area *area, struct ospf_route *or, int lsa_pos, struct bfs_vertex *v);
 extern void bfs_spf_process_stubs(struct ospf_area *area, struct bfs_vertex *v, struct route_table *new_table);
 extern void bfs_spf_calculate(struct ospf_area *area, struct ospf_lsa *root_lsa, struct route_table *new_table, struct list *bfs_vertex_list);

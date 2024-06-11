@@ -255,6 +255,9 @@ class Network:
             # ret = self.docker_client.exec_cmd(container_name, command, stream=False, detach=True)
 
     def update_delay_param(self, set_time: float):
+        """
+        param: set_time, uint ms
+        """
         old_delay = self.delay
         self.delay = set_time
         if abs(self.delay - old_delay) >= 1:
