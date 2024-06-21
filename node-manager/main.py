@@ -342,7 +342,9 @@ def run(protocol_name: int,
     logger.success(f'finished 1 test in {run_end_time - init_start_time:.6f}s')
     # ----------------------------------------------------------
 
-
+"""
+use sudo -E python3 main.py to execute
+"""
 if __name__ == "__main__":
     # check sudo permission
     sudo_uid = os.environ.get('SUDO_UID')

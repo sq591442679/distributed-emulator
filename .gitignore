@@ -4,6 +4,7 @@
 #[IDE Config]
 **/.idea
 **/.vscode
+**/.venv
 
 #[NodeJs Dependencies]
 **/node_modules

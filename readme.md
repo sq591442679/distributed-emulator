@@ -78,7 +78,7 @@ npm install
 启动控制器需要进入控制器文件夹`node-manager`, 执行
 
 ```bash
-sudo python3 main.py
+sudo -E python3 main.py
 ```
 
 如果需要启动前端, 则新开一个终端, 进入`ui`文件夹, 执行
