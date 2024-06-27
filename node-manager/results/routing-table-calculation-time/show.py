@@ -1,27 +1,34 @@
+"""
+monitor node_2_3 and change eth1 of node_3_7,15*15 satellites
+"""
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
-from itertools import cycle
+import re
 
 # 读取CSV文件
 current_path = os.path.dirname(__file__)
-df = pd.read_csv(f'{current_path}/result.csv')
+protocol_names = ['bfs', 'ospf']
+result_path_prefix = f'{current_path}/delay'
+file_names = [f'{result_path_prefix}/{protocol}.log' for protocol in protocol_names]
+average_execution_time = []
+average_pure_calculation_time = []
+bar_height = []
 
-# 过滤掉protocol字段为'comment'的行
-df_filtered = df[df['protocol'] != 'comment']
+for file_name in file_names:
+	# print(file_name)
+	with open(file_name, 'r') as file:
+		log_content = file.read()
+		excecution_times = re.findall(r'calculation, elapsed (\d+)ns,(\d+)ns', log_content)
+		first_parts = [int(times[0]) for times in excecution_times]
+		second_parts = [int(times[1]) for times in excecution_times]
+		average_first = sum(first_parts) / len(first_parts) / 1000					# uint: μs
+		average_second = sum(second_parts) / len(second_parts) / 1000				# uint: μs
 
-# 移除'execution_time'和'pure_calculation_time'中的'ns'后缀并转换为浮点数，然后从纳秒转换为微秒
-df_filtered['execution_time'] = df_filtered['execution_time'].str.replace('ns', '').astype(float) / 1000
-df_filtered['pure_calculation_time'] = df_filtered['pure_calculation_time'].str.replace('ns', '').astype(float) / 1000
-
-# 计算每个协议的平均执行时间和平均纯计算时间（单位为微秒）
-average_execution_time = df_filtered.groupby('protocol')['execution_time'].mean()
-average_pure_calculation_time = df_filtered.groupby('protocol')['pure_calculation_time'].mean()
-
-# 按照所需的顺序重新排序
-desired_order = ['node-rule-bfs', 'node-rule-id', 'ospf']
-average_execution_time = average_execution_time.reindex(desired_order)
-average_pure_calculation_time = average_pure_calculation_time.reindex(desired_order)
+		average_execution_time.append(average_first)
+		average_pure_calculation_time.append(average_second)
+		bar_height.append(average_first - average_second)
 
 # 设置颜色
 # default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -29,16 +36,31 @@ average_pure_calculation_time = average_pure_calculation_time.reindex(desired_or
 
 # 绘制堆叠柱状图
 plt.figure(figsize=(10, 10))
-bar_width = 0.4
+bar_width = 0.3
 
 # 绘制柱状图
-bars1 = plt.bar(desired_order, average_execution_time - average_pure_calculation_time, color='C0', bottom=average_pure_calculation_time, label='Other Time')
-bars2 = plt.bar(desired_order, average_pure_calculation_time, color='C1', label='Pure Calculation Time')
+bars1 = plt.bar(protocol_names, 
+				bar_height, 
+				bottom=average_pure_calculation_time, 
+				label='Other Time',
+				color='none', 
+				edgecolor='C0',
+				hatch='++',
+				linewidth=3)
+bars2 = plt.bar(protocol_names, 
+				average_pure_calculation_time, 
+				label='Pure Calculation Time',
+				color='none', 
+				edgecolor='C1',
+				hatch='//',
+				linewidth=3)
 
 # 添加标题和标签，增大字号
 plt.title('Average Execution Time and Pure Calculation Time', fontsize=20)
 # plt.xlabel('Protocol', fontsize=16)
 plt.ylabel('Average Time (μs)', fontsize=18)
+plt.xlabel('Protocol', fontsize=18)
+plt.ylim(0, 3000)
 
 # 设置刻度的字号
 plt.xticks(rotation=0, fontsize=18)

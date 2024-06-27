@@ -56,8 +56,10 @@ class SatelliteNode:
         geocentric = self.satellite.at(t)
         position = geocentric.position.km  # 获取以公里为单位的位置坐标 (x, y, z)
         lat, lon = wgs84.latlon_of(geocentric)
+        lat_degree = lat.degrees
+        lon_degree = lon.degrees
         height = wgs84.height_of(geocentric).m
-        return lat, lon, height
+        return lat_degree, lon_degree, height
 
 
 if __name__ == "__main__":

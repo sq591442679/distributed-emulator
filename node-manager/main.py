@@ -202,10 +202,9 @@ def run(protocol_name: int,
 
     # create position updater
     # ----------------------------------------------------------
+    logger.info(f"host ip:{host_ip}, udp port:{udp_port}")
     updater = DataUpdater("<broadcast>", host_ip, int(udp_port))
     # ----------------------------------------------------------
-
-    logger.info(f"host ip:{host_ip}, udp port:{udp_port}")
 
     # create docker client
     # ----------------------------------------------------------
@@ -268,7 +267,7 @@ def run(protocol_name: int,
     start_frr(docker_client)
     # set the initial position
     # NOTE must start frr first, then call update_network_delay,
-    # because this function will chenge ospf cost
+    # because this function will change ospf cost
     for node_id in sorted(list(satellite_map.keys())):
         satellite_node = satellite_map[node_id]
         node_id_str = satellite_id_tuple_to_str(node_id)

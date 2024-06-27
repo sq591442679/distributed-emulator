@@ -836,7 +836,7 @@ static unsigned int ospf_nexthop_calculation(struct ospf_area *area,
 	 */
 	struct timespec start;
 	clock_gettime(CLOCK_MONOTONIC, &start);
-	zlog_debug("%s    searching %pI4->%pI4", __func__, &v->id, &w->id);
+	// zlog_debug("%s    searching %pI4->%pI4", __func__, &v->id, &w->id);
 
 	if (IS_DEBUG_OSPF_EVENT) {
 		zlog_debug("%s: Start", __func__);

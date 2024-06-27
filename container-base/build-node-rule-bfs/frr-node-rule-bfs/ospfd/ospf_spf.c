@@ -1821,7 +1821,7 @@ int bfs_nexthop_calculation(struct ospf_area *area,
 	struct timespec start;
 	clock_gettime(CLOCK_MONOTONIC, &start);
 
-	zlog_debug("%s    searching %pI4->%pI4", __func__, &v->id, &w->id);
+	// zlog_debug("%s    searching %pI4->%pI4", __func__, &v->id, &w->id);
 
 	if (v->lsa_p == area->router_lsa_self) {
 		/**
@@ -1831,7 +1831,7 @@ int bfs_nexthop_calculation(struct ospf_area *area,
 																NULL,
 								       							l->link_data);
 		if (oi == NULL) {
-			dump_excution_time(__func__, &start);
+			// dump_excution_time(__func__, &start);
 			return 0;
 		}
 		else {
@@ -1845,11 +1845,11 @@ int bfs_nexthop_calculation(struct ospf_area *area,
 				if (bfs_add_parent(v, w, nh) == NULL) {
 					bfs_vertex_nexthop_free(nh);
 				}
-				dump_excution_time(__func__, &start);
+				// dump_excution_time(__func__, &start);
 				return 1;
 			}
 			else {
-				dump_excution_time(__func__, &start);
+				// dump_excution_time(__func__, &start);
 				return 0;
 			}
 		}
@@ -1869,7 +1869,7 @@ int bfs_nexthop_calculation(struct ospf_area *area,
 				bfs_vertex_nexthop_free(nh);
 			}
 		}
-		dump_excution_time(__func__, &start);
+		// dump_excution_time(__func__, &start);
 		return added;
 	}
 }

@@ -1,0 +1,54 @@
+
+2024/06/26 20:03:10 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:10.409306262, finished routing table calculation, elapsed 2239636ns,1723320ns
+2024/06/26 20:03:14 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:14.182436161, finished routing table calculation, elapsed 3257085ns,2221570ns
+2024/06/26 20:03:15 warnings: ZEBRA: [PHJDC-499N2][EC 100663314] STARVATION: task dplane_thread_loop (560a90dd92c0) ran for 5230ms (cpu time 24ms)
+2024/06/26 20:03:17 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:17.21834276, finished routing table calculation, elapsed 3144673ns,2072987ns
+2024/06/26 20:03:17 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:17.841653790, finished routing table calculation, elapsed 1259809ns,854986ns
+2024/06/26 20:03:17 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:17.965593222, finished routing table calculation, elapsed 2452767ns,1584212ns
+2024/06/26 20:03:22 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:22.619687612, finished routing table calculation, elapsed 5407285ns,3520203ns
+2024/06/26 20:03:26 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:26.18840200, finished routing table calculation, elapsed 3666873ns,2454359ns
+2024/06/26 20:03:28 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:28.858046545, finished routing table calculation, elapsed 3431540ns,2064630ns
+2024/06/26 20:03:29 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:29.844660970, finished routing table calculation, elapsed 4728411ns,3594657ns
+2024/06/26 20:03:29 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:29.966925788, finished routing table calculation, elapsed 1726765ns,1021146ns
+2024/06/26 20:03:34 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:34.439997847, finished routing table calculation, elapsed 4866212ns,2102023ns
+2024/06/26 20:03:37 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:37.856429758, finished routing table calculation, elapsed 3261840ns,2153746ns
+2024/06/26 20:03:40 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:40.698042744, finished routing table calculation, elapsed 1249874ns,853116ns
+2024/06/26 20:03:41 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:41.844057701, finished routing table calculation, elapsed 1877847ns,1246413ns
+2024/06/26 20:03:41 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:41.968615825, finished routing table calculation, elapsed 1482562ns,951162ns
+2024/06/26 20:03:45 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:45.985920811, finished routing table calculation, elapsed 3192679ns,2092189ns
+2024/06/26 20:03:49 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:49.696683189, finished routing table calculation, elapsed 1905604ns,1263132ns
+2024/06/26 20:03:53 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:53.474362297, finished routing table calculation, elapsed 2196102ns,1592699ns
+2024/06/26 20:03:53 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:53.847539172, finished routing table calculation, elapsed 3260921ns,2175637ns
+2024/06/26 20:03:53 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:53.976047625, finished routing table calculation, elapsed 1465666ns,953619ns
+2024/06/26 20:03:58 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:03:58.636541363, finished routing table calculation, elapsed 3363734ns,2256115ns
+2024/06/26 20:03:58 warnings: ZEBRA: [PHJDC-499N2][EC 100663314] STARVATION: task dplane_thread_loop (560a90dd92c0) ran for 5028ms (cpu time 18ms)
+2024/06/26 20:04:02 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:02.465036463, finished routing table calculation, elapsed 3238165ns,2130140ns
+2024/06/26 20:04:04 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:04.948539351, finished routing table calculation, elapsed 3251456ns,2139299ns
+2024/06/26 20:04:05 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:05.848373050, finished routing table calculation, elapsed 4489901ns,2834098ns
+2024/06/26 20:04:05 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:05.972391854, finished routing table calculation, elapsed 3093445ns,2010451ns
+2024/06/26 20:04:10 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:10.224034691, finished routing table calculation, elapsed 1601845ns,1078100ns
+2024/06/26 20:04:13 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:13.943652254, finished routing table calculation, elapsed 1645266ns,1122615ns
+2024/06/26 20:04:16 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:16.892995183, finished routing table calculation, elapsed 3358307ns,2308668ns
+2024/06/26 20:04:17 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:17.845979343, finished routing table calculation, elapsed 3140301ns,2043063ns
+2024/06/26 20:04:17 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:17.970513446, finished routing table calculation, elapsed 1485736ns,948541ns
+2024/06/26 20:04:21 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:21.790388196, finished routing table calculation, elapsed 3207313ns,2069454ns
+2024/06/26 20:04:24 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:24.885550871, finished routing table calculation, elapsed 1785236ns,1076909ns
+2024/06/26 20:04:27 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:27.698191110, finished routing table calculation, elapsed 2150429ns,1502548ns
+2024/06/26 20:04:28 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:28.844719806, finished routing table calculation, elapsed 1257380ns,859175ns
+2024/06/26 20:04:28 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:28.972604962, finished routing table calculation, elapsed 1838898ns,1293452ns
+2024/06/26 20:04:32 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:32.774848080, finished routing table calculation, elapsed 1709295ns,1142548ns
+2024/06/26 20:04:36 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:36.691910777, finished routing table calculation, elapsed 1991381ns,1339109ns
+2024/06/26 20:04:39 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:39.689011763, finished routing table calculation, elapsed 2093059ns,1696970ns
+2024/06/26 20:04:40 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:40.849354763, finished routing table calculation, elapsed 3136599ns,2067069ns
+2024/06/26 20:04:40 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:40.969549074, finished routing table calculation, elapsed 2065924ns,1176644ns
+2024/06/26 20:04:44 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:44.679794000, finished routing table calculation, elapsed 3144984ns,2074880ns
+2024/06/26 20:04:47 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:47.689390759, finished routing table calculation, elapsed 3171979ns,2091499ns
+2024/06/26 20:04:50 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:50.479479392, finished routing table calculation, elapsed 3275244ns,2157929ns
+2024/06/26 20:04:50 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:50.855587525, finished routing table calculation, elapsed 2742956ns,1844779ns
+2024/06/26 20:04:50 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:50.979994954, finished routing table calculation, elapsed 3531105ns,2345730ns
+2024/06/26 20:04:55 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:55.957227572, finished routing table calculation, elapsed 3308443ns,2204456ns
+2024/06/26 20:04:59 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:04:59.471959197, finished routing table calculation, elapsed 3194504ns,2102094ns
+2024/06/26 20:05:01 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:05:01.665085337, finished routing table calculation, elapsed 3464275ns,2349863ns
+2024/06/26 20:05:02 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:05:02.861708291, finished routing table calculation, elapsed 3219571ns,2044420ns
+2024/06/26 20:05:02 debugging: OSPF: [TTJPM-FK1BD] ospf_spf_calculate    2024-06-26 20:05:02.988655432, finished routing table calculation, elapsed 1955373ns,1438270ns
+2024/06/26 20:05:07 warnings: ZEBRA: [PHJDC-499N2][EC 100663314] STARVATION: task dplane_thread_loop (560a90dd92c0) ran for 7336ms (cpu time 17ms)
