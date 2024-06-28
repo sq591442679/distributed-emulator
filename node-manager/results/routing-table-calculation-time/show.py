@@ -2,19 +2,19 @@
 monitor node_2_3 and change eth1 of node_3_7,15*15 satellites
 """
 
-import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import re
 
 # 读取CSV文件
+metric = 'delay'
 current_path = os.path.dirname(__file__)
-protocol_names = ['bfs', 'ospf']
-result_path_prefix = f'{current_path}/delay'
+protocol_names = ['id', 'bfs', 'ospf']
+result_path_prefix = f'{current_path}/{metric}'
 file_names = [f'{result_path_prefix}/{protocol}.log' for protocol in protocol_names]
 average_execution_time = []
 average_pure_calculation_time = []
-bar_height = []
+average_other_time = []
 
 for file_name in file_names:
 	# print(file_name)
@@ -28,7 +28,9 @@ for file_name in file_names:
 
 		average_execution_time.append(average_first)
 		average_pure_calculation_time.append(average_second)
-		bar_height.append(average_first - average_second)
+		average_other_time.append(average_first - average_second)
+
+print(average_execution_time, average_pure_calculation_time, average_other_time)
 
 # 设置颜色
 # default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -40,7 +42,7 @@ bar_width = 0.3
 
 # 绘制柱状图
 bars1 = plt.bar(protocol_names, 
-				bar_height, 
+				average_other_time, 
 				bottom=average_pure_calculation_time, 
 				label='Other Time',
 				color='none', 
@@ -56,11 +58,11 @@ bars2 = plt.bar(protocol_names,
 				linewidth=3)
 
 # 添加标题和标签，增大字号
-plt.title('Average Execution Time and Pure Calculation Time', fontsize=20)
+plt.title('Routing Table Calculation Time of 15*15 Satellites', fontsize=20)
 # plt.xlabel('Protocol', fontsize=16)
 plt.ylabel('Average Time (μs)', fontsize=18)
 plt.xlabel('Protocol', fontsize=18)
-plt.ylim(0, 3000)
+plt.ylim(0, 2200)
 
 # 设置刻度的字号
 plt.xticks(rotation=0, fontsize=18)
@@ -71,4 +73,5 @@ plt.yticks(fontsize=14)
 plt.legend(fontsize=14)
 
 # 显示图表
-plt.show()
+# plt.savefig(f'{result_path_prefix}/result.pdf', format='pdf')
+# plt.show()
